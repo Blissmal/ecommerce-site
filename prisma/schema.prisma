@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  authId    String     @unique
+  email     String     @unique
+  name      String?
+  phone     String?
+  address   String?
+  country   String?
+  town      String?
+  verified  Boolean    @default(false)
+  role      String     @default("USER")
+  createdAt DateTime   @default(now())
+  cartItems CartItem[]
+  likes     Like[]
+  orders    Order[]
+  reviews   Review[]
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  products Product[]
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  stock       Int
+  imageUrl    String
+  discount    Float?
+  status      ProductStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  categoryId  String
+  cartItems   CartItem[]
+  likes       Like[]
+  orderItems  OrderItem[]
+  category    Category      @relation(fields: [categoryId], references: [id])
+  reviews     Review[]
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int
+  product   Product @relation(fields: [productId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  rating    Int      @default(0)
+  comment   String
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Like {
+  id        String  @id @default(cuid())
+  userId    String
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id                 String        @id @default(cuid())
+  userId             String
+  total              Float
+  receipt            String?
+  paymentMethod      PaymentMethod
+  status             OrderStatus   @default(PENDING)
+  phoneNumber        String?
+  checkoutRequestId  String?       @unique
+  merchantRequestId  String?
+  billingName        String?
+  billingEmail       String?
+  billingAddress     String?
+  orderNotes         String?
+  paymentInitiatedAt DateTime?
+  paymentCompletedAt DateTime?
+  createdAt          DateTime      @default(now())
+  user               User          @relation(fields: [userId], references: [id])
+  orderItems         OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+enum PaymentMethod {
+  MPESA
+  BANK
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+  SHIPPED
+  DELIVERED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+}
