@@ -38,17 +38,18 @@ export default function ProductActions({ product }: { product: Product }) {
   };
 
   return (
-    <div className="flex space-x-2">
+    <div className="flex items-center space-x-4 font-euclid-circular-a">
+      {/* Row Action Buttons */}
       <button
         onClick={() => setShowEditModal(true)}
-        className="text-blue-600 hover:text-blue-800 text-sm px-3 py-1 border border-blue-200 rounded hover:bg-blue-50"
+        className="text-blue hover:text-blue-dark text-custom-sm font-bold transition-colors"
       >
         Edit
       </button>
       
       <button
         onClick={() => setShowDeleteConfirm(true)}
-        className="text-red-600 hover:text-red-800 text-sm px-3 py-1 border border-red-200 rounded hover:bg-red-50"
+        className="text-red-dark hover:text-red text-custom-sm font-bold transition-colors"
       >
         Delete
       </button>
@@ -63,29 +64,44 @@ export default function ProductActions({ product }: { product: Product }) {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Delete Product
-            </h3>
-            <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to delete "{product.title}"? This action cannot be undone.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleDelete}
-                disabled={loading}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
-              >
-                {loading ? "Deleting..." : "Delete"}
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={loading}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          {/* Backdrop using your 'dark' color with opacity */}
+          <div 
+            className="absolute inset-0 bg-dark/40 backdrop-blur-sm"
+            onClick={() => !loading && setShowDeleteConfirm(false)}
+          />
+          
+          <div className="relative bg-white rounded-2xl shadow-4 border border-gray-3 p-8 max-w-md w-full animate-in fade-in zoom-in duration-200">
+            <div className="flex flex-col items-center text-center">
+              {/* Danger Icon */}
+              <div className="w-16 h-16 bg-red-light-6 rounded-full flex items-center justify-center mb-5">
+                <span className="text-red-dark text-2xl font-bold">!</span>
+              </div>
+              
+              <h3 className="text-heading-5 font-bold text-dark mb-2">
+                Delete Product
+              </h3>
+              <p className="text-custom-sm text-body mb-8">
+                Are you sure you want to delete <span className="font-bold text-dark">"{product.title}"</span>? 
+                This action is permanent and cannot be undone.
+              </p>
+              
+              <div className="flex w-full gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={loading}
+                  className="flex-1 px-6 py-3 bg-gray-2 hover:bg-gray-3 text-dark font-bold rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={loading}
+                  className="flex-1 px-6 py-3 bg-red hover:bg-red-dark text-white font-bold rounded-xl shadow-lg shadow-red/20 transition-all disabled:opacity-50"
+                >
+                  {loading ? "Deleting..." : "Delete"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

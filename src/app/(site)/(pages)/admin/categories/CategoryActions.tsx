@@ -1,10 +1,11 @@
+// app/admin/categories/CategoryActions.tsx
 "use client";
 
 import { useState } from "react";
-import { Edit2, Trash2, MoreVertical } from "lucide-react";
+import { Edit2, Trash2, MoreVertical, X } from "lucide-react";
 import { deleteCategory, updateCategory } from "../../../../../../lib/category.actions";
-
-// Note: In your actual implementation, you would import these from your server actions:
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 interface Category {
   id: string;
@@ -21,7 +22,8 @@ export default function CategoryActions({ category }: CategoryActionsProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
     name: category.name,
     description: category.description || ""
@@ -30,16 +32,14 @@ export default function CategoryActions({ category }: CategoryActionsProps) {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage(null);
 
     try {
       await updateCategory(category.id, formData);
-      setMessage({ type: 'success', text: 'Category updated successfully' });
+      toast.success('Category updated successfully');
       setShowEditModal(false);
-      // In your actual app, you would refresh the data or use a state management solution
-      // router.refresh();
+      router.refresh();
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update category' });
+      toast.error('Failed to update category');
     } finally {
       setLoading(false);
     }
@@ -47,24 +47,20 @@ export default function CategoryActions({ category }: CategoryActionsProps) {
 
   const handleDelete = async () => {
     if (category.products.length > 0) {
-      setMessage({ type: 'error', text: `Cannot delete category with ${category.products.length} products` });
+      toast.error(`Cannot delete category with ${category.products.length} products`);
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete "${category.name}"?`)) {
-      return;
-    }
+    // Using toast for confirmation or standard confirm - here we trigger logic
+    if (!confirm(`Are you sure you want to delete "${category.name}"?`)) return;
 
     setLoading(true);
-    setMessage(null);
-
     try {
       await deleteCategory(category.id);
-      setMessage({ type: 'success', text: 'Category deleted successfully' });
-      // In your actual app, you would refresh the data or use a state management solution
-      // router.refresh();
+      toast.success('Category deleted successfully');
+      router.refresh();
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to delete category' });
+      toast.error('Failed to delete category');
     } finally {
       setLoading(false);
     }
@@ -76,131 +72,120 @@ export default function CategoryActions({ category }: CategoryActionsProps) {
   };
 
   return (
-    <>
+    <div className="font-euclid-circular-a">
       {/* Actions Dropdown */}
       <div className="relative">
         <button
           onClick={() => setShowDropdown(!showDropdown)}
-          className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-2 text-dark-5 hover:text-dark transition-all"
           disabled={loading}
         >
-          <MoreVertical className="w-4 h-4 text-gray-500" />
+          <MoreVertical className="w-5 h-5" />
         </button>
 
         {showDropdown && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
-            <div className="py-1">
-              <button
-                onClick={() => {
-                  setShowEditModal(true);
-                  setShowDropdown(false);
-                }}
-                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <Edit2 className="w-4 h-4" />
-                Edit Category
-              </button>
-              <button
-                onClick={() => {
-                  handleDelete();
-                  setShowDropdown(false);
-                }}
-                disabled={category.products.length > 0}
-                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title={category.products.length > 0 ? "Cannot delete category with products" : "Delete category"}
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Category
-              </button>
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
+            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-4 border border-gray-3 z-20 overflow-hidden animate-in fade-in zoom-in duration-150">
+              <div className="p-2">
+                <button
+                  onClick={() => {
+                    setShowEditModal(true);
+                    setShowDropdown(false);
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-custom-sm font-bold text-dark hover:bg-gray-1 rounded-xl transition-all"
+                >
+                  <Edit2 className="w-4 h-4 text-blue" />
+                  Edit Details
+                </button>
+                <button
+                  onClick={() => {
+                    handleDelete();
+                    setShowDropdown(false);
+                  }}
+                  disabled={category.products.length > 0}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-custom-sm font-bold text-red hover:bg-red-light-6 rounded-xl transition-all disabled:opacity-30 disabled:grayscale"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Category
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Backdrop to close dropdown */}
-        {showDropdown && (
-          <div
-            className="fixed inset-0 z-0"
-            onClick={() => setShowDropdown(false)}
-          />
+          </>
         )}
       </div>
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Edit Category
-              </h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Category Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter category name"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    id="edit-description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter category description"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowEditModal(false);
-                      setFormData({
-                        name: category.name,
-                        description: category.description || ""
-                      });
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    disabled={loading}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleEdit}
-                    disabled={loading || !formData.name.trim()}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                  >
-                    {loading ? 'Updating...' : 'Update Category'}
-                  </button>
-                </div>
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-dark/40 backdrop-blur-sm" onClick={() => !loading && setShowEditModal(false)} />
+          
+          <div className="relative bg-white rounded-2xl shadow-4 border border-gray-3 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="px-8 py-6 border-b border-gray-2 flex items-center justify-between bg-gray-1/30">
+              <div>
+                <h2 className="text-heading-6 font-bold text-dark">Edit Category</h2>
+                <p className="text-custom-xs text-body italic">Modify category identification</p>
               </div>
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-gray-2 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-dark-5" />
+              </button>
             </div>
-          </div>
+            
+            <form onSubmit={handleEdit} className="p-8 space-y-6">
+              <div>
+                <label className="block text-2xs font-bold text-dark-5 uppercase tracking-widest mb-2 ml-1">
+                  Category Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full bg-gray-1 border border-gray-3 rounded-xl px-4 py-3 text-custom-sm font-medium text-dark focus:bg-white focus:border-blue focus:ring-4 focus:ring-blue/5 outline-none transition-all"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-2xs font-bold text-dark-5 uppercase tracking-widest mb-2 ml-1">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full bg-gray-1 border border-gray-3 rounded-xl px-4 py-3 text-custom-sm font-medium text-dark focus:bg-white focus:border-blue focus:ring-4 focus:ring-blue/5 outline-none transition-all resize-none"
+                />
+              </div>
 
-          {/* Modal backdrop */}
-          <div
-            className="fixed inset-0 -z-10"
-            onClick={() => setShowEditModal(false)}
-          />
+              <div className="flex gap-4 pt-4 border-t border-gray-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-6 py-3.5 bg-gray-2 hover:bg-gray-3 text-dark font-bold rounded-xl transition-all"
+                  disabled={loading}
+                >
+                  Discard
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || !formData.name.trim()}
+                  className="flex-1 px-6 py-3.5 bg-blue hover:bg-blue-dark text-white font-bold rounded-xl shadow-lg shadow-blue/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

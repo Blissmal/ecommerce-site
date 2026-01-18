@@ -18,6 +18,10 @@ const SingleItem = ({ item }) => {
   const [quantity, setQuantity] = useState(item.quantity);
   const prevCart = useAppSelector(selectCartItems);
 
+  // Use discountedPrice (the actual price after discount) instead of original price
+  const priceToUse = item.discountedPrice || item.product.price;
+  const hasDiscount = item.product.discount && item.product.discount > 0;
+
   const handleRemoveFromCart = () => {
     dispatch(removeItemOptimistic(item.id));
 
@@ -70,15 +74,32 @@ const SingleItem = ({ item }) => {
               <h3 className="text-dark ease-out duration-200 hover:text-blue">
                 <a href="#"> {item.product.title} </a>
               </h3>
+              {/* Show discount badge if applicable */}
+              {hasDiscount && (
+                <span className="text-xs text-green">
+                  {item.product.discount}% off applied
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Unit Price - Use DISCOUNTED price */}
       <div className="min-w-[180px]">
-        <p className="text-dark">${item.product.price}</p>
+        {hasDiscount ? (
+          <div className="flex flex-col">
+            <p className="text-dark font-medium">${priceToUse.toFixed(2)}</p>
+            <p className="text-sm text-gray-500 line-through">
+              ${item.product.price.toFixed(2)}
+            </p>
+          </div>
+        ) : (
+          <p className="text-dark">${priceToUse.toFixed(2)}</p>
+        )}
       </div>
 
+      {/* Quantity Controls */}
       <div className="min-w-[275px]">
         <div className="w-max flex items-center rounded-md border border-gray-3">
           <button
@@ -108,17 +129,24 @@ const SingleItem = ({ item }) => {
         </div>
       </div>
 
+      {/* Total Price - Use DISCOUNTED price */}
       <div className="min-w-[200px]">
-        <p className="text-dark">${(item.product.price * quantity).toFixed(2)}</p>
+        <p className="text-dark font-medium">${(priceToUse * quantity).toFixed(2)}</p>
+        {hasDiscount && (
+          <p className="text-xs text-gray-500">
+            (${((priceToUse * quantity) - (item.product.price * quantity)).toFixed(2)} saved)
+          </p>
+        )}
       </div>
 
+      {/* Remove Button */}
       <div className="min-w-[50px] flex justify-end">
         <button
           onClick={handleRemoveFromCart}
           aria-label="remove product"
           className="flex items-center justify-center rounded-lg max-w-[38px] w-full h-9.5 bg-gray-2 border border-gray-3 text-dark ease-out duration-200 hover:bg-red-light-6 hover:border-red-light-4 hover:text-red"
         >
-          🗑
+          🗑️
         </button>
       </div>
     </div>

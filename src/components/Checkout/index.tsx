@@ -417,7 +417,7 @@ const Checkout = ({userId}: {userId: string}) => {
                     {/* Cart Items */}
                     {cartItems.map(item => {
                       const price = item.product.discount 
-                        ? item.product.price * (1 - item.product.discount)
+                        ? item.product.price * (100 - item.product.discount) / 100
                         : item.product.price;
                       
                       return (
@@ -426,7 +426,7 @@ const Checkout = ({userId}: {userId: string}) => {
                             <p className="text-dark">{item.product.title}</p>
                             {item.product.discount && (
                               <p className="text-sm text-green-600">
-                                {(item.product.discount * 100).toFixed(0)}% off
+                                {(item.product.discount).toFixed(0)}% off
                               </p>
                             )}
                           </div>

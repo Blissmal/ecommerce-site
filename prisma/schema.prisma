@@ -18,12 +18,13 @@ model User {
   country   String?
   town      String?
   verified  Boolean    @default(false)
-  role      String     @default("USER")
+  role      String     @default("USER") // USER, ADMIN, etc.
   createdAt DateTime   @default(now())
+
   cartItems CartItem[]
-  likes     Like[]
   orders    Order[]
   reviews   Review[]
+  likes     Like[]
 }
 
 model Category {
@@ -34,30 +35,33 @@ model Category {
 }
 
 model Product {
-  id          String        @id @default(cuid())
+  id          String         @id @default(cuid())
   title       String
   description String
   price       Float
   stock       Int
-  imageUrl    String
-  discount    Float?
-  status      ProductStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
+  imageUrl    String         // Primary/main image for backward compatibility
+  images      String[]       @default([]) // Array of additional image URLs
+  discount    Float?         // Optional: e.g., 0.15 for 15% off
+  status      ProductStatus  @default(ACTIVE)
+  createdAt   DateTime       @default(now())
   categoryId  String
+
+  category    Category       @relation(fields: [categoryId], references: [id])
   cartItems   CartItem[]
+  reviews     Review[]
   likes       Like[]
   orderItems  OrderItem[]
-  category    Category      @relation(fields: [categoryId], references: [id])
-  reviews     Review[]
 }
 
 model CartItem {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   productId String
   quantity  Int
-  product   Product @relation(fields: [productId], references: [id])
-  user      User    @relation(fields: [userId], references: [id])
+
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 
   @@unique([userId, productId])
 }
@@ -69,49 +73,55 @@ model Review {
   rating    Int      @default(0)
   comment   String
   createdAt DateTime @default(now())
-  product   Product  @relation(fields: [productId], references: [id])
+
   user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
 
 model Like {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   productId String
-  product   Product @relation(fields: [productId], references: [id])
-  user      User    @relation(fields: [userId], references: [id])
+
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 
   @@unique([userId, productId])
 }
 
 model Order {
-  id                 String        @id @default(cuid())
-  userId             String
-  total              Float
-  receipt            String?
-  paymentMethod      PaymentMethod
-  status             OrderStatus   @default(PENDING)
-  phoneNumber        String?
-  checkoutRequestId  String?       @unique
-  merchantRequestId  String?
-  billingName        String?
-  billingEmail       String?
-  billingAddress     String?
-  orderNotes         String?
-  paymentInitiatedAt DateTime?
-  paymentCompletedAt DateTime?
-  createdAt          DateTime      @default(now())
-  user               User          @relation(fields: [userId], references: [id])
-  orderItems         OrderItem[]
+  id            String        @id @default(cuid())
+  userId        String
+  total         Float
+  receipt       String?       // M-PESA or bank transaction reference
+  paymentMethod PaymentMethod
+  status        OrderStatus   @default(PENDING)
+  
+  phoneNumber       String?       // Phone number used for M-Pesa payment
+  checkoutRequestId String?       @unique // M-Pesa STK push identifier
+  merchantRequestId String?       // M-Pesa merchant request identifier
+  billingName       String?       // Customer billing name
+  billingEmail      String?       // Customer billing email
+  billingAddress    String?       // Customer billing address
+  orderNotes        String?       // Customer order notes
+  paymentInitiatedAt DateTime?    // When payment was initiated
+  paymentCompletedAt DateTime?    // When payment was completed
+
+  createdAt     DateTime      @default(now())
+
+  user         User      @relation(fields: [userId], references: [id])
+  orderItems   OrderItem[]
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   orderId   String
   productId String
   quantity  Int
   price     Float
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
 
 enum PaymentMethod {
@@ -120,13 +130,13 @@ enum PaymentMethod {
 }
 
 enum OrderStatus {
-  PENDING
-  PROCESSING
-  PAID
-  FAILED
-  CANCELLED
-  SHIPPED
-  DELIVERED
+  PENDING      // Order created, payment not initiated
+  PROCESSING   // Payment initiated (STK push sent)
+  PAID         // Payment successful
+  FAILED       // Payment failed
+  CANCELLED    // Order cancelled
+  SHIPPED      // Order shipped (for future use)
+  DELIVERED    // Order delivered (for future use)
 }
 
 enum ProductStatus {

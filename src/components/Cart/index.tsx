@@ -3,12 +3,33 @@ import React from "react";
 import Discount from "./Discount";
 import OrderSummary from "./OrderSummary";
 import { useAppSelector } from "@/redux/store";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/redux/store";
+import { clearCartOptimistic, clearCartAsync, revertOptimisticUpdate } from "@/redux/features/cart-slice";
 import SingleItem from "./SingleItem";
 import Breadcrumb from "../Common/Breadcrumb";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
 
 const Cart = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const cartItems = useAppSelector((state) => state.cartReducer.items);
+
+  const handleClearCart = async () => {
+    const prevCart = [...cartItems];
+    
+    // Optimistic update
+    dispatch(clearCartOptimistic());
+    
+    try {
+      await dispatch(clearCartAsync()).unwrap();
+      toast.success("Cart cleared");
+    } catch (err) {
+      // Revert on error
+      dispatch(revertOptimisticUpdate(prevCart));
+      toast.error("Failed to clear cart");
+    }
+  };
 
   return (
     <>
@@ -22,7 +43,12 @@ const Cart = () => {
           <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
             <div className="flex flex-wrap items-center justify-between gap-5 mb-7.5">
               <h2 className="font-medium text-dark text-2xl">Your Cart</h2>
-              <button className="text-blue">Clear Shopping Cart</button>
+              <button 
+                onClick={handleClearCart}
+                className="text-blue hover:text-blue-dark transition-colors"
+              >
+                Clear Shopping Cart
+              </button>
             </div>
 
             <div className="bg-white rounded-[10px] shadow-1">
@@ -68,7 +94,7 @@ const Cart = () => {
         </section>
       ) : (
         <>
-          <div className="text-center mt-8">
+          <div className="text-center mt-8 py-20">
             <div className="mx-auto pb-7.5">
               <svg
                 className="mx-auto"
@@ -100,11 +126,11 @@ const Cart = () => {
               </svg>
             </div>
 
-            <p className="pb-6">Your cart is empty!</p>
+            <p className="pb-6 text-lg text-gray-600">Your cart is empty!</p>
 
             <Link
               href="/shop-with-sidebar"
-              className="w-96 mx-auto flex justify-center font-medium text-white bg-dark py-[13px] px-6 rounded-md ease-out duration-200 hover:bg-opacity-95"
+              className="inline-flex font-medium text-white bg-dark py-[13px] px-8 rounded-md ease-out duration-200 hover:bg-opacity-95"
             >
               Continue Shopping
             </Link>

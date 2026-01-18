@@ -11,14 +11,15 @@ const initialState = {
     reviews: 0,
     price: 0,
     discountedPrice: 0,
+    description: "",
+    img: "",
+    imageUrl: "",
+    id: 0,
     stock: 0,
     discount: 0,
-    imageUrl: "",
-    img: "",
-    images: [],
-    id: 0,
-    imgs: { thumbnails: [], previews: [] },
-  },
+    images: [] as string[],
+    imgs: { thumbnails: [] as string[], previews: [] as string[] },
+  } as Product,
 } as InitialState;
 
 export const productDetails = createSlice({

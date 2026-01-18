@@ -18,90 +18,104 @@ export default async function ProductsPage() {
   const products = await getProducts();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Products Management</h1>
+    <div className="min-h-screen bg-meta p-7.5 font-euclid-circular-a">
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <h1 className="text-heading-4 font-bold text-dark">Products Management</h1>
+          <p className="text-custom-sm text-body">Manage your inventory, pricing, and categories.</p>
+        </div>
         <Link
           href="/admin/add-product"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="bg-blue hover:bg-blue-dark text-white px-5 py-2.5 rounded-lg transition-all duration-200 font-medium text-custom-sm flex items-center gap-2"
         >
-          Add New Product
+          <span className="text-lg">＋</span> Add New Product
         </Link>
       </div>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white shadow-2 rounded-xl border border-gray-3 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-3">
+            <thead className="bg-gray-1">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Product
+                <th className="px-6 py-4 text-left text-2xs font-bold text-dark-5 uppercase tracking-wider">
+                  Product Details
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-2xs font-bold text-dark-5 uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-2xs font-bold text-dark-5 uppercase tracking-wider">
                   Price
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock
+                <th className="px-6 py-4 text-left text-2xs font-bold text-dark-5 uppercase tracking-wider">
+                  Stock Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sales
+                <th className="px-6 py-4 text-left text-2xs font-bold text-dark-5 uppercase tracking-wider">
+                  Performance
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-2xs font-bold text-dark-5 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-2">
               {products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <tr key={product.id} className="hover:bg-gray-1 transition-colors group">
+                  <td className="px-6 py-5 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-12 bg-gray-2 rounded-lg overflow-hidden flex-shrink-0 border border-gray-3">
                         {product.imageUrl ? (
                           <img
                             src={product.imageUrl}
                             alt={product.title}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <div className="w-full h-full flex items-center justify-center text-xl">
                             📦
                           </div>
                         )}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-custom-sm font-bold text-dark">
                           {product.title}
                         </div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
+                        <div className="text-custom-xs text-body truncate max-w-[200px]">
                           {product.description}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {product.category?.name || 'No Category'}
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <span className="inline-flex px-3 py-1 text-2xs font-bold rounded-full uppercase tracking-wider bg-blue-light-5 text-blue-dark border border-blue-light-4">
+                      {product.category?.name || 'Uncategorized'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-5 whitespace-nowrap text-custom-sm font-bold text-dark">
                     ${product.price.toFixed(2)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`text-sm font-medium ${
-                      product.stock > 10 ? 'text-green-600' : 
-                      product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
-                    }`}>
-                      {product.stock}
-                    </span>
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span className={`text-custom-sm font-bold ${
+                        product.stock > 10 ? 'text-green-dark' : 
+                        product.stock > 0 ? 'text-yellow-dark' : 'text-red-dark'
+                      }`}>
+                        {product.stock} in stock
+                      </span>
+                      <div className="w-24 h-1.5 bg-gray-2 rounded-full mt-1.5 overflow-hidden">
+                         <div 
+                          className={`h-full rounded-full ${
+                            product.stock > 10 ? 'bg-green' : 
+                            product.stock > 0 ? 'bg-yellow' : 'bg-red'
+                          }`}
+                          style={{ width: `${Math.min(product.stock * 2, 100)}%` }}
+                         />
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {product.orderItems.length} sold
+                  <td className="px-6 py-5 whitespace-nowrap text-custom-sm text-body font-medium">
+                    <span className="text-dark font-bold">{product.orderItems.length}</span> units sold
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-5 whitespace-nowrap">
                     <ProductActions product={product} />
                   </td>
                 </tr>

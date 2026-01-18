@@ -148,14 +148,14 @@ export async function POST(req) {
     }
 
     // Calculate total amount
-    // const totalAmount = cartItems.reduce((sum, item) => {
-    //   const price = item.product.discount
-    //     ? item.product.price * (1 - item.product.discount)
-    //     : item.product.price;
-    //   return sum + (price * item.quantity);
-    // }, 0);
+    const totalAmount = cartItems.reduce((sum, item) => {
+      const price = item.product.discount
+        ? item.product.price * (100 - item.product.discount) / 100
+        : item.product.price;
+      return sum + (price * item.quantity);
+    }, 0);
 
-    const totalAmount = 1  //for testing purposes 😊
+    // const totalAmount = 1  //for testing purposes 😊
     
 
     // Validate minimum amount (M-Pesa minimum is 1 KES)
@@ -178,7 +178,7 @@ export async function POST(req) {
       productId: item.productId,
       quantity: item.quantity,
       price: item.product.discount
-        ? item.product.price * (1 - item.product.discount)
+        ? item.product.price * (100 - item.product.discount) / 100
         : item.product.price
     })));
 

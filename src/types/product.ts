@@ -1,8 +1,9 @@
 export type Product = {
   title: string;
-  reviews: number;
+  reviews?: number;
   price: number;
   discountedPrice: number;
+  description: string;
   id: number;
   imgs?: {
     thumbnails: string[];
@@ -11,4 +12,5 @@ export type Product = {
   stock: number;
   discount: number;
   imageUrl: string;
+  images?: string[];
 };

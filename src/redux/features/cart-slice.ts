@@ -259,16 +259,27 @@ export const selectCartItems = (state: RootState) => state.cartReducer.items
 export const selectCartLoading = (state: RootState) => state.cartReducer.isLoading
 export const selectCartError = (state: RootState) => state.cartReducer.error
 
-// Fixed selector - using discountedPrice from CartItem interface
+// FIXED: Use discountedPrice instead of original price
 export const selectTotalPrice = createSelector([selectCartItems], (items) => {
   return items.reduce((total, item) => {
-    // Use discountedPrice as it exists directly on CartItem
-    const price = Number(item?.product?.price ?? 0);
+    // Use discountedPrice (the actual price after discount)
+    // Fall back to product.price if discountedPrice is not available
+    const price = Number(item?.discountedPrice ?? item?.product?.price ?? 0);
     const quantity = Number(item?.quantity ?? 0);
     return total + price * quantity;
   }, 0);
 });
 
+// Calculate total savings
+export const selectTotalSavings = createSelector([selectCartItems], (items) => {
+  return items.reduce((total, item) => {
+    const originalPrice = Number(item?.price ?? item?.product?.price ?? 0);
+    const discountedPrice = Number(item?.discountedPrice ?? originalPrice);
+    const quantity = Number(item?.quantity ?? 0);
+    const savings = (originalPrice - discountedPrice) * quantity;
+    return total + savings;
+  }, 0);
+});
 
 export const selectCartItemCount = createSelector([selectCartItems], (items) => {
   return items.reduce((total, item) => total + item.quantity, 0)

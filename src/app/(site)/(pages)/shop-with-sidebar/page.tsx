@@ -1,17 +1,50 @@
 import React from "react";
-import ShopWithSidebar from "@/components/ShopWithSidebar";
+import { prisma } from "../../../../../lib/prisma";
 
 import { Metadata } from "next";
+import ShopWithSidebarClient from "@/components/ShopWithSidebar/ShopWithSidebarClient";
 export const metadata: Metadata = {
-  title: "Shop Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Shop Page for NextCommerce Template",
-  // other metadata
+  title: "Shop Page | NextCommerce E-commerce",
+  description: "Browse our complete product collection with advanced filters",
 };
 
-const ShopWithSidebarPage = () => {
+const ShopWithSidebarPage = async () => {
+  // Fetch all products from database
+  const products = await prisma.product.findMany({
+    where: {
+      status: "ACTIVE",
+    },
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  // Fetch all categories
+  const categories = await prisma.category.findMany({
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      _count: {
+        select: {
+          products: true,
+        },
+      },
+    },
+  });
+
   return (
     <main>
-      <ShopWithSidebar />
+      <ShopWithSidebarClient products={products} categories={categories} />
     </main>
   );
 };

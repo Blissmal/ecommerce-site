@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import clsx from "clsx";
-
-
+import Link from "next/link";
 
 interface Category {
   id: string;
@@ -15,26 +13,48 @@ type Props = {
   categories: Category[];
 };
 
-export default function Categories({categories}: Props) {
-  const [active, setActive] = useState("All");
-
+export default function CategoryExplorer({ categories }: Props) {
   return (
-    <section className="overflow-hidden pt-10 flex justify-center">
-      <div className="max-w-screen-xl mx-auto px-4">
-        <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
+    <section className="py-12 bg-meta font-euclid-circular-a">
+      <div className="max-w-screen-xl mx-auto px-6">
+        {/* Section Header */}
+        <div className="flex items-end justify-between mb-8 border-b border-gray-3 pb-6">
+          <div>
+            <h2 className="text-heading-4 font-bold text-dark">Shop by Category</h2>
+            <p className="text-custom-sm text-body mt-1">Explore our curated collections across all departments.</p>
+          </div>
+          <span className="text-2xs font-bold text-dark-5 uppercase tracking-widest hidden sm:block">
+            {categories.length} Collections Available
+          </span>
+        </div>
+
+        {/* Categories Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
           {categories.map((category) => (
-            <button
+            <Link
               key={category.id}
-              onClick={() => setActive(category.name)}
-              className={clsx(
-                "inline-flex items-center h-10 px-5 text-sm truncate text-center rounded-2xl ring-0 cursor-pointer transition-all duration-200 ease-out",
-                active === category.name
-                  ? "bg-gray-7 text-white hover:bg-gray-6"
-                  : "bg-gray-2 text-gray-7 hover:bg-gray-3"
-              )}
+              href={`/shop-with-sidebar`}
+              className="group relative flex flex-col items-center p-6 bg-white rounded-2xl border border-gray-3 shadow-1 hover:shadow-4 hover:border-blue transition-all duration-300 overflow-hidden text-center"
             >
-              {category.name}
-            </button>
+              {/* Decorative Circle Icon Wrapper */}
+              <div className="w-16 h-16 mb-4 rounded-full bg-gray-1 flex items-center justify-center text-2xl group-hover:bg-blue-light-6 group-hover:scale-110 transition-all duration-300 border border-transparent group-hover:border-blue-light-4">
+                {/* Fallback for icons: You can map specific icons to category names here */}
+                {/* {category.name.toLowerCase().includes('electronic') ? '🎧' : 
+                 category.name.toLowerCase().includes('fashion') ? '👕' : 
+                 category.name.toLowerCase().includes('home') ? '🏠' : '📦'} */}
+              </div>
+
+              <h3 className="text-custom-sm font-bold text-dark group-hover:text-blue transition-colors">
+                {category.name}
+              </h3>
+              
+              <div className="mt-2 flex items-center text-2xs font-bold text-blue uppercase tracking-tighter opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                Explore Items →
+              </div>
+
+              {/* Subtle background glow on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
           ))}
         </div>
       </div>

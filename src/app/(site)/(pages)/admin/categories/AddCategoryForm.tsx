@@ -35,45 +35,64 @@ export default function AddCategoryForm() {
     }
   };
 
+  const inputStyles = "w-full bg-gray-1 border border-gray-3 rounded-xl px-4 py-3 text-custom-sm font-medium text-dark focus:bg-white focus:border-blue focus:ring-4 focus:ring-blue/5 outline-none transition-all placeholder:text-body-dark/40";
+  const labelStyles = "block text-2xs font-bold text-dark-5 uppercase tracking-widest mb-2 ml-1";
+
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Category Name
-        </label>
-        <input
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          placeholder="Enter category name"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          required
-        />
+    <div className="bg-white shadow-2 rounded-2xl border border-gray-3 p-6 font-euclid-circular-a mb-8">
+      <div className="mb-6">
+        <h3 className="text-custom-sm font-bold text-dark">Quick Create</h3>
+        <p className="text-custom-xs text-body italic">Add a new organization tag for your products.</p>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Description (Optional)
-        </label>
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          placeholder="Enter category description"
-          rows={1}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-        />
-      </div>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
+        <div className="md:col-span-4">
+          <label className={labelStyles}>
+            Category Name
+          </label>
+          <input
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            placeholder="e.g. Electronics"
+            className={inputStyles}
+            required
+          />
+        </div>
 
-      <div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {loading ? "Adding..." : "Add Category"}
-        </button>
-      </div>
-    </form>
+        <div className="md:col-span-5">
+          <label className={labelStyles}>
+            Description (Optional)
+          </label>
+          <input
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            placeholder="Short overview of items in this group..."
+            className={inputStyles}
+          />
+        </div>
+
+        <div className="md:col-span-3">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue hover:bg-blue-dark text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Processing
+              </>
+            ) : (
+              <>
+                <span className="text-lg leading-none">+</span>
+                Add Category
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

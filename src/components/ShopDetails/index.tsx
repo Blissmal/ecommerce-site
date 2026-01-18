@@ -167,7 +167,7 @@ const ShopDetails = () => {
                       </button>
 
                       <Image
-                        src={product.imgs?.previews[previewImg]}
+                        src={product.imageUrl}
                         alt="products-details"
                         width={400}
                         height={400}
@@ -177,7 +177,7 @@ const ShopDetails = () => {
 
                   {/* ?  &apos;border-blue &apos; :  &apos;border-transparent&apos; */}
                   <div className="flex flex-wrap sm:flex-nowrap gap-4.5 mt-6">
-                    {product.imgs?.thumbnails.map((item, key) => (
+                    {product.images?.map((item, key) => (
                       <button
                         onClick={() => setPreviewImg(key)}
                         key={key}

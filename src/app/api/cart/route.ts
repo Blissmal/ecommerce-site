@@ -28,9 +28,37 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    console.log("Cart items fetched for user:", userId, cartItems);
+    // Transform cart items to include calculated discountedPrice
+    const transformedCartItems = cartItems.map((item) => {
+      // Calculate discounted price
+      const hasDiscount = item.product.discount && item.product.discount > 0;
+      const discountedPrice = hasDiscount
+        ? item.product.price * (1 - item.product.discount / 100)
+        : item.product.price;
 
-    return NextResponse.json(cartItems);
+      return {
+        id: item.id,
+        title: item.product.title,
+        price: item.product.price, // Original price
+        discountedPrice: discountedPrice, // Calculated discounted price
+        quantity: item.quantity,
+        image: item.product.imageUrl,
+        stock: item.product.stock,
+        product: {
+          id: item.product.id,
+          discount: item.product.discount,
+          imageUrl: item.product.imageUrl,
+          title: item.product.title,
+          description: item.product.description,
+          price: item.product.price,
+          stock: item.product.stock,
+        },
+      };
+    });
+
+    console.log("Cart items fetched for user:", userId, transformedCartItems);
+
+    return NextResponse.json(transformedCartItems);
   } catch (error) {
     console.error('[CART_GET_ERROR]', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
@@ -81,9 +109,38 @@ export async function POST(req: NextRequest) {
         productId,
         quantity,
       },
+      include: {
+        product: true,
+      },
     });
 
-    return NextResponse.json(cartItem);
+    // Calculate discounted price for response
+    const hasDiscount = cartItem.product.discount && cartItem.product.discount > 0;
+    const discountedPrice = hasDiscount
+      ? cartItem.product.price * (1 - cartItem.product.discount / 100)
+      : cartItem.product.price;
+
+    // Return structured response with discountedPrice
+    const response = {
+      id: cartItem.id,
+      title: cartItem.product.title,
+      price: cartItem.product.price,
+      discountedPrice: discountedPrice,
+      quantity: cartItem.quantity,
+      image: cartItem.product.imageUrl,
+      stock: cartItem.product.stock,
+      product: {
+        id: cartItem.product.id,
+        discount: cartItem.product.discount,
+        imageUrl: cartItem.product.imageUrl,
+        title: cartItem.product.title,
+        description: cartItem.product.description,
+        price: cartItem.product.price,
+        stock: cartItem.product.stock,
+      },
+    };
+
+    return NextResponse.json({ item: response });
   } catch (error) {
     console.error('[CART_POST_ERROR]', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

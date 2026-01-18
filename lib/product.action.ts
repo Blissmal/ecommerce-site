@@ -10,7 +10,9 @@ export async function addProduct(data: {
   price: string;
   stock: string;
   imageUrl: string;
+  images?: string[];
   categoryId: string;
+  discount?: string;
 }) {
   try {
     await prisma.product.create({
@@ -20,6 +22,8 @@ export async function addProduct(data: {
         price: parseFloat(data.price),
         stock: parseInt(data.stock),
         imageUrl: data.imageUrl,
+        images: data.images || [],
+        discount: data.discount ? parseFloat(data.discount) : null,
         categoryId: data.categoryId,
       },
     });
@@ -38,7 +42,9 @@ export async function updateProduct(productId: string, data: {
   price: string;
   stock: string;
   imageUrl: string;
+  images?: string[];
   categoryId: string;
+  discount?: string;
 }) {
   try {
     await prisma.product.update({
@@ -49,6 +55,8 @@ export async function updateProduct(productId: string, data: {
         price: parseFloat(data.price),
         stock: parseInt(data.stock),
         imageUrl: data.imageUrl,
+        images: data.images || [],
+        discount: data.discount ? parseFloat(data.discount) : null,
         categoryId: data.categoryId,
       },
     });

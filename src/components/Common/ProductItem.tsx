@@ -9,7 +9,6 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import Link from "next/link";
 import { addItemOptimistic, addItemToCartAsync } from "@/redux/features/cart-slice";
-import { it } from "node:test";
 import toast from "react-hot-toast";
 
 type Product = {
@@ -19,6 +18,7 @@ type Product = {
   discount: number | null;
   reviews: number;
   imageUrl: string;
+  images?: string[];
   description: string;
   stock: number;
   category: {
@@ -28,80 +28,136 @@ type Product = {
   };
 };
 
-const ProductItem = ({ item }: { item: Product }) => {
-  const { openModal } = useModalContext();
-
-  const dispatch = useDispatch<AppDispatch>();
-
-  // update the QuickView state
-  const handleQuickViewUpdate = () => {
-    dispatch(updateQuickView({ ...item }));
+// Inline serialization function to avoid non-serializable data in Redux
+const serializeForRedux = (product: Product) => {
+  return {
+    id: product.id,
+    title: product.title,
+    price: product.price,
+    discount: product.discount,
+    reviews: product.reviews,
+    imageUrl: product.imageUrl,
+    images: product.images || [],
+    description: product.description,
+    stock: product.stock,
+    category: {
+      id: product.category.id,
+      name: product.category.name,
+      slug: product.category.slug,
+    },
   };
-
-  // add to cart
-  
-const handleAddToCart = async () => {
-  // Optimistic local update
-  dispatch(
-    addItemOptimistic({
-      id: item.id,
-      title: item.title,
-      price: item.price,
-      discountedPrice: item.discount !== null ? item.price - item.discount : item.price,
-      quantity: 1,
-      image: item.imageUrl,
-      stock: item.stock
-    })
-  );
-
-  try {
-    // Wait for async server update
-    await dispatch(
-      addItemToCartAsync({
-        productId: item.id,
-        quantity: 1,
-      })
-    ).unwrap();
-
-    toast.success("Item added to cart");
-  } catch (err) {
-    toast.error("Failed to add item to cart. Sync error.");
-    console.error("Add to cart sync failed:", err);
-  }
 };
 
+const ProductItem = ({ item }: { item: Product }) => {
+  const { openModal } = useModalContext();
+  const dispatch = useDispatch<AppDispatch>();
 
+  // Calculate discount and prices
+  const hasDiscount = item.discount !== null && item.discount > 0;
+  const finalPrice = hasDiscount
+    ? item.price * (1 - item.discount / 100)
+    : item.price;
+
+  // Update the QuickView state with serialized data
+  const handleQuickViewUpdate = () => {
+    const serializedItem = serializeForRedux(item);
+    dispatch(updateQuickView(serializedItem));
+  };
+
+  // Add to cart - IMPORTANT: Send the FINAL PRICE (after discount)
+  const handleAddToCart = async () => {
+    // Optimistic local update with DISCOUNTED price
+    dispatch(
+      addItemOptimistic({
+        id: item.id,
+        title: item.title,
+        price: item.price, // Original price (for reference)
+        discountedPrice: finalPrice, // ACTUAL price to pay (after discount)
+        quantity: 1,
+        image: item.imageUrl,
+        stock: item.stock,
+      })
+    );
+
+    try {
+      // Wait for async server update
+      await dispatch(
+        addItemToCartAsync({
+          productId: item.id,
+          quantity: 1,
+        })
+      ).unwrap();
+
+      toast.success("Item added to cart");
+    } catch (err) {
+      toast.error("Failed to add item to cart");
+      console.error("Add to cart sync failed:", err);
+    }
+  };
+
+  // Add to wishlist
   const handleItemToWishList = () => {
     dispatch(
       addItemToWishlist({
         id: item.id,
         title: item.title,
-        price: item.price,
-        discountedPrice: item.discount !== null ? item.price - item.discount : item.price,
+        price: item.price, // Original price
+        discountedPrice: finalPrice, // Price after discount
         quantity: 1,
         status: "available",
-        imgs: (item as any).imgs, // add this if imgs is available on item, otherwise remove this line
+        imgs: {
+          previews: [item.imageUrl],
+          thumbnails: item.images || [item.imageUrl],
+        },
       })
     );
   };
 
+  // Update product details with serialized data
   const handleProductDetails = () => {
-    dispatch(updateproductDetails({ ...item }));
+    const serializedItem = serializeForRedux(item);
+    dispatch(updateproductDetails(serializedItem));
   };
 
   return (
     <div className="group">
       <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-[#F6F7FB] min-h-[270px] mb-4">
-        <Image src={item.imageUrl} alt="" width={250} height={250} />
+        <Image
+          src={item.imageUrl || "/images/products/product-1-bg-1.png"}
+          alt={item.title}
+          width={250}
+          height={250}
+          className="object-contain"
+          onError={(e) => {
+            e.currentTarget.src = "/images/products/product-1-bg-1.png";
+          }}
+        />
 
+        {/* Discount Badge - Only show if discount exists and is greater than 0 */}
+        {hasDiscount && (
+          <div className="absolute top-3 left-3 bg-red-500 text-white px-2.5 py-1 rounded-md text-xs font-semibold">
+            -{item.discount}%
+          </div>
+        )}
+
+        {/* Stock Badge */}
+        {item.stock === 0 && (
+          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+            <span className="bg-white text-dark px-4 py-2 rounded-md font-semibold">
+              Out of Stock
+            </span>
+          </div>
+        )}
+
+        {/* Hover Actions */}
         <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0">
+          {/* Quick View Button */}
           <button
             onClick={() => {
-              openModal();
               handleQuickViewUpdate();
+              openModal();
             }}
-            id="newOne"
-            aria-label="button for quick view"
+            aria-label="Quick view"
             className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue"
           >
             <svg
@@ -127,17 +183,19 @@ const handleAddToCart = async () => {
             </svg>
           </button>
 
+          {/* Add to Cart Button */}
           <button
-            onClick={() => handleAddToCart()}
-            className="inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark"
+            onClick={handleAddToCart}
+            disabled={item.stock === 0}
+            className="inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            Add to cart
+            {item.stock === 0 ? "Sold Out" : "Add to cart"}
           </button>
 
+          {/* Wishlist Button */}
           <button
-            onClick={() => handleItemToWishList()}
-            aria-label="button for favorite select"
-            id="favOne"
+            onClick={handleItemToWishList}
+            aria-label="Add to wishlist"
             className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue"
           >
             <svg
@@ -159,54 +217,53 @@ const handleAddToCart = async () => {
         </div>
       </div>
 
+      {/* Product Info */}
       <div className="flex items-center gap-2.5 mb-2">
         <div className="flex items-center gap-1">
-          <Image
-            src="/images/icons/icon-star.svg"
-            alt="star icon"
-            width={14}
-            height={14}
-          />
-          <Image
-            src="/images/icons/icon-star.svg"
-            alt="star icon"
-            width={14}
-            height={14}
-          />
-          <Image
-            src="/images/icons/icon-star.svg"
-            alt="star icon"
-            width={14}
-            height={14}
-          />
-          <Image
-            src="/images/icons/icon-star.svg"
-            alt="star icon"
-            width={14}
-            height={14}
-          />
-          <Image
-            src="/images/icons/icon-star.svg"
-            alt="star icon"
-            width={14}
-            height={14}
-          />
+          {[...Array(5)].map((_, i) => (
+            <Image
+              key={i}
+              src="/images/icons/icon-star.svg"
+              alt="star"
+              width={14}
+              height={14}
+            />
+          ))}
         </div>
-
         <p className="text-custom-sm">({item.reviews})</p>
       </div>
 
       <h3
-        className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5"
-        onClick={() => handleProductDetails()}
+        className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5 cursor-pointer"
+        onClick={handleProductDetails}
       >
-        <Link href="/shop-details"> {item.title} </Link>
+        <Link href="/shop-details">{item.title}</Link>
       </h3>
 
-      <span className="flex items-center gap-2 font-medium text-lg">
-        <span className="text-dark">${item.price}</span>
-        <span className="text-dark-4 line-through">${item.discount}</span>
-      </span>
+      {/* Price Display - Shows discounted price or regular price */}
+      {hasDiscount ? (
+        // Show discounted price with original price struck through
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-lg text-dark">
+            ${finalPrice.toFixed(2)}
+          </span>
+          <span className="font-medium text-sm text-dark-4 line-through">
+            ${item.price.toFixed(2)}
+          </span>
+        </div>
+      ) : (
+        // Show only the regular price (no discount)
+        <span className="font-medium text-lg text-dark">
+          ${item.price.toFixed(2)}
+        </span>
+      )}
+
+      {/* Stock Warning */}
+      {item.stock > 0 && item.stock <= 5 && (
+        <p className="text-xs text-orange-600 mt-1">
+          Only {item.stock} left!
+        </p>
+      )}
     </div>
   );
 };
