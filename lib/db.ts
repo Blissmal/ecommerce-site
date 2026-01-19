@@ -97,7 +97,8 @@ export async function getUserCartItems(userId) {
   return await prisma.cartItem.findMany({
     where: { userId },
     include: {
-      product: true
+      product: true,
+      variant: true
     }
   });
 }

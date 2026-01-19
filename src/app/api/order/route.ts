@@ -195,6 +195,7 @@ export async function POST(req: NextRequest) {
         price: finalPrice,
       };
     });
+    console.log("Total Amount:", totalAmount);
 
     // Create order using server action
     const { createOrder } = await import("../../../../lib/order.action");

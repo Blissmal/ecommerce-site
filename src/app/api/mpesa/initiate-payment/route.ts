@@ -147,11 +147,13 @@ export async function POST(req) {
       }, { status: 400 });
     }
 
+    console.log("Cart Items:", cartItems);
+
     // Calculate total amount
     const totalAmount = cartItems.reduce((sum, item) => {
       const price = item.product.discount
-        ? item.product.price * (100 - item.product.discount) / 100
-        : item.product.price;
+        ? item.variant.price * (100 - item.product.discount) / 100
+        : item.variant.price;
       return sum + (price * item.quantity);
     }, 0);
 
