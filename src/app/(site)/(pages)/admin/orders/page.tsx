@@ -25,20 +25,31 @@ export default async function OrdersPage() {
   const getStatusColor = (status: string) => {
   switch (status) {
     case 'PAID': 
-      return 'bg-green-light-6 text-green-dark';
-    case 'FAILED': 
-      return 'bg-red-light-6 text-red-dark';
-    case 'PENDING': 
-      return 'bg-yellow-light-2 text-yellow-dark';
-    case 'PROCESSING': 
-      return 'bg-blue-light-5 text-blue-dark';
-    case 'SHIPPED': 
-      return 'bg-orange/10 text-orange-dark';
     case 'DELIVERED': 
+      // Background: #DAF8E6 | Text: #1A8245
       return 'bg-green-light-6 text-green-dark';
+
+    case 'FAILED': 
     case 'CANCELLED': 
+      // Background: #FEF3F3 | Text: #E10E0E
       return 'bg-red-light-6 text-red-dark';
+
+    case 'PENDING': 
+      // Background: #FEF3C7 | Text: #F59E0B
+      return 'bg-yellow-light-2 text-yellow-dark';
+
+    case 'PROCESSING': 
+      // Background: #E1E8FF | Text: #1C3FB7
+      return 'bg-blue-light-5 text-blue-dark';
+
+    case 'SHIPPED': 
+      // Background: #FDE68A (Yellow light-1) or custom orange
+      // Note: Orange doesn't have a light-5 in your config, 
+      // so we use yellow-light-1 or the default gray-2
+      return 'bg-yellow-light-1 text-orange-dark';
+
     default: 
+      // Background: #F9FAFB | Text: #6B7280
       return 'bg-gray-1 text-gray-6';
   }
 };
