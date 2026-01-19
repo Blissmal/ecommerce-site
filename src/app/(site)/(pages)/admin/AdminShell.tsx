@@ -11,7 +11,6 @@ const navigation = [
   { name: "Products", href: "/admin/products", icon: "📦" },
   { name: "Categories", href: "/admin/categories", icon: "🏷️" },
   { name: "Orders", href: "/admin/orders", icon: "📋" },
-  { name: "Add Product", href: "/admin/add-product", icon: "➕" },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
