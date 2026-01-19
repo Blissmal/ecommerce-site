@@ -57,6 +57,7 @@ const SingleItem: React.FC<CartItemProps> = ({ item }) => {
       await dispatch(
         updateCartItemAsync({ cartItemId: item.id, quantity: newQuantity })
       ).unwrap();
+      toast.success("Quantity updated");
     } catch (error) {
       console.error("Error updating quantity:", error);
       toast.error("Failed to update quantity");
