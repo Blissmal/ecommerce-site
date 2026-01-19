@@ -13,4 +13,9 @@ export type Product = {
   discount: number;
   imageUrl: string;
   images?: string[];
+  category?: {
+    id: string;
+    name: string;
+    slug: string;
+  }
 };
