@@ -418,7 +418,7 @@ const handleStorageChange = (storage: string) => {
               {/* Title and Discount Badge */}
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-semibold text-xl sm:text-2xl xl:text-custom-3 text-dark">
-                  {displayTitle}
+                  {product.title} | {product.model}
                 </h2>
 
                 {hasDiscount && (
