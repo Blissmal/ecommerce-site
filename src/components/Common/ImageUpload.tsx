@@ -1,74 +1,181 @@
-// components/ImageUpload.tsx
-"use client";
+'use client';
 
-import { CldUploadWidget } from 'next-cloudinary';
-import Image from 'next/image';
 import { useState } from 'react';
+import Image from 'next/image';
+import toast from 'react-hot-toast';
 
 interface ImageUploadProps {
-  value: string;
-  onChange: (url: string) => void;
-  onRemove?: () => void;
+  value?: string[];
+  onChange: (urls: string[]) => void;
+  maxImages?: number;
 }
 
-export default function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
-  const [isUploading, setIsUploading] = useState(false);
+export default function ImageUpload({ 
+  value = [], 
+  onChange, 
+  maxImages = 5 
+}: ImageUploadProps) {
+  const [uploading, setUploading] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState<string[]>(value);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    // Check max images limit
+    if (previewUrls.length + files.length > maxImages) {
+      toast.error(`You can only upload up to ${maxImages} images`);
+      return;
+    }
+
+    setUploading(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      // Upload each file
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
+
+        const data = await response.json();
+        uploadedUrls.push(data.url);
+      }
+
+      // Update state
+      const newUrls = [...previewUrls, ...uploadedUrls];
+      setPreviewUrls(newUrls);
+      onChange(newUrls);
+      
+      toast.success(`${uploadedUrls.length} image(s) uploaded successfully`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload images');
+    } finally {
+      setUploading(false);
+      // Reset input
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    const newUrls = previewUrls.filter((_, i) => i !== index);
+    setPreviewUrls(newUrls);
+    onChange(newUrls);
+    toast.success('Image removed');
+  };
 
   return (
-    <div>
-      <CldUploadWidget
-        uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} // Create this in Cloudinary dashboard
-        onUpload={(result: any) => {
-          if (result.event === 'success') {
-            onChange(result.info.secure_url);
-            setIsUploading(false);
-          }
-        }}
-        onOpen={() => setIsUploading(true)}
-        onClose={() => setIsUploading(false)}
-      >
-        {({ open }) => (
-          <div className="space-y-4">
-            {value ? (
-              <div className="relative w-full h-48 rounded-lg overflow-hidden border">
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <label
+          htmlFor="image-upload"
+          className={`
+            flex items-center justify-center px-6 py-3 
+            border-2 border-dashed border-gray-300 rounded-lg
+            cursor-pointer hover:border-blue transition-colors
+            ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
+            ${previewUrls.length >= maxImages ? 'opacity-50 cursor-not-allowed' : ''}
+          `}
+        >
+          <div className="flex flex-col items-center gap-2">
+            <svg
+              className="w-8 h-8 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            <span className="text-sm text-gray-600">
+              {uploading ? 'Uploading...' : 'Upload Images'}
+            </span>
+            <span className="text-xs text-gray-400">
+              {previewUrls.length}/{maxImages}
+            </span>
+          </div>
+        </label>
+
+        <input
+          id="image-upload"
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileChange}
+          disabled={uploading || previewUrls.length >= maxImages}
+          className="hidden"
+        />
+      </div>
+
+      {/* Image Previews */}
+      {previewUrls.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {previewUrls.map((url, index) => (
+            <div key={index} className="relative group">
+              <div className="aspect-square rounded-lg overflow-hidden border border-gray-200">
                 <Image
-                  src={value}
-                  alt="Upload"
-                  fill
-                  className="object-cover"
+                  src={url}
+                  alt={`Upload ${index + 1}`}
+                  width={200}
+                  height={200}
+                  className="w-full h-full object-cover"
                 />
-                <button
-                  type="button"
-                  onClick={onRemove}
-                  className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
-                >
-                  ✕
-                </button>
               </div>
-            ) : (
+              
+              {/* Remove button */}
               <button
                 type="button"
-                onClick={() => open()}
-                disabled={isUploading}
-                className="w-full p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition-colors"
+                onClick={() => handleRemoveImage(index)}
+                className="
+                  absolute top-2 right-2 
+                  bg-red-500 text-white rounded-full p-1.5
+                  opacity-0 group-hover:opacity-100 transition-opacity
+                  hover:bg-red-600
+                "
               >
-                {isUploading ? (
-                  <span>Uploading...</span>
-                ) : (
-                  <div className="flex flex-col items-center gap-2">
-                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <span className="text-sm text-gray-600">
-                      Click to upload or drag and drop
-                    </span>
-                  </div>
-                )}
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
               </button>
-            )}
-          </div>
-        )}
-      </CldUploadWidget>
+
+              {/* Primary badge */}
+              {index === 0 && (
+                <div className="absolute top-2 left-2 bg-blue text-white text-xs px-2 py-1 rounded">
+                  Primary
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-xs text-gray-500">
+        First image will be used as the primary product image
+      </p>
     </div>
   );
 }
