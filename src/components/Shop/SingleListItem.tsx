@@ -26,7 +26,6 @@ const SingleListItem = ({ item }: { item: Product }) => {
     // Optimistic local update
     dispatch(
       addItemOptimistic({
-        id: item.id.toString(),
         title: item.title,
         price: item.price,
         discountedPrice: item.discount !== null ? item.price - item.discount : item.price,
