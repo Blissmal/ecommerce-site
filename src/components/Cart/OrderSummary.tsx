@@ -34,9 +34,9 @@ const OrderSummary = () => {
               </div>
               <div>
                 <p className="text-dark text-right">
-                  {isNaN(item.product.price * item.quantity)
+                  {isNaN(item.price * item.quantity)
                     ? "Calculating..."
-                    : `$${(item.product.price * item.quantity).toFixed(2)}`}
+                    : `$${(item.price * item.quantity).toFixed(2)}`}
                 </p>
               </div>
             </div>
