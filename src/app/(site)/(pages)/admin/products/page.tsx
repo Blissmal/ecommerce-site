@@ -102,11 +102,17 @@ export default function ProductsListPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-meta font-euclid-circular-a">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue"></div>
-          <p className="mt-4 text-custom-sm text-dark-5 font-medium">Loading inventory...</p>
-        </div>
-      </div>
+  <div className="flex flex-col items-center justify-center">
+    <div className="relative flex h-12 w-12 mb-4">
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue opacity-75"></span>
+      <span className="relative inline-flex rounded-full h-12 w-12 bg-blue opacity-20 items-center justify-center">
+        {/* Optional: Small inner dot or icon */}
+        <div className="h-3 w-3 bg-blue rounded-full"></div>
+      </span>
+    </div>
+    <p className="text-custom-sm text-dark-5 font-medium">Fetching inventory...</p>
+  </div>
+</div>
     );
   }
 
@@ -263,7 +269,7 @@ export default function ProductsListPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-custom-sm font-medium text-dark bg-blue-light-6 text-blue-dark px-2 py-1 rounded-md border border-blue-light-4">
+                        <span className="text-custom-sm font-medium text-dark bg-blue-light-5 text-blue-dark px-2 py-1 rounded-md border border-blue-light-4">
                           {product._count.variants}
                         </span>
                       </td>
