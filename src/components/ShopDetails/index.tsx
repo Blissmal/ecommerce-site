@@ -86,7 +86,7 @@ const ShopDetails = () => {
     discountedPrice: 0,
   };
 
-  const [product, setProduct] = useState(productFromStorage || emptyProduct);
+  const [product, setProduct] = useState(productFromStorage);
 
   // Read/write localStorage only on the client inside useEffect to avoid
   // server-side errors during prerendering (localStorage is not defined on server).
