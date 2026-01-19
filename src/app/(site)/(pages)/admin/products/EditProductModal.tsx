@@ -1,4 +1,3 @@
-// app/admin/products/EditProductModal.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -27,7 +26,7 @@ export default function EditProductModal({ product, onClose }: { product: Produc
     price: product.price.toString(),
     stock: product.stock.toString(),
     imageUrl: product.imageUrl || "",
-    images: product.images || [] as string[],
+    images: product.images || [],
     categoryId: product.categoryId || "",
     discount: product.discount ? product.discount.toString() : "",
   });
@@ -48,7 +47,9 @@ export default function EditProductModal({ product, onClose }: { product: Produc
     fetchCategories();
   }, []);
 
-  const handleChange = (e: any) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,14 +61,16 @@ export default function EditProductModal({ product, onClose }: { product: Produc
         price: form.price,
         stock: form.stock,
         imageUrl: form.imageUrl,
-        images: form.images.filter(url => url.trim() !== ""),
+        images: form.images.filter(url => url && url.trim() !== ""),
         categoryId: form.categoryId,
         discount: form.discount || undefined,
       });
+      
       toast.success("Update successful");
       router.refresh();
       onClose();
     } catch (error) {
+      console.error(error);
       toast.error("Update failed");
     } finally {
       setLoading(false);
@@ -75,8 +78,9 @@ export default function EditProductModal({ product, onClose }: { product: Produc
   };
 
   return (
-    <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm flex items-center justify-center z-9999 p-4 font-euclid-circular-a">
+    <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 font-euclid-circular-a">
       <div className="bg-white rounded-[2rem] max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2 border border-gray-3">
+        
         {/* Modal Header */}
         <div className="px-8 py-6 border-b border-gray-200 bg-gray-1 flex items-center justify-between">
           <div>
@@ -122,13 +126,14 @@ export default function EditProductModal({ product, onClose }: { product: Produc
               <div className="flex items-center justify-between mb-4">
                 <label className="block text-2xs font-bold text-dark-4 uppercase">Additional Images</label>
                 <span className="text-2xs text-dark-5">
-                  {form.images.length} / 5 images
+                  {form.images.length} / 10 images
                 </span>
               </div>
               <ImageUpload
+                id="edit-gallery-upload" // Unique ID
                 value={form.images}
-                onChange={(urls) => setForm({ ...form, images: urls })}
-                maxImages={5}
+                onChange={(urls) => setForm(prev => ({ ...prev, images: urls }))}
+                maxImages={10}
               />
             </div>
           </div>
@@ -138,8 +143,9 @@ export default function EditProductModal({ product, onClose }: { product: Produc
             <div className="p-6 bg-meta rounded-[2rem] border border-gray-3">
               <label className="block text-center text-2xs font-bold text-dark-4 uppercase mb-4">Hero Media</label>
               <ImageUpload 
+                id="edit-hero-upload" // Unique ID
                 value={form.imageUrl ? [form.imageUrl] : []} 
-                onChange={(urls) => setForm({ ...form, imageUrl: urls[0] || "" })} 
+                onChange={(urls) => setForm(prev => ({ ...prev, imageUrl: urls[0] || "" }))} 
                 maxImages={1}
               />
             </div>
@@ -155,7 +161,7 @@ export default function EditProductModal({ product, onClose }: { product: Produc
                     step="0.01"
                     value={form.price} 
                     onChange={handleChange} 
-                    className="w-full p-3 bg-gray-1 border-none rounded-xl text-dark font-bold" 
+                    className="w-full p-3 bg-gray-1 border-none rounded-xl text-dark font-bold focus:ring-2 focus:ring-blue/20 outline-none" 
                     required
                   />
                 </div>
@@ -166,7 +172,7 @@ export default function EditProductModal({ product, onClose }: { product: Produc
                     type="number" 
                     value={form.stock} 
                     onChange={handleChange} 
-                    className="w-full p-3 bg-gray-1 border-none rounded-xl text-dark font-bold" 
+                    className="w-full p-3 bg-gray-1 border-none rounded-xl text-dark font-bold focus:ring-2 focus:ring-blue/20 outline-none" 
                     required
                   />
                 </div>
@@ -188,7 +194,7 @@ export default function EditProductModal({ product, onClose }: { product: Produc
                   name="categoryId" 
                   value={form.categoryId} 
                   onChange={handleChange} 
-                  className="w-full p-3 bg-gray-1 border-none rounded-xl text-dark font-bold"
+                  className="w-full p-3 bg-gray-1 border-none rounded-xl text-dark font-bold outline-none focus:ring-2 focus:ring-blue/20"
                   required
                 >
                   <option value="">Select a category</option>
@@ -211,7 +217,7 @@ export default function EditProductModal({ product, onClose }: { product: Produc
             Cancel
           </button>
           <button 
-            type="button"
+            type="submit" // Changed to type="submit" to link with form
             onClick={handleSubmit} 
             disabled={loading} 
             className="flex-[2] py-4 bg-blue text-white font-bold rounded-2xl shadow-2 hover:bg-blue-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"

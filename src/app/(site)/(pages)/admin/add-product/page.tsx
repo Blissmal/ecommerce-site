@@ -126,34 +126,30 @@ export default function AddProductPage() {
             </div>
 
             {/* Additional Gallery */}
-            <div className="bg-white p-7.5 rounded-xl border border-gray-3 shadow-1">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-custom-lg font-bold text-dark">Additional Gallery</h2>
-                <span className="text-2xs text-dark-5">
-                  {form.images.length} / 5 images
-                </span>
-              </div>
-              <ImageUpload
-                value={form.images}
-                onChange={(urls) => setForm(prev => ({ ...prev, images: urls }))}
-                maxImages={5}
-              />
-            </div>
+            {/* Additional Gallery */}
+<div className="bg-white p-7.5 rounded-xl border border-gray-3 shadow-1">
+  <h2 className="text-custom-lg font-bold text-dark">Additional Gallery</h2>
+  <ImageUpload
+    id="gallery-images"
+    value={form.images}
+    onChange={(urls) => setForm(prev => ({ ...prev, images: urls }))}
+    maxImages={10} // Changed from 5 to 10
+  />
+</div>
           </div>
 
           {/* Pricing & Media Sidebar */}
           <div className="space-y-6">
-            <div className="bg-white p-7.5 rounded-xl border border-gray-3 shadow-1">
-              <h2 className="text-custom-lg font-bold text-dark mb-6">Product Hero Image</h2>
-              <ImageUpload
-                value={form.imageUrl ? [form.imageUrl] : []}
-                onChange={(urls) => setForm(prev => ({ ...prev, imageUrl: urls[0] || "" }))}
-                maxImages={1}
-              />
-              <p className="text-2xs text-body mt-3 italic">
-                This will be the main product image displayed on listings.
-              </p>
-            </div>
+            {/* Product Hero Image */}
+<div className="bg-white p-7.5 rounded-xl border border-gray-3 shadow-1">
+  <h2 className="text-custom-lg font-bold text-dark mb-6">Product Hero Image</h2>
+  <ImageUpload
+    id="hero-image"
+    value={form.imageUrl ? [form.imageUrl] : []}
+    onChange={(urls) => setForm(prev => ({ ...prev, imageUrl: urls[0] || "" }))}
+    maxImages={1}
+  />
+</div>
 
             <div className="bg-white p-7.5 rounded-xl border border-gray-3 shadow-1 space-y-5.5">
               <h2 className="text-custom-lg font-bold text-dark">Inventory & Pricing</h2>

@@ -60,23 +60,14 @@ export async function DELETE(request: NextRequest) {
     const { publicId } = await request.json();
 
     if (!publicId) {
-      return NextResponse.json(
-        { error: 'No public ID provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No public ID provided' }, { status: 400 });
     }
 
+    // This removes it from your Cloudinary Dashboard storage
     const result = await cloudinary.uploader.destroy(publicId);
 
-    return NextResponse.json({
-      success: true,
-      result,
-    });
+    return NextResponse.json({ success: true, result });
   } catch (error) {
-    console.error('Delete error:', error);
-    return NextResponse.json(
-      { error: 'Delete failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
   }
 }
