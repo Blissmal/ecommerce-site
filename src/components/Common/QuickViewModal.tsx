@@ -63,7 +63,6 @@ const QuickViewModal = () => {
 
     dispatch(
       addItemOptimistic({
-        id: String(product.id),
         title: product.title,
         price: product.price,
         discountedPrice:

@@ -416,9 +416,7 @@ const Checkout = ({userId}: {userId: string}) => {
 
                     {/* Cart Items */}
                     {cartItems.map(item => {
-                      const price = item.product.discount 
-                        ? item.product.price * (100 - item.product.discount) / 100
-                        : item.product.price;
+                      const price = item.discountedPrice
                       
                       return (
                         <div key={item.id} className="flex items-center justify-between py-5 border-b border-gray-3">

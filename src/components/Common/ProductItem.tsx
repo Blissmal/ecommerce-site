@@ -1,122 +1,163 @@
+// components/ProductItem/index.tsx
 "use client";
+
 import React from "react";
 import Image from "next/image";
-import { useModalContext } from "@/app/context/QuickViewModalContext";
-import { updateQuickView } from "@/redux/features/quickView-slice";
-import { addItemToWishlist } from "@/redux/features/wishlist-slice";
-import { updateproductDetails } from "@/redux/features/product-details";
+import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
-import Link from "next/link";
 import { addItemOptimistic, addItemToCartAsync } from "@/redux/features/cart-slice";
-import toast from "react-hot-toast";
+import { addItemToWishlist } from "@/redux/features/wishlist-slice";
+import { updateQuickView } from "@/redux/features/quickView-slice";
+import { useModalContext } from "@/app/context/QuickViewModalContext";
+import { toast } from "react-hot-toast";
 
-type Product = {
+interface ProductVariant {
   id: string;
-  title: string;
   price: number;
-  discount: number | null;
-  reviews: number;
-  imageUrl: string;
-  images?: string[];
-  description: string;
   stock: number;
-  category: {
+  isDefault: boolean;
+}
+
+interface ProductItemProps {
+  item: {
     id: string;
-    name: string;
-    slug: string;
+    title: string;
+    price: number;
+    discount?: number | null;
+    stock: number;
+    imageUrl: string;
+    brand?: string | null;
+    model?: string | null;
+    category?: {
+      name: string;
+    };
+    variants?: ProductVariant[];
+    _count?: {
+      variants?: number;
+    };
   };
-};
+}
 
-// Inline serialization function to avoid non-serializable data in Redux
-const serializeForRedux = (product: Product) => {
-  return {
-    id: product.id,
-    title: product.title,
-    price: product.price,
-    discount: product.discount,
-    reviews: product.reviews,
-    imageUrl: product.imageUrl,
-    images: product.images || [],
-    description: product.description,
-    stock: product.stock,
-    category: {
-      id: product.category.id,
-      name: product.category.name,
-      slug: product.category.slug,
-    },
-  };
-};
-
-const ProductItem = ({ item }: { item: Product }) => {
-  const { openModal } = useModalContext();
+const ProductItem: React.FC<ProductItemProps> = ({ item }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const { openModal } = useModalContext();
 
-  // Calculate discount and prices
-  const hasDiscount = item.discount !== null && item.discount > 0;
-  const finalPrice = hasDiscount
-    ? item.price * (1 - item.discount / 100)
-    : item.price;
+  // Get default variant or first variant
+  const defaultVariant = item.variants?.find((v) => v.isDefault) || item.variants?.[0];
+  const hasMultipleVariants = (item.variants?.length || 0) > 1;
 
-  // Update the QuickView state with serialized data
-  const handleQuickViewUpdate = () => {
-    const serializedItem = serializeForRedux(item);
-    dispatch(updateQuickView(serializedItem));
-  };
+  // Calculate prices
+  const basePrice = defaultVariant?.price || item.price;
+  const hasDiscount = item.discount && item.discount > 0;
+  const discountedPrice = hasDiscount
+    ? basePrice * (1 - item.discount / 100)
+    : basePrice;
 
-  // Add to cart - IMPORTANT: Send the FINAL PRICE (after discount)
-  const handleAddToCart = async () => {
-    // Optimistic local update with DISCOUNTED price
+  // Display title
+  const displayTitle = item.brand && item.model
+    ? `${item.brand} ${item.model}`
+    : item.title;
+
+  // Stock status
+  const isOutOfStock = item.stock === 0;
+  const isLowStock = item.stock > 0 && item.stock <= 5;
+
+  // Add to cart handler
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (isOutOfStock) {
+      toast.error("Product is out of stock");
+      return;
+    }
+
+    if (!defaultVariant) {
+      toast.error("No variants available");
+      return;
+    }
+
+    // Optimistic update
     dispatch(
       addItemOptimistic({
-        id: item.id,
         title: item.title,
-        price: item.price, // Original price (for reference)
-        discountedPrice: finalPrice, // ACTUAL price to pay (after discount)
+        price: defaultVariant.price,
+        discountedPrice: hasDiscount
+          ? defaultVariant.price * (1 - item.discount / 100)
+          : defaultVariant.price,
         quantity: 1,
         image: item.imageUrl,
-        stock: item.stock,
+        stock: defaultVariant.stock,
+        variantId: defaultVariant.id,
+        product: {
+          id: item.id,
+          discount: item.discount,
+          imageUrl: item.imageUrl,
+          title: item.title,
+          category: item.category?.name,
+        },
       })
     );
 
     try {
-      // Wait for async server update
       await dispatch(
         addItemToCartAsync({
           productId: item.id,
+          variantId: defaultVariant.id,
           quantity: 1,
         })
       ).unwrap();
 
-      toast.success("Item added to cart");
+      toast.success("Added to cart!");
     } catch (err) {
-      toast.error("Failed to add item to cart");
-      console.error("Add to cart sync failed:", err);
+      toast.error("Failed to add to cart");
+      console.error("Add to cart error:", err);
     }
   };
 
-  // Add to wishlist
-  const handleItemToWishList = () => {
+  // Add to wishlist handler
+  const handleAddToWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
     dispatch(
       addItemToWishlist({
         id: item.id,
         title: item.title,
-        price: item.price, // Original price
-        discountedPrice: finalPrice, // Price after discount
+        price: basePrice,
+        discountedPrice: discountedPrice,
         quantity: 1,
         status: "available",
         imgs: {
           previews: [item.imageUrl],
-          thumbnails: item.images || [item.imageUrl],
+          thumbnails: [item.imageUrl],
         },
       })
     );
+    
+    toast.success("Added to wishlist!");
   };
 
-  // Update product details with serialized data
-  const handleProductDetails = () => {
-    const serializedItem = serializeForRedux(item);
-    dispatch(updateproductDetails(serializedItem));
+  // Quick view handler
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Serialize product data for Redux
+    const serializedItem = {
+      id: item.id,
+      title: displayTitle,
+      price: basePrice,
+      discount: item.discount,
+      reviews: 0, // Add reviews if available
+      imageUrl: item.imageUrl,
+      images: [item.imageUrl],
+      description: "", // Add description if available
+      stock: item.stock,
+      category: item.category || { id: "", name: "", slug: "" },
+      variants: item.variants || [],
+    };
+    
+    dispatch(updateQuickView(serializedItem));
+    openModal();
   };
 
   return (
@@ -124,7 +165,7 @@ const ProductItem = ({ item }: { item: Product }) => {
       <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-[#F6F7FB] min-h-[270px] mb-4">
         <Image
           src={item.imageUrl || "/images/products/product-1-bg-1.png"}
-          alt={item.title}
+          alt={displayTitle}
           width={250}
           height={250}
           className="object-contain"
@@ -133,15 +174,22 @@ const ProductItem = ({ item }: { item: Product }) => {
           }}
         />
 
-        {/* Discount Badge - Only show if discount exists and is greater than 0 */}
+        {/* Discount Badge */}
         {hasDiscount && (
           <div className="absolute top-3 left-3 bg-red-500 text-white px-2.5 py-1 rounded-md text-xs font-semibold">
             -{item.discount}%
           </div>
         )}
 
+        {/* Multiple Variants Badge */}
+        {hasMultipleVariants && (
+          <div className="absolute top-3 right-3 bg-blue-500 text-white px-2.5 py-1 rounded-md text-xs font-semibold">
+            {item.variants?.length} Options
+          </div>
+        )}
+
         {/* Stock Badge */}
-        {item.stock === 0 && (
+        {isOutOfStock && (
           <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
             <span className="bg-white text-dark px-4 py-2 rounded-md font-semibold">
               Out of Stock
@@ -153,10 +201,7 @@ const ProductItem = ({ item }: { item: Product }) => {
         <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0">
           {/* Quick View Button */}
           <button
-            onClick={() => {
-              handleQuickViewUpdate();
-              openModal();
-            }}
+            onClick={handleQuickView}
             aria-label="Quick view"
             className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue"
           >
@@ -184,17 +229,19 @@ const ProductItem = ({ item }: { item: Product }) => {
           </button>
 
           {/* Add to Cart Button */}
+          <Link href={isOutOfStock ? "#" : `/shop-details/${item.id}`}>
           <button
-            onClick={handleAddToCart}
-            disabled={item.stock === 0}
+            // onClick={handleAddToCart}
+            disabled={isOutOfStock}
             className="inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {item.stock === 0 ? "Sold Out" : "Add to cart"}
+            {isOutOfStock ? "Sold Out" : "Add to cart"}
           </button>
+          </Link>
 
           {/* Wishlist Button */}
           <button
-            onClick={handleItemToWishList}
+            onClick={handleAddToWishlist}
             aria-label="Add to wishlist"
             className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue"
           >
@@ -221,45 +268,46 @@ const ProductItem = ({ item }: { item: Product }) => {
       <div className="flex items-center gap-2.5 mb-2">
         <div className="flex items-center gap-1">
           {[...Array(5)].map((_, i) => (
-            <Image
+            <svg
               key={i}
-              src="/images/icons/icon-star.svg"
-              alt="star"
-              width={14}
-              height={14}
-            />
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M6.99999 0.833344L8.58332 5.25001H13.1667L9.29166 8.16668L10.875 12.5833L6.99999 9.66668L3.12499 12.5833L4.70832 8.16668L0.833324 5.25001H5.41666L6.99999 0.833344Z"
+                fill="#FBBF24"
+              />
+            </svg>
           ))}
         </div>
-        <p className="text-custom-sm">({item.reviews})</p>
+        <p className="text-custom-sm">(0)</p>
       </div>
 
-      <h3
-        className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5 cursor-pointer"
-        onClick={handleProductDetails}
-      >
-        <Link href="/shop-details">{item.title}</Link>
+      <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5 cursor-pointer">
+        <Link href={`/shop-details/${item.id}`}>{displayTitle}</Link>
       </h3>
 
-      {/* Price Display - Shows discounted price or regular price */}
+      {/* Price Display */}
       {hasDiscount ? (
-        // Show discounted price with original price struck through
         <div className="flex items-center gap-2">
           <span className="font-medium text-lg text-dark">
-            ${finalPrice.toFixed(2)}
+            ${discountedPrice.toFixed(2)}
           </span>
           <span className="font-medium text-sm text-dark-4 line-through">
-            ${item.price.toFixed(2)}
+            ${basePrice.toFixed(2)}
           </span>
         </div>
       ) : (
-        // Show only the regular price (no discount)
         <span className="font-medium text-lg text-dark">
-          ${item.price.toFixed(2)}
+          ${basePrice.toFixed(2)}
         </span>
       )}
 
       {/* Stock Warning */}
-      {item.stock > 0 && item.stock <= 5 && (
+      {isLowStock && !isOutOfStock && (
         <p className="text-xs text-orange-600 mt-1">
           Only {item.stock} left!
         </p>

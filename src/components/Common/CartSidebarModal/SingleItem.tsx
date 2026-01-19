@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import { fetchCartItems } from "@/redux/features/cart-slice";
 
 const SingleItem = ({ item, removeItemFromCart, removeFromCartAsync, closeCartModal  }) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -12,11 +13,11 @@ const SingleItem = ({ item, removeItemFromCart, removeFromCartAsync, closeCartMo
     // dispatch(removeFromCartAsync(item.product.id));
     // toast.success("Item removed from cart");
     try {
-    await dispatch(removeFromCartAsync(item.product.id)).unwrap(); // attempt server sync
+    await dispatch(removeFromCartAsync(item.id)).unwrap(); // attempt server sync
     toast.success("Item removed from cart");
   } catch (err) {
     toast.error("Failed to sync with server.");
-    // Optionally: dispatch(addItemBackToCart(item)) to restore UI state
+    dispatch(fetchCartItems(item));
     console.error(err);
   }
   };
@@ -32,7 +33,7 @@ const SingleItem = ({ item, removeItemFromCart, removeFromCartAsync, closeCartMo
           <h3 className="font-medium text-dark mb-1 ease-out duration-200 hover:text-blue">
             <a href="#"> {item.product.title} </a>
           </h3>
-          <p className="text-custom-sm">Price: ${item.product.price}</p>
+          <p className="text-custom-sm">Price: ${item.price}</p>
         </div>) : (<p className="text-sm text-gray-400">Loading product...</p>)}
       </div>
 

@@ -5,7 +5,7 @@ import OrderSummary from "./OrderSummary";
 import { useAppSelector } from "@/redux/store";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
-import { clearCartOptimistic, clearCartAsync, revertOptimisticUpdate } from "@/redux/features/cart-slice";
+import { clearCartOptimistic, clearCartAsync, fetchCartItems } from "@/redux/features/cart-slice";
 import SingleItem from "./SingleItem";
 import Breadcrumb from "../Common/Breadcrumb";
 import Link from "next/link";
@@ -16,18 +16,19 @@ const Cart = () => {
   const cartItems = useAppSelector((state) => state.cartReducer.items);
 
   const handleClearCart = async () => {
-    const prevCart = [...cartItems];
-    
-    // Optimistic update
+    // Optimistic update - clear immediately
     dispatch(clearCartOptimistic());
     
     try {
+      // Actually clear on server
       await dispatch(clearCartAsync()).unwrap();
       toast.success("Cart cleared");
     } catch (err) {
-      // Revert on error
-      dispatch(revertOptimisticUpdate(prevCart));
+      // On error, refetch to restore correct state
+      console.error("Failed to clear cart:", err);
       toast.error("Failed to clear cart");
+      // Refetch cart to restore accurate state
+      dispatch(fetchCartItems());
     }
   };
 

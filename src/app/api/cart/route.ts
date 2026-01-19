@@ -1,8 +1,9 @@
+// app/api/cart/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/stack';
 import { prisma } from '../../../../lib/prisma';
 
-// 🔹 GET — Fetch all cart items for the user
+// 🔹 GET — Fetch all cart items for the user (with variants)
 export async function GET(req: NextRequest) {
   try {
     const user = await stackServerApp.getUser();
@@ -24,34 +25,68 @@ export async function GET(req: NextRequest) {
     const cartItems = await prisma.cartItem.findMany({
       where: { userId },
       include: {
-        product: true,
+        product: {
+          select: {
+            id: true,
+            title: true,
+            imageUrl: true,
+            discount: true,
+            category: {
+              select: {
+                name: true
+              }
+            }
+          }
+        },
+        variant: {
+          select: {
+            id: true,
+            sku: true,
+            price: true,
+            stock: true,
+            color: true,
+            size: true,
+            storage: true,
+            images: true,
+          }
+        }
       },
     });
 
     // Transform cart items to include calculated discountedPrice
     const transformedCartItems = cartItems.map((item) => {
+      // Use variant price if available, otherwise product base price
+      const basePrice = item.variant?.price || 0;
+      const discount = item.product.discount || 0;
+      
       // Calculate discounted price
-      const hasDiscount = item.product.discount && item.product.discount > 0;
+      const hasDiscount = discount > 0;
       const discountedPrice = hasDiscount
-        ? item.product.price * (1 - item.product.discount / 100)
-        : item.product.price;
+        ? basePrice * (1 - discount / 100)
+        : basePrice;
 
       return {
         id: item.id,
         title: item.product.title,
-        price: item.product.price, // Original price
-        discountedPrice: discountedPrice, // Calculated discounted price
+        price: basePrice,
+        discountedPrice: discountedPrice,
         quantity: item.quantity,
-        image: item.product.imageUrl,
-        stock: item.product.stock,
+        image: item.variant?.images?.[0] || item.product.imageUrl,
+        stock: item.variant?.stock || 0,
+        
+        // Variant details
+        variantId: item.variantId,
+        color: item.variant?.color,
+        size: item.variant?.size,
+        storage: item.variant?.storage,
+        sku: item.variant?.sku,
+        
         product: {
           id: item.product.id,
           discount: item.product.discount,
           imageUrl: item.product.imageUrl,
           title: item.product.title,
-          description: item.product.description,
-          price: item.product.price,
-          stock: item.product.stock,
+          category: item.product.category.name,
         },
       };
     });
@@ -65,7 +100,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// 🔹 POST — Add or increment a product in cart
+// 🔹 POST — Add or increment a product variant in cart
 export async function POST(req: NextRequest) {
   try {
     const user = await stackServerApp.getUser();
@@ -80,23 +115,63 @@ export async function POST(req: NextRequest) {
     });
     const userId = userIdObj?.id;
 
+    if (!userId) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    }
+
     const body = await req.json();
-    const { productId, quantity } = body;
+    const { productId, variantId, quantity } = body;
 
     if (!productId || !quantity || quantity < 1) {
       return NextResponse.json({ message: 'Invalid input' }, { status: 400 });
     }
 
-    const product = await prisma.product.findUnique({ where: { id: productId } });
+    // Verify product exists
+    const product = await prisma.product.findUnique({ 
+      where: { id: productId },
+      select: { id: true, discount: true, imageUrl: true, title: true }
+    });
+    
     if (!product) {
       return NextResponse.json({ message: 'Product not found' }, { status: 404 });
     }
 
+    // Verify variant exists if variantId provided
+    let variant = null;
+    if (variantId) {
+      variant = await prisma.productVariant.findUnique({
+        where: { id: variantId },
+        select: {
+          id: true,
+          sku: true,
+          price: true,
+          stock: true,
+          color: true,
+          size: true,
+          storage: true,
+          images: true,
+        }
+      });
+      
+      if (!variant) {
+        return NextResponse.json({ message: 'Variant not found' }, { status: 404 });
+      }
+      
+      // Check stock
+      if (variant.stock < quantity) {
+        return NextResponse.json({ 
+          message: `Only ${variant.stock} items in stock` 
+        }, { status: 400 });
+      }
+    }
+
+    // Upsert cart item
     const cartItem = await prisma.cartItem.upsert({
       where: {
-        userId_productId: {
+        userId_productId_variantId: {
           userId,
           productId,
+          variantId: variantId || null,
         },
       },
       update: {
@@ -107,40 +182,69 @@ export async function POST(req: NextRequest) {
       create: {
         userId,
         productId,
+        variantId: variantId || null,
         quantity,
       },
       include: {
-        product: true,
-      },
+        product: {
+          select: {
+            id: true,
+            title: true,
+            imageUrl: true,
+            discount: true,
+          }
+        },
+        variant: {
+          select: {
+            id: true,
+            sku: true,
+            price: true,
+            stock: true,
+            color: true,
+            size: true,
+            storage: true,
+            images: true,
+          }
+        }
+      }
     });
 
     // Calculate discounted price for response
-    const hasDiscount = cartItem.product.discount && cartItem.product.discount > 0;
+    const basePrice = cartItem.variant?.price || 0;
+    const discount = cartItem.product.discount || 0;
+    const hasDiscount = discount > 0;
     const discountedPrice = hasDiscount
-      ? cartItem.product.price * (1 - cartItem.product.discount / 100)
-      : cartItem.product.price;
+      ? basePrice * (1 - discount / 100)
+      : basePrice;
 
     // Return structured response with discountedPrice
     const response = {
-      id: cartItem.id,
-      title: cartItem.product.title,
-      price: cartItem.product.price,
-      discountedPrice: discountedPrice,
-      quantity: cartItem.quantity,
-      image: cartItem.product.imageUrl,
-      stock: cartItem.product.stock,
-      product: {
-        id: cartItem.product.id,
-        discount: cartItem.product.discount,
-        imageUrl: cartItem.product.imageUrl,
+      item: {
+        id: cartItem.id,
         title: cartItem.product.title,
-        description: cartItem.product.description,
-        price: cartItem.product.price,
-        stock: cartItem.product.stock,
-      },
+        price: basePrice,
+        discountedPrice: discountedPrice,
+        quantity: cartItem.quantity,
+        image: cartItem.variant?.images?.[0] || cartItem.product.imageUrl,
+        stock: cartItem.variant?.stock || 0,
+        
+        // Variant details
+        variantId: cartItem.variantId,
+        color: cartItem.variant?.color,
+        size: cartItem.variant?.size,
+        storage: cartItem.variant?.storage,
+        sku: cartItem.variant?.sku,
+        
+        product: {
+          id: cartItem.product.id,
+          discount: cartItem.product.discount,
+          imageUrl: cartItem.product.imageUrl,
+          title: cartItem.product.title,
+        },
+      }
     };
 
-    return NextResponse.json({ item: response });
+    return NextResponse.json(response);
   } catch (error) {
     console.error('[CART_POST_ERROR]', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
@@ -162,21 +266,41 @@ export async function PUT(req: NextRequest) {
     });
     const userId = userIdObj?.id;
 
-    const body = await req.json();
-    const { productId, quantity } = body;
+    if (!userId) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    }
 
-    if (!productId || !quantity || quantity < 1) {
+    const body = await req.json();
+    const { cartItemId, quantity } = body;
+
+    if (!cartItemId || !quantity || quantity < 1) {
       return NextResponse.json({ message: 'Invalid input' }, { status: 400 });
     }
 
-    const updated = await prisma.cartItem.updateMany({
-      where: {
-        userId,
-        id: productId,
-      },
-      data: {
-        quantity,
-      },
+    // Get cart item with variant to check stock
+    const cartItem = await prisma.cartItem.findUnique({
+      where: { id: cartItemId },
+      include: {
+        variant: {
+          select: { stock: true }
+        }
+      }
+    });
+
+    if (!cartItem) {
+      return NextResponse.json({ message: 'Cart item not found' }, { status: 404 });
+    }
+
+    // Check stock if variant exists
+    if (cartItem.variant && cartItem.variant.stock < quantity) {
+      return NextResponse.json({ 
+        message: `Only ${cartItem.variant.stock} items in stock` 
+      }, { status: 400 });
+    }
+
+    const updated = await prisma.cartItem.update({
+      where: { id: cartItemId },
+      data: { quantity },
     });
 
     return NextResponse.json({ success: true, updated });
@@ -201,25 +325,59 @@ export async function DELETE(req: NextRequest) {
     });
     const userId = userIdObj?.id;
 
-    const body = await req.json();
-    const { productId } = body;
-
-    if (!productId) {
-      return NextResponse.json({ message: 'Product ID required' }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
-    console.log("Deleting cart item for user:", userId, "productId:", productId);
+    const body = await req.json();
+    const { cartItemId } = body;
 
-    await prisma.cartItem.deleteMany({
+    if (!cartItemId) {
+      return NextResponse.json({ message: 'Cart item ID required' }, { status: 400 });
+    }
+
+    console.log("Deleting cart item for user:", userId, "cartItemId:", cartItemId);
+
+    await prisma.cartItem.delete({
       where: {
-        userId,
-        productId,
+        id: cartItemId,
+        userId, // Ensure user owns this cart item
       },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[CART_DELETE_ERROR]', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// 🔹 PATCH — Clear entire cart
+export async function PATCH(req: NextRequest) {
+  try {
+    const user = await stackServerApp.getUser();
+
+    if (!user?.id) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userIdObj = await prisma.user.findUnique({
+      where: { authId: user.id },
+      select: { id: true },
+    });
+    const userId = userIdObj?.id;
+
+    if (!userId) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    }
+
+    await prisma.cartItem.deleteMany({
+      where: { userId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[CART_CLEAR_ERROR]', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

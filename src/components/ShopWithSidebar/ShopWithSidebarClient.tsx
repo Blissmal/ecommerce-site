@@ -388,10 +388,7 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
                   {filteredProducts.map((product, key) => (
                     <ProductItem 
                       key={key} 
-                      item={{
-                        ...product,
-                        reviews: product.reviews || 0
-                      }} 
+                      item={product}
                     />
                   ))}
                 </div>

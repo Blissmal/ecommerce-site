@@ -18,7 +18,7 @@ model User {
   country   String?
   town      String?
   verified  Boolean    @default(false)
-  role      String     @default("USER") // USER, ADMIN, etc.
+  role      String     @default("USER")
   createdAt DateTime   @default(now())
 
   cartItems CartItem[]
@@ -38,32 +38,91 @@ model Product {
   id          String         @id @default(cuid())
   title       String
   description String
-  price       Float
-  stock       Int
-  imageUrl    String         // Primary/main image for backward compatibility
-  images      String[]       @default([]) // Array of additional image URLs
-  discount    Float?         // Optional: e.g., 0.15 for 15% off
+  price       Float          // Base price (lowest variant price)
+  stock       Int            // Total stock across all variants
+  imageUrl    String
+  images      String[]       @default([])
+  discount    Float?
   status      ProductStatus  @default(ACTIVE)
   createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   categoryId  String
 
+  // Product details
+  shortDescription String?
+  brand         String?
+  model         String?
+  sku           String?      @unique
+  
+  // Physical properties
+  weight        Float?
+  dimensions    String?
+  tags          String[]     @default([])
+  
+  // 🆕 Base specifications (common to all variants)
+  specifications Json?       // e.g., { "chipset": "A15", "camera": "12MP", "displaySize": "6.7 inches" }
+  
+  // 🆕 Available options for variants
+  availableColors String[]   @default([])  // ["Blue", "Red", "Purple"]
+  availableSizes  String[]   @default([])  // ["8", "9", "10"] for shoes
+  availableStorage String[]  @default([])  // ["128GB", "256GB", "512GB"] for phones
+  features        String[]   @default([])  // ["Free delivery", "1 year warranty"]
+
   category    Category       @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]  // 🆕 Individual variants with specific prices
   cartItems   CartItem[]
   reviews     Review[]
   likes       Like[]
   orderItems  OrderItem[]
 }
 
+// 🆕 NEW: Product Variant Model
+// Each variant is a specific combination of options (e.g., "128GB Blue iPhone")
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  
+  // Variant-specific attributes
+  sku       String   @unique  // "IP14-128-BLU"
+  price     Float              // Specific price for this variant
+  stock     Int                // Stock for this variant
+  
+  // Variant options
+  color     String?            // "Blue"
+  size      String?            // "9" (for shoes/clothing)
+  storage   String?            // "128GB" (for electronics)
+  
+  // Additional variant data
+  images    String[]  @default([])  // Variant-specific images
+  weight    Float?
+  isDefault Boolean   @default(false) // Main variant to display
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems CartItem[]
+  orderItems OrderItem[]
+  
+  @@unique([productId, color, size, storage]) // Prevent duplicate variants
+  @@index([productId])
+}
+
+// 🔄 UPDATED: CartItem now references specific variant
 model CartItem {
   id        String   @id @default(cuid())
   userId    String
   productId String
+  variantId String?  // 🆕 Link to specific variant
   quantity  Int
 
-  user      User     @relation(fields: [userId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, productId])
+  @@unique([userId, productId, variantId]) // User can only have one of each variant in cart
+  @@index([userId])
+  @@index([productId])
 }
 
 model Review {
@@ -76,6 +135,8 @@ model Review {
 
   user      User     @relation(fields: [userId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
+  
+  @@index([productId])
 }
 
 model Like {
@@ -93,35 +154,46 @@ model Order {
   id            String        @id @default(cuid())
   userId        String
   total         Float
-  receipt       String?       // M-PESA or bank transaction reference
+  receipt       String?
   paymentMethod PaymentMethod
   status        OrderStatus   @default(PENDING)
   
-  phoneNumber       String?       // Phone number used for M-Pesa payment
-  checkoutRequestId String?       @unique // M-Pesa STK push identifier
-  merchantRequestId String?       // M-Pesa merchant request identifier
-  billingName       String?       // Customer billing name
-  billingEmail      String?       // Customer billing email
-  billingAddress    String?       // Customer billing address
-  orderNotes        String?       // Customer order notes
-  paymentInitiatedAt DateTime?    // When payment was initiated
-  paymentCompletedAt DateTime?    // When payment was completed
+  phoneNumber       String?
+  checkoutRequestId String?       @unique
+  merchantRequestId String?
+  billingName       String?
+  billingEmail      String?
+  billingAddress    String?
+  orderNotes        String?
+  paymentInitiatedAt DateTime?
+  paymentCompletedAt DateTime?
 
   createdAt     DateTime      @default(now())
 
   user         User      @relation(fields: [userId], references: [id])
   orderItems   OrderItem[]
+  
+  @@index([userId])
+  @@index([status])
 }
 
+// 🔄 UPDATED: OrderItem now stores variant details
 model OrderItem {
   id        String   @id @default(cuid())
   orderId   String
   productId String
+  variantId String?  // 🆕 Link to specific variant
   quantity  Int
-  price     Float
+  price     Float    // Price at time of purchase
+  
+  // 🆕 Snapshot of variant details at purchase time
+  variantSnapshot Json?  // Store color, size, storage, sku for historical record
 
-  order     Order    @relation(fields: [orderId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id])
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  
+  @@index([orderId])
 }
 
 enum PaymentMethod {
@@ -130,13 +202,13 @@ enum PaymentMethod {
 }
 
 enum OrderStatus {
-  PENDING      // Order created, payment not initiated
-  PROCESSING   // Payment initiated (STK push sent)
-  PAID         // Payment successful
-  FAILED       // Payment failed
-  CANCELLED    // Order cancelled
-  SHIPPED      // Order shipped (for future use)
-  DELIVERED    // Order delivered (for future use)
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+  SHIPPED
+  DELIVERED
 }
 
 enum ProductStatus {
