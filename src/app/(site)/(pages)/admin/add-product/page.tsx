@@ -21,7 +21,7 @@ export default function AddProductPage() {
     price: "",
     stock: "",
     imageUrl: "",
-    additionalImages: [""],
+    images: [] as string[], // Changed to array
     categoryId: "",
     discount: "",
   });
@@ -47,25 +47,33 @@ export default function AddProductPage() {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAdditionalImageChange = (index: number, value: string) => {
-    const newImages = [...form.additionalImages];
-    newImages[index] = value;
-    setForm(prev => ({ ...prev, additionalImages: newImages }));
-  };
-
-  const addImageField = () => setForm(prev => ({ ...prev, additionalImages: [...prev.additionalImages, ""] }));
-  const removeImageField = (index: number) => setForm(prev => ({ ...prev, additionalImages: prev.additionalImages.filter((_, i) => i !== index) }));
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const validAdditionalImages = form.additionalImages.filter(url => url.trim() !== "");
-      await addProduct({ ...form, images: validAdditionalImages });
+      // Validate that we have at least one image
+      if (!form.imageUrl) {
+        toast.error("Please upload a hero image");
+        setLoading(false);
+        return;
+      }
+
+      await addProduct({
+        title: form.title,
+        description: form.description,
+        price: form.price,
+        stock: form.stock,
+        imageUrl: form.imageUrl,
+        images: form.images,
+        categoryId: form.categoryId,
+        discount: form.discount,
+      });
+      
       toast.success("Product created successfully");
       router.push("/admin/products");
       router.refresh();
     } catch (error) {
+      console.error("Error adding product:", error);
       toast.error("Failed to add product");
     } finally {
       setLoading(false);
@@ -117,21 +125,19 @@ export default function AddProductPage() {
               </div>
             </div>
 
+            {/* Additional Gallery */}
             <div className="bg-white p-7.5 rounded-xl border border-gray-3 shadow-1">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-custom-lg font-bold text-dark">Additional Gallery</h2>
-                <button type="button" onClick={addImageField} className="text-2xs font-bold text-blue uppercase tracking-widest hover:underline">+ Add Slot</button>
+                <span className="text-2xs text-dark-5">
+                  {form.images.length} / 5 images
+                </span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                {form.additionalImages.map((image, index) => (
-                  <ImageUpload
-                    key={index}
-                    value={image}
-                    onChange={(url) => handleAdditionalImageChange(index, url)}
-                    onRemove={() => removeImageField(index)}
-                  />
-                ))}
-              </div>
+              <ImageUpload
+                value={form.images}
+                onChange={(urls) => setForm(prev => ({ ...prev, images: urls }))}
+                maxImages={5}
+              />
             </div>
           </div>
 
@@ -140,10 +146,13 @@ export default function AddProductPage() {
             <div className="bg-white p-7.5 rounded-xl border border-gray-3 shadow-1">
               <h2 className="text-custom-lg font-bold text-dark mb-6">Product Hero Image</h2>
               <ImageUpload
-                value={form.imageUrl}
-                onChange={(url) => setForm(prev => ({ ...prev, imageUrl: url }))}
-                onRemove={() => setForm(prev => ({ ...prev, imageUrl: "" }))}
+                value={form.imageUrl ? [form.imageUrl] : []}
+                onChange={(urls) => setForm(prev => ({ ...prev, imageUrl: urls[0] || "" }))}
+                maxImages={1}
               />
+              <p className="text-2xs text-body mt-3 italic">
+                This will be the main product image displayed on listings.
+              </p>
             </div>
 
             <div className="bg-white p-7.5 rounded-xl border border-gray-3 shadow-1 space-y-5.5">
@@ -155,6 +164,17 @@ export default function AddProductPage() {
                   type="number"
                   step="0.01"
                   value={form.price}
+                  onChange={handleChange}
+                  className="w-full p-3 bg-gray-1 border border-gray-3 rounded-lg font-bold text-dark outline-none focus:border-blue"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-2xs font-bold uppercase tracking-wider text-dark-5 mb-2">Stock Quantity</label>
+                <input
+                  name="stock"
+                  type="number"
+                  value={form.stock}
                   onChange={handleChange}
                   className="w-full p-3 bg-gray-1 border border-gray-3 rounded-lg font-bold text-dark outline-none focus:border-blue"
                   required
@@ -191,7 +211,7 @@ export default function AddProductPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-blue text-white rounded-xl font-bold text-custom-lg shadow-2 hover:bg-blue-dark transition-all disabled:opacity-50"
+              className="w-full py-4 bg-blue text-white rounded-xl font-bold text-custom-lg shadow-2 hover:bg-blue-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Publishing..." : "Publish Product"}
             </button>
