@@ -637,6 +637,93 @@ useEffect(() => {
           </div>
         </section>
 
+        {/* Specifications */}
+        <section className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Specifications</h2>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Section</label>
+                <input
+                  type="text"
+                  value={specSection}
+                  onChange={(e) => setSpecSection(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="e.g., Display, Performance"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Key</label>
+                <input
+                  type="text"
+                  value={specKey}
+                  onChange={(e) => setSpecKey(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="e.g., Screen Size, Processor"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium mb-2">Value</label>
+                  <input
+                    type="text"
+                    value={specValue}
+                    onChange={(e) => setSpecValue(e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="e.g., 6.7 inches, A15 Bionic"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={addSpecification}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Display Specifications */}
+            {Object.keys(specifications).length > 0 && (
+              <div className="mt-4 space-y-4">
+                {Object.entries(specifications).map(([section, specs]) => (
+                  <div key={section} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-semibold text-lg">{section}</h3>
+                      <button
+                        type="button"
+                        onClick={() => removeSpecSection(section)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Remove Section
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {typeof specs === 'object' && Object.entries(specs as Record<string, string>).map(([key, value]) => (
+                        <div key={key} className="flex justify-between py-1 px-2 bg-gray-50 rounded">
+                          <span className="text-sm font-medium text-gray-700">{key}:</span>
+                          <span className="text-sm text-gray-900">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {Object.keys(specifications).length === 0 && (
+              <p className="text-gray-500 text-sm text-center py-4">
+                No specifications added yet. Fill in the fields above to add specifications.
+              </p>
+            )}
+          </div>
+        </section>
+
         {/* Available Options */}
         <section className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Available Options (for Variants)</h2>
