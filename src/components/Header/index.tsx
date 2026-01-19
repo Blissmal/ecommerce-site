@@ -1,163 +1,118 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import CustomSelect from "./CustomSelect";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
 import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 import Image from "next/image";
 import type { AppDispatch, RootState } from "@/redux/store";
-import { get } from "node:http";
 
 const Header = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [navigationOpen, setNavigationOpen] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
-  const { openCartModal } = useCartModalContext();
   const [user, setUser] = useState<null | { id: string; email: string }>(null);
+  const { openCartModal } = useCartModalContext();
+  const dispatch = useDispatch<AppDispatch>();
 
-const productCount = useSelector((state: RootState) => state.cartReducer.items.length);  
-const totalPrice = useSelector(selectTotalPrice);
+  const productCount = useSelector((state: RootState) => state.cartReducer.items.length);
+  const totalPrice = useSelector(selectTotalPrice);
 
-  // Sticky menu effect
   useEffect(() => {
-    const handleStickyMenu = () => {
-      setStickyMenu(window.scrollY >= 80);
-    };
-
+    const handleStickyMenu = () => setStickyMenu(window.scrollY >= 40);
     window.addEventListener("scroll", handleStickyMenu);
     return () => window.removeEventListener("scroll", handleStickyMenu);
   }, []);
 
   useEffect(() => {
-  const syncUser = async () => {
-    try {
-      await fetch("/api/sync-user");
-    } catch (err) {
-      console.error("User sync failed:", err);
-    }
-  };
-
-  const getUser = async () => {
+    const initData = async () => {
       try {
         const res = await fetch("/api/login-check");
         const data = await res.json();
         setUser(data.user);
       } catch (err) {
-        console.error("Failed to get user", err);
+        console.error("Auth check failed", err);
       }
     };
-
-  syncUser();
-  getUser();
-}, []);
-const dispatch = useDispatch<AppDispatch>();
-
-useEffect(() => {
-  dispatch(fetchCartItems());
-}, [dispatch]);
-
-
-  const options = [
-    { label: "All Categories", value: "0" },
-    { label: "Desktop", value: "1" },
-    { label: "Laptop", value: "2" },
-    { label: "Monitor", value: "3" },
-    { label: "Phone", value: "4" },
-    { label: "Watch", value: "5" },
-    { label: "Mouse", value: "6" },
-    { label: "Tablet", value: "7" },
-  ];
+    initData();
+    dispatch(fetchCartItems());
+  }, [dispatch]);
 
   return (
     <header
-      className={`fixed left-0 top-0 w-full z-50 bg-white transition-all duration-300 ${stickyMenu ? "shadow py-4" : "py-6"
-        }`}
+      className={`fixed left-0 top-0 w-full z-999 transition-all duration-300 bg-white ${
+        stickyMenu ? "shadow-1 py-4.5" : "py-7.5"
+      }`}
     >
       <div className="max-w-[1170px] mx-auto px-4 sm:px-7.5 xl:px-0">
-        <div className="flex flex-col lg:flex-row gap-5 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex-shrink-0">
+        <div className="flex items-center justify-between">
+          
+          {/* 1. Logo Section */}
+          <Link href="/" className="flex-shrink-0 transition-transform hover:scale-105">
             <Image
               src="/hero.webp"
               alt="Logo"
               width={50}
               height={50}
+              className="w-10 h-10 lg:w-12.5 lg:h-12.5"
             />
           </Link>
 
-          {/* Centered search with categories */}
-          <div className="flex-1 flex justify-center w-full max-w-[600px]">
-            <form className="flex w-full items-center gap-2">
-              {/* <CustomSelect options={options} /> */}
-              <div className="relative w-full">
-                <input
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  value={searchQuery}
-                  type="search"
-                  placeholder="I am shopping for..."
-                  className="custom-search w-full rounded-r-md border border-gray-300 bg-gray-100 py-2.5 pl-4 pr-10 outline-none"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-blue"
-                >
-                  🔍
-                </button>
-              </div>
-            </form>
-          </div>
+          {/* 2. Desktop Navigation - Using your custom-sm size and gray-6 color */}
+          <nav className="hidden lg:flex items-center gap-9.5 text-custom-sm font-semibold uppercase tracking-wider text-gray-6">
+            <Link href="#" className="hover:text-blue transition-colors">Shop</Link>
+            <Link href="#categories" className="hover:text-blue transition-colors">Categories</Link>
+            <Link href="#newArrivals" className="hover:text-blue transition-colors">New Arrivals</Link>
+          </nav>
 
-          {/* Right icons: Cart + Country */}
-          <div className="flex items-center gap-5">
+          {/* 3. Action Group */}
+          <div className="flex items-center gap-5 sm:gap-7.5">
+            
+            {/* Search Trigger */}
+            {/* <button className="text-dark hover:text-blue transition-colors" aria-label="Search">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5.5 h-5.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+            </button> */}
+
+            {/* Account - Using your blue and dark-5 colors */}
             {user ? (
-              <Link href="/my-account" className="flex items-center gap-2">
-                <Image src="/kenya.svg" alt="Country" width={24} height={24} />
+              <Link href="/my-account" className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-2 border border-gray-3 hover:border-blue transition-all">
+                <span className="text-custom-xs font-bold text-dark">{user.email[0].toUpperCase()}</span>
               </Link>
-                
-              ) : (
-                <Link href="/handler/login" className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-blue-600 hover:underline">
-                  Login
-                </span>
-                </Link>
-              )}
+            ) : (
+              <Link href="/handler/login" className="text-custom-sm font-bold text-blue hover:text-blue-dark transition-colors">
+                Login
+              </Link>
+            )}
 
-            {/* Cart */}
+            {/* Cart - Using your red for badge and dark for text */}
             <button
               onClick={openCartModal}
-              className="relative flex items-center gap-3 focus:outline-none pr-6" // extra padding right for badge space
+              className="group relative flex items-center gap-3"
               aria-label="Open cart"
             >
-              {/* Cart Icon */}
-
-              {/* Cart Info */}
-              <div className="text-left leading-tight">
-                <span className="block text-[10px] uppercase text-gray-500">Cart</span>
-                <span className="block font-semibold text-sm text-gray-900">${isNaN(totalPrice) ? "Calculating..." : `${totalPrice.toFixed(2)}`}</span>
+              <div className="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6.5 h-6.5 text-dark group-hover:text-blue transition-colors">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.112 11.211a2.25 2.25 0 0 1-2.247 2.472H4.402a2.25 2.25 0 0 1-2.247-2.472L3.268 8.507a2.25 2.25 0 0 1 2.247-2.25h13.218a2.25 2.25 0 0 1 2.247 2.25Z" />
+                </svg>
+                {productCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red text-white text-2xs font-bold rounded-full w-4.5 h-4.5 flex items-center justify-center shadow-1">
+                    {productCount}
+                  </span>
+                )}
               </div>
-
-              {/* Right-Aligned Badge */}
-              {productCount > 0 && (
-                <span className="absolute top-0 right-0 bg-blue text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
-                  {productCount}
+              
+              <div className="hidden xsm:block text-left leading-none">
+                <span className="block text-2xs font-bold text-gray-5 uppercase mb-1">My Cart</span>
+                <span className="block font-bold text-custom-sm text-dark">
+                  ${isNaN(totalPrice) ? "0.00" : totalPrice.toFixed(2)}
                 </span>
-              )}
+              </div>
             </button>
 
-
-
-            {/* Mobile menu toggle */}
-            <button
-              onClick={() => setNavigationOpen(!navigationOpen)}
-              className="xl:hidden block"
-              aria-label="Menu"
-            >
-              <div className="space-y-1">
-                <span className="block w-6 h-0.5 bg-black"></span>
-                <span className="block w-6 h-0.5 bg-black"></span>
-                <span className="block w-6 h-0.5 bg-black"></span>
-              </div>
+            {/* Mobile Toggle */}
+            <button className="lg:hidden flex flex-col gap-1.5">
+              <span className="w-6 h-0.5 bg-dark"></span>
+              <span className="w-6 h-0.5 bg-dark"></span>
             </button>
           </div>
         </div>

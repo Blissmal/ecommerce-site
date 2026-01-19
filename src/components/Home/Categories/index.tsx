@@ -15,7 +15,7 @@ type Props = {
 
 export default function CategoryExplorer({ categories }: Props) {
   return (
-    <section className="py-12 bg-meta font-euclid-circular-a">
+    <section id="categories" className="py-20 bg-meta font-euclid-circular-a">
       <div className="max-w-screen-xl mx-auto px-6">
         {/* Section Header */}
         <div className="flex items-end justify-between mb-8 border-b border-gray-3 pb-6">

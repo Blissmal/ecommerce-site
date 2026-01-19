@@ -39,7 +39,7 @@ const NewArrivalClient = ({ products }: { products: Product[] }) => {
   }, [products, activeCategory]);
 
   return (
-    <section className="py-20 lg:py-28 bg-white font-euclid-circular-a">
+    <section id="newArrivals" className="py-20 lg:py-28 bg-white font-euclid-circular-a">
       <div className="max-w-[1240px] w-full mx-auto px-6">
         
         {/* Section Header - More spacious and bold */}
