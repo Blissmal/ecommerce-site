@@ -1,176 +1,19 @@
-// "use client";
-// import React from "react";
-// import Breadcrumb from "../Common/Breadcrumb";
-// import Login from "./Login";
-// import Shipping from "./Shipping";
-// import ShippingMethod from "./ShippingMethod";
-// import PaymentMethod from "./PaymentMethod";
-// import Coupon from "./Coupon";
-// import Billing from "./Billing";
-
-// const Checkout = () => {
-//   const cartItems = useAppSelector((state) => state.cartReducer.items);
-//   const totalPrice = useSelector(selectTotalPrice);
-//   return (
-//     <>
-//       <Breadcrumb title={"Your Orders"} pages={["checkout"]} />
-//       <section className="overflow-hidden py-20 bg-gray-2">
-//         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
-//           <form>
-//             <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-11">
-//               {/* <!-- checkout left --> */}
-//               <div className="lg:max-w-[670px] w-full">
-//                 {/* <!-- login box --> */}
-
-//                 {/* <!-- billing details --> */}
-//                 <Billing />
-
-//                 {/* <!-- others note box --> */}
-//                 <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 mt-7.5">
-//                   <div>
-//                     <label htmlFor="notes" className="block mb-2.5">
-//                       Other Notes (optional)
-//                     </label>
-
-//                     <textarea
-//                       name="notes"
-//                       id="notes"
-//                       rows={5}
-//                       placeholder="Notes about your order, e.g. speacial notes for delivery."
-//                       className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full p-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-//                     ></textarea>
-//                   </div>
-//                 </div>
-//               </div>
-
-//               {/* // <!-- checkout right --> */}
-//               <div className="max-w-[455px] w-full">
-//                 {/* <!-- order list box --> */}
-//                 <div className="bg-white shadow-1 rounded-[10px]">
-//                   <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
-//                     <h3 className="font-medium text-xl text-dark">
-//                       Your Orders
-//                     </h3>
-//                   </div>
-
-//                   <div className="pt-2.5 pb-8.5 px-4 sm:px-8.5">
-//                     {/* <!-- title --> */}
-//                     <div className="flex items-center justify-between py-5 border-b border-gray-3">
-//                       <div>
-//                         <h4 className="font-medium text-dark">Product</h4>
-//                       </div>
-//                       <div>
-//                         <h4 className="font-medium text-dark text-right">
-//                           Subtotal
-//                         </h4>
-//                       </div>
-//                     </div>
-
-//                     {/* <!-- product item --> */}
-//                     {cartItems.map(item => (
-//                       <div key={item.id} className="flex items-center justify-between py-5 border-b border-gray-3">
-//                       <div>
-//                         <p className="text-dark">{item.product.title}</p>
-//                       </div>
-//                       <div>
-//                         <p className="text-dark text-right">${item.product.price} * {item.quantity}</p>
-//                       </div>
-//                     </div>
-//                     ))}
-
-//                     {/* <!-- total --> */}
-//                     <div className="flex items-center justify-between pt-5">
-//                       <div>
-//                         <p className="font-medium text-lg text-dark">Total</p>
-//                       </div>
-//                       <div>
-//                         <p className="font-medium text-lg text-dark text-right">
-//                           ${totalPrice}
-//                         </p>
-//                       </div>
-//                     </div>
-//                   </div>
-//                 </div>
-
-//                 {/* <!-- payment box --> */}
-//                 <PaymentMethod />
-//                 <AgreementCheckboxes />
-
-//                 {/* <!-- checkout button --> */}
-//                 <button
-//                   type="submit"
-//                   className="w-full flex justify-center font-medium text-white bg-blue py-3 px-6 rounded-md ease-out duration-200 hover:bg-blue-dark mt-7.5"
-//                 >
-//                   Make payment
-//                 </button>
-//               </div>
-//             </div>
-//           </form>
-//         </div>
-//       </section>
-//     </>
-//   );
-// };
-
-// export default Checkout;
-
-
-// import { useState } from "react";
-// import { useAppSelector } from "@/redux/store";
-// import { useSelector } from "react-redux";
-// import { selectTotalPrice } from "@/redux/features/cart-slice";
-
-// export function AgreementCheckboxes() {
-//   const [termsAccepted, setTermsAccepted] = useState(false);
-//   const [offersAccepted, setOffersAccepted] = useState(false);
-
-//   return (
-//     <div className="space-y-4 mt-6">
-//       <label className="flex items-start space-x-2 cursor-pointer">
-//         <input
-//           type="checkbox"
-//           checked={termsAccepted}
-//           onChange={(e) => setTermsAccepted(e.target.checked)}
-//           className="mt-1 w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary"
-//         />
-//         <span className="text-sm text-gray-700">
-//           I have read and understood the <strong>Terms and Conditions</strong> associated with this purchase.
-//         </span>
-//       </label>
-
-//       <label className="flex items-start space-x-2 cursor-pointer">
-//         <input
-//           type="checkbox"
-//           checked={offersAccepted}
-//           onChange={(e) => setOffersAccepted(e.target.checked)}
-//           className="mt-1 w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary"
-//         />
-//         <span className="text-sm text-gray-700">
-//           I agree to receive offers or promotions from <strong>HustleSasa</strong> by Email, Text, or Phone.
-//         </span>
-//       </label>
-//     </div>
-//   );
-// }
-
-// Updated Checkout Component
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAppSelector } from "@/redux/store";
 import { useSelector } from "react-redux";
 import { selectTotalPrice } from "@/redux/features/cart-slice";
 import Breadcrumb from "../Common/Breadcrumb";
+import toast from "react-hot-toast";
 
-const Checkout = ({userId}: {userId: string}) => {
+const Checkout = ({ userId }: { userId: string }) => {
   const cartItems = useAppSelector((state) => state.cartReducer.items);
   const totalPrice = useSelector(selectTotalPrice);
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
-  const [orderId, setOrderId] = useState('');
 
-  console.log(cartItems, totalPrice, userId);
-  
-  // Form state matching your schema
+  // Form state matching your database schema
   const [formData, setFormData] = useState({
     billingName: '',
     billingEmail: '',
@@ -179,310 +22,247 @@ const Checkout = ({userId}: {userId: string}) => {
     orderNotes: ''
   });
 
-  // const userId = useAppSelector((state) => state.auth?.user?.id); // Adjust based on your auth state
-
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
 
-  const handleMpesaPayment = async (e) => {
+  /**
+   * 1. Initiate the M-Pesa STK Push
+   */
+  const handleMpesaPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validation
+
+    // Validations
     if (!formData.billingName || !formData.billingEmail || !formData.phoneNumber) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
     if (!userId) {
-      alert('Please log in to place an order');
+      toast.error('Please log in to place an order');
       return;
     }
 
-    if (!cartItems || cartItems.length === 0) {
-      alert('Your cart is empty');
+    if (cartItems.length === 0) {
+      toast.error('Your cart is empty');
       return;
     }
 
     setIsProcessing(true);
-    setPaymentStatus('Creating order...');
+    setPaymentStatus('Initiating payment request...');
 
     try {
       const response = await fetch('/api/mpesa/initiate-payment', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
-          phoneNumber: formData.phoneNumber,
-          billingName: formData.billingName,
-          billingEmail: formData.billingEmail,
-          billingAddress: formData.billingAddress,
-          orderNotes: formData.orderNotes
+          ...formData
         })
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setOrderId(data.orderId);
-        setPaymentStatus('Check your phone for M-Pesa prompt...');
+        setPaymentStatus('Please check your phone for the M-Pesa prompt.');
+        toast.success("STK Push sent!");
         
-        // Start polling for payment status
+        // 2. Start Polling for payment completion
         pollPaymentStatus(data.checkoutRequestID);
       } else {
-        setPaymentStatus(`Order failed: ${data.message}`);
-        setIsProcessing(false);
+        throw new Error(data.message || 'Payment initiation failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment error:', error);
+      toast.error(error.message);
       setPaymentStatus('Order failed. Please try again.');
       setIsProcessing(false);
     }
   };
 
-  const pollPaymentStatus = async (checkoutRequestID) => {
-    const maxAttempts = 24; // Poll for 4 minutes (24 * 10 seconds)
+  /**
+   * 3. Poll the server to check if the user has entered their PIN
+   */
+  const pollPaymentStatus = async (checkoutRequestID: string) => {
+    const maxAttempts = 15; // Poll for ~2.5 minutes
     let attempts = 0;
 
-    const poll = async () => {
+    const interval = setInterval(async () => {
+      attempts++;
+      
       try {
         const response = await fetch('/api/mpesa/check-status', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ checkoutRequestID })
         });
 
         const data = await response.json();
-        
+
         if (data.status === 'PAID') {
-          setPaymentStatus('Payment successful! Order confirmed.');
-          setIsProcessing(false);
+          clearInterval(interval);
+          setPaymentStatus('Payment Successful! Redirecting...');
+          toast.success("Order confirmed!");
           
-          // Redirect to success page after 2 seconds
+          // Clear cart or redirect
           setTimeout(() => {
             window.location.href = `/order-success?orderId=${data.orderId}`;
           }, 2000);
-          
-        } else if (data.status === 'FAILED') {
-          setPaymentStatus('Payment failed. Please try again.');
+        } 
+        else if (data.status === 'FAILED') {
+          clearInterval(interval);
+          setPaymentStatus('Payment cancelled or failed on your phone.');
           setIsProcessing(false);
-          
-        } else if (data.status === 'PROCESSING' && attempts < maxAttempts) {
-          attempts++;
-          setTimeout(poll, 10000); // Poll every 10 seconds
-          
-        } else {
-          // Timeout or unknown status
-          setPaymentStatus('Payment timeout. Please check your M-Pesa messages or contact support.');
+        }
+        
+        // If we hit max attempts without a result
+        if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setPaymentStatus('Payment verification timed out. If you paid, please contact support.');
           setIsProcessing(false);
         }
       } catch (error) {
-        console.error('Status check error:', error);
-        if (attempts < maxAttempts) {
-          attempts++;
-          setTimeout(poll, 10000);
-        } else {
-          setPaymentStatus('Unable to verify payment status. Please contact support.');
-          setIsProcessing(false);
-        }
+        console.error("Polling error:", error);
       }
-    };
-
-    // Start polling after 5 seconds
-    setTimeout(poll, 5000);
+    }, 10000); // Check every 10 seconds
   };
 
   return (
     <>
-      <Breadcrumb title={"Your Orders"} pages={["checkout"]} />
-      <section className="overflow-hidden py-20 bg-gray-2">
-        <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
-          <form onSubmit={handleMpesaPayment}>
-            <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-11">
-              {/* Checkout Left - Billing Details */}
-              <div className="lg:max-w-[670px] w-full">
-                {/* Billing Details */}
-                <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5">
-                  <h3 className="font-medium text-xl text-dark mb-5">Billing Details</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                    <div>
-                      <label htmlFor="billingName" className="block mb-2.5 text-dark">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        id="billingName"
-                        name="billingName"
-                        value={formData.billingName}
-                        onChange={handleInputChange}
-                        className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full p-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="billingEmail" className="block mb-2.5 text-dark">
-                        Email Address *
-                      </label>
-                      <input
-                        type="email"
-                        id="billingEmail"
-                        name="billingEmail"
-                        value={formData.billingEmail}
-                        onChange={handleInputChange}
-                        className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full p-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                        required
-                      />
-                    </div>
-                  </div>
+      <Breadcrumb title={"Checkout"} pages={["shop", "checkout"]} />
+      
+      
 
-                  <div className="mb-5">
-                    <label htmlFor="phoneNumber" className="block mb-2.5 text-dark">
-                      Phone Number (M-Pesa) *
-                    </label>
+      <section className="py-20 bg-gray-2 font-euclid-circular-a">
+        <div className="max-w-[1170px] mx-auto px-4">
+          <form onSubmit={handleMpesaPayment} className="flex flex-col lg:flex-row gap-10">
+            
+            {/* LEFT: Billing Details */}
+            <div className="lg:w-2/3 space-y-6">
+              <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-3">
+                <h3 className="text-xl font-bold text-dark mb-6">Billing & Shipping</h3>
+                
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-dark">Full Name *</label>
                     <input
-                      type="tel"
-                      id="phoneNumber"
-                      name="phoneNumber"
-                      value={formData.phoneNumber}
+                      name="billingName"
+                      type="text"
                       onChange={handleInputChange}
-                      placeholder="07XXXXXXXX or 2547XXXXXXXX"
-                      className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full p-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                      className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20"
+                      placeholder="John Doe"
                       required
                     />
                   </div>
-
-                  <div className="mb-5">
-                    <label htmlFor="billingAddress" className="block mb-2.5 text-dark">
-                      Address
-                    </label>
-                    <textarea
-                      id="billingAddress"
-                      name="billingAddress"
-                      value={formData.billingAddress}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-dark">Email Address *</label>
+                    <input
+                      name="billingEmail"
+                      type="email"
                       onChange={handleInputChange}
-                      rows={3}
-                      placeholder="Delivery address"
-                      className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full p-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                      className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20"
+                      placeholder="john@example.com"
+                      required
                     />
                   </div>
                 </div>
 
-                {/* Order Notes */}
-                <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 mt-7.5">
-                  <div>
-                    <label htmlFor="orderNotes" className="block mb-2.5 text-dark">
-                      Order Notes (optional)
-                    </label>
-                    <textarea
-                      name="orderNotes"
-                      id="orderNotes"
-                      value={formData.orderNotes}
-                      onChange={handleInputChange}
-                      rows={5}
-                      placeholder="Notes about your order, e.g. special notes for delivery."
-                      className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full p-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                    />
-                  </div>
+                <div className="space-y-2 mb-4">
+                  <label className="text-sm font-medium text-dark">M-Pesa Phone Number *</label>
+                  <input
+                    name="phoneNumber"
+                    type="tel"
+                    onChange={handleInputChange}
+                    className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20"
+                    placeholder="0712345678"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-dark">Delivery Address</label>
+                  <textarea
+                    name="billingAddress"
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20"
+                    placeholder="Street, Apartment, City"
+                  />
                 </div>
               </div>
 
-              {/* Checkout Right - Order Summary */}
-              <div className="max-w-[455px] w-full">
-                {/* Order List */}
-                <div className="bg-white shadow-1 rounded-[10px]">
-                  <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
-                    <h3 className="font-medium text-xl text-dark">Your Orders</h3>
-                  </div>
+              <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-3">
+                <label className="text-sm font-medium text-dark">Order Notes (Optional)</label>
+                <textarea
+                  name="orderNotes"
+                  onChange={handleInputChange}
+                  rows={2}
+                  className="w-full mt-2 p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20"
+                  placeholder="Notes about your delivery..."
+                />
+              </div>
+            </div>
 
-                  <div className="pt-2.5 pb-8.5 px-4 sm:px-8.5">
-                    {/* Header */}
-                    <div className="flex items-center justify-between py-5 border-b border-gray-3">
-                      <div>
-                        <h4 className="font-medium text-dark">Product</h4>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-dark text-right">Subtotal</h4>
-                      </div>
-                    </div>
-
-                    {/* Cart Items */}
-                    {cartItems.map(item => {
-                      const price = item.discountedPrice
-                      
-                      return (
-                        <div key={item.id} className="flex items-center justify-between py-5 border-b border-gray-3">
-                          <div>
-                            <p className="text-dark">{item.product.title}</p>
-                            {item.product.discount && (
-                              <p className="text-sm text-green-600">
-                                {(item.product.discount).toFixed(0)}% off
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-dark text-right">
-                              KSh {price.toFixed(2)} × {item.quantity}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Total */}
-                    <div className="flex items-center justify-between pt-5">
-                      <div>
-                        <p className="font-medium text-lg text-dark">Total</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-lg text-dark text-right">
-                          KSh {totalPrice.toFixed(2)}
+            {/* RIGHT: Order Summary */}
+            <div className="lg:w-1/3">
+              <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-3 sticky top-6">
+                <h3 className="text-xl font-bold text-dark mb-6">Your Order</h3>
+                
+                <div className="max-h-[300px] overflow-y-auto mb-6 space-y-4 pr-2">
+                  {cartItems.map((item: any) => (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <div className="flex-1">
+                        <p className="font-medium text-dark line-clamp-1">{item.product.title}</p>
+                        <p className="text-xs text-body">
+                          Qty: {item.quantity} 
+                          {item.variant && ` | ${item.variant.color || ''} ${item.variant.size || ''}`}
                         </p>
                       </div>
+                      <p className="font-bold text-dark ml-4">
+                        KSh {(item.discountedPrice * item.quantity).toLocaleString()}
+                      </p>
                     </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-gray-3 pt-4 mb-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-bold text-dark">Total</span>
+                    <span className="text-xl font-black text-blue">
+                      KSh {totalPrice.toLocaleString()}
+                    </span>
                   </div>
                 </div>
 
-                {/* Payment Status */}
                 {paymentStatus && (
-                  <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 mt-7.5">
-                    <p className={`text-center ${
-                      paymentStatus.includes('successful') ? 'text-green-600' : 
-                      paymentStatus.includes('failed') || paymentStatus.includes('timeout') ? 'text-red-600' : 
-                      'text-blue-600'
-                    }`}>
+                  <div className="mb-4 p-3 bg-blue/5 border border-blue/10 rounded-lg">
+                    <p className="text-xs text-center text-blue-dark font-medium animate-pulse">
                       {paymentStatus}
                     </p>
                   </div>
                 )}
 
-                {/* Payment Button */}
                 <button
                   type="submit"
-                  disabled={isProcessing || !userId || cartItems.length === 0}
-                  className={`w-full flex justify-center font-medium text-white py-3 px-6 rounded-md ease-out duration-200 mt-7.5 ${
-                    isProcessing || !userId || cartItems.length === 0
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue hover:bg-blue-dark'
-                  }`}
+                  disabled={isProcessing || cartItems.length === 0}
+                  className="w-full flex items-center justify-center gap-2 py-4 bg-blue text-white rounded-xl font-bold hover:bg-blue-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isProcessing 
-                    ? 'Processing...' 
-                    : `Pay KSh ${totalPrice.toFixed(2)} via M-Pesa`
-                  }
+                  {isProcessing ? (
+                    <>
+                      <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    `Pay KSh ${totalPrice.toLocaleString()} via M-Pesa`
+                  )}
                 </button>
 
                 {!userId && (
-                  <p className="text-red-600 text-center mt-2">
-                    Please log in to place an order
+                  <p className="mt-3 text-xs text-center text-red">
+                    Please log in to complete your purchase.
                   </p>
                 )}
               </div>

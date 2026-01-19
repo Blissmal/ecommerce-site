@@ -9,7 +9,8 @@ async function getOrders() {
       user: { select: { name: true, email: true } },
       orderItems: {
         include: {
-          product: { select: { title: true, price: true } }
+          product: { select: { title: true, price: true } },
+          variant: true,
         }
       }
     },
@@ -22,21 +23,25 @@ export default async function OrdersPage() {
 
   // Mapping to your custom color configuration
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING': 
-        return 'bg-yellow-light-2 text-yellow-dark';
-      case 'PROCESSING': 
-        return 'bg-blue-light-5 text-blue-dark';
-      case 'SHIPPED': 
-        return 'bg-orange/10 text-orange-dark'; // Orange doesn't have a light-6, using opacity
-      case 'DELIVERED': 
-        return 'bg-green-light-6 text-green-dark';
-      case 'CANCELLED': 
-        return 'bg-red-light-6 text-red-dark';
-      default: 
-        return 'bg-gray-1 text-gray-6';
-    }
-  };
+  switch (status) {
+    case 'PAID': 
+      return 'bg-green-light-6 text-green-dark';
+    case 'FAILED': 
+      return 'bg-red-light-6 text-red-dark';
+    case 'PENDING': 
+      return 'bg-yellow-light-2 text-yellow-dark';
+    case 'PROCESSING': 
+      return 'bg-blue-light-5 text-blue-dark';
+    case 'SHIPPED': 
+      return 'bg-orange/10 text-orange-dark';
+    case 'DELIVERED': 
+      return 'bg-green-light-6 text-green-dark';
+    case 'CANCELLED': 
+      return 'bg-red-light-6 text-red-dark';
+    default: 
+      return 'bg-gray-1 text-gray-6';
+  }
+};
 
   return (
     <div className="min-h-screen bg-meta p-7.5 font-euclid-circular-a">

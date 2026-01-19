@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 
-export async function createOrderWithItems(userId, orderData, cartItems) {
+export async function createOrderWithItems(userId: string, orderData: any, items: any[]) {
   try {
     const order = await prisma.order.create({
       data: {
@@ -14,19 +14,18 @@ export async function createOrderWithItems(userId, orderData, cartItems) {
         billingAddress: orderData.billingAddress,
         orderNotes: orderData.orderNotes,
         orderItems: {
-          create: cartItems.map(item => ({
+          create: items.map(item => ({
             productId: item.productId,
+            variantId: item.variantId,
             quantity: item.quantity,
-            price: item.price || item.product.price
+            price: item.price,
+            // Capture JSON snapshot of the variant at this exact moment
+            variantSnapshot: item.variantSnapshot 
           }))
         }
       },
       include: {
-        orderItems: {
-          include: {
-            product: true
-          }
-        },
+        orderItems: true,
         user: true
       }
     });
@@ -38,13 +37,13 @@ export async function createOrderWithItems(userId, orderData, cartItems) {
   }
 }
 
-export async function updateOrderPaymentDetails(orderId, paymentData) {
+export async function updateOrderPaymentDetails(orderId: string, paymentData: any) {
   return await prisma.order.update({
     where: { id: orderId },
     data: {
       checkoutRequestId: paymentData.checkoutRequestId,
       merchantRequestId: paymentData.merchantRequestId,
-      status: 'PROCESSING',
+      status: 'PENDING', // Keep as pending until STK is successful
       paymentInitiatedAt: new Date()
     }
   });
@@ -93,7 +92,7 @@ export async function clearUserCart(userId) {
   });
 }
 
-export async function getUserCartItems(userId) {
+export async function getUserCartItems(userId: string) {
   return await prisma.cartItem.findMany({
     where: { userId },
     include: {
