@@ -18,6 +18,13 @@ type Product = {
     name: string;
     slug: string;
   };
+  reviews?: number;
+  discountedPrice?: number;
+  // Legacy fields for backwards compatibility
+  imgs?: {
+    thumbnails?: string[];
+    previews?: string[];
+  };
 };
 
 type Category = {
@@ -379,7 +386,13 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
                   }
                 >
                   {filteredProducts.map((product, key) => (
-                    <ProductItem key={key} item={product} />
+                    <ProductItem 
+                      key={key} 
+                      item={{
+                        ...product,
+                        reviews: product.reviews || 0
+                      }} 
+                    />
                   ))}
                 </div>
               ) : (
