@@ -757,30 +757,56 @@ const handleStorageChange = (storage: string) => {
 
             {/* Specifications Tab */}
             {activeTab === "tabTwo" && (
-              <div className="rounded-xl bg-white shadow-1 p-6">
-                <h3 className="font-medium text-2xl text-dark mb-6">Specifications</h3>
-                {product.specifications && typeof product.specifications === "object" ? (
-                  <div className="space-y-6">
-                    {Object.entries(product.specifications).map(([section, specs]) => (
-                      <div key={section}>
-                        <h4 className="font-semibold text-lg text-dark mb-3">{section}</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {typeof specs === "object" &&
-                            Object.entries(specs as any).map(([key, value]) => (
-                              <div key={key} className="flex justify-between border-b pb-2">
-                                <span className="text-gray-600">{key}:</span>
-                                <span className="font-medium">{String(value)}</span>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No specifications available</p>
-                )}
+  <div className="rounded-2xl bg-white shadow-2 border border-gray-2 overflow-hidden font-euclid-circular-a">
+    {/* Header with Background Tint */}
+    <div className="px-8 py-6 border-b border-gray-2 bg-gray-1/30">
+      <h3 className="text-heading-6 font-bold text-dark">Technical Specifications</h3>
+      <p className="text-custom-xs text-body mt-1">Detailed breakdown of hardware and features.</p>
+    </div>
+
+    <div className="p-8">
+      {product.specifications && typeof product.specifications === "object" ? (
+        <div className="space-y-12">
+          {Object.entries(product.specifications).map(([section, specs]) => (
+            <div key={section} className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
+              
+              {/* Section Branding: Sticky-ish labels on the left for desktop */}
+              <div className="lg:col-span-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1.5 h-6 bg-blue rounded-full" /> {/* Accent bar */}
+                  <h4 className="font-bold text-dark text-lg capitalize">{section}</h4>
+                </div>
               </div>
-            )}
+
+              {/* Specs Grid: 2 columns on medium screens */}
+              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                {typeof specs === "object" &&
+                  Object.entries(specs as any).map(([key, value]) => (
+                    <div 
+                      key={key} 
+                      className="flex flex-col py-3 border-b border-gray-1 group hover:border-blue-light-4 transition-colors"
+                    >
+                      <span className="text-2xs font-bold text-dark-5 uppercase tracking-widest mb-1 group-hover:text-blue transition-colors">
+                        {key}
+                      </span>
+                      <span className="text-custom-sm font-medium text-dark leading-relaxed">
+                        {String(value)}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="py-12 text-center flex flex-col items-center">
+          <div className="w-12 h-12 bg-gray-1 rounded-full flex items-center justify-center text-xl mb-3">📋</div>
+          <p className="text-custom-sm font-bold text-dark-5">No specifications available for this model.</p>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
             {/* Reviews Tab */}
             {activeTab === "tabThree" && (
