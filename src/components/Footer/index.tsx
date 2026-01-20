@@ -69,7 +69,7 @@ const Footer = () => {
             <ul className="space-y-4">
               {[
                 { name: "My Account", href: "/my-account" },
-                { name: "Track Order", href: "/order" },
+                { name: "Track Order", href: "/my-account?tab=orders" },
                 { name: "Shipping Policy", href: "#" },
                 { name: "Refunds & Returns", href: "#" },
                 { name: "FAQs", href: "#" },
