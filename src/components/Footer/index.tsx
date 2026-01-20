@@ -69,10 +69,10 @@ const Footer = () => {
             <ul className="space-y-4">
               {[
                 { name: "My Account", href: "/my-account" },
-                { name: "Track Order", href: "/orders" },
-                { name: "Shipping Policy", href: "/shipping" },
-                { name: "Refunds & Returns", href: "/refunds" },
-                { name: "FAQs", href: "/faq" },
+                { name: "Track Order", href: "/order" },
+                { name: "Shipping Policy", href: "#" },
+                { name: "Refunds & Returns", href: "#" },
+                { name: "FAQs", href: "#" },
               ].map((link) => (
                 <li key={link.name}>
                   <Link href={link.href} className="text-dark-5 hover:text-blue text-sm transition-colors block font-medium">

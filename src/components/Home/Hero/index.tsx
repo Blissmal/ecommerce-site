@@ -37,7 +37,7 @@ const Hero = () => {
             {/* General CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <Link
-                href="/shop"
+                href="/shop-with-sidebar"
                 className="w-full sm:w-auto px-10 py-4 bg-blue text-white rounded-xl font-bold shadow-2 hover:bg-blue-dark transition-all transform hover:-translate-y-1 text-center"
               >
                 Shop All Products
