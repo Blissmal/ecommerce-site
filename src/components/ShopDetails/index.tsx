@@ -1,7 +1,7 @@
 // components/ShopDetails/ShopDetailsClient.tsx
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import Image from "next/image";
 import Newsletter from "../Common/Newsletter";
@@ -10,6 +10,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import { addItemOptimistic, addItemToCartAsync } from "@/redux/features/cart-slice";
 import { toast } from "react-hot-toast";
+import { updateproductDetails } from "@/redux/features/product-details";
 
 // Type definitions
 interface ProductVariant {
@@ -23,6 +24,7 @@ interface ProductVariant {
   images: string[];
   weight?: number | null;
   isDefault: boolean;
+  createdAt?: string | Date; // Add this if the backend sends it
 }
 
 interface Product {
@@ -52,7 +54,7 @@ interface Product {
     id: string;
     rating: number;
     comment: string;
-    createdAt: string;
+    createdAt: string | Date;
     user: {
       name: string | null;
       email: string;
@@ -107,8 +109,36 @@ const handleStorageChange = (storage: string) => {
   setSelectedStorage(storage);
 };
 
-  const dispatch = useDispatch<AppDispatch>();
-  const { openPreviewModal } = usePreviewSlider();
+const dispatch = useDispatch<AppDispatch>();
+const { openPreviewModal } = usePreviewSlider();
+
+// Sync the product prop to the Redux store so the Modal can see it
+
+useEffect(() => {
+  if (product) {
+    const serializableProduct = {
+      ...product,
+      variants: product.variants.map(variant => ({
+        ...variant,
+        // Convert Date objects to strings safely
+        createdAt: variant.createdAt instanceof Date 
+          ? variant.createdAt.toISOString() 
+          : String(variant.createdAt || ""),
+        updatedAt: (variant as any).updatedAt instanceof Date 
+          ? (variant as any).updatedAt.toISOString() 
+          : String((variant as any).updatedAt || "")
+      })),
+      reviews: product.reviews?.map(review => ({
+        ...review,
+        createdAt: review.createdAt instanceof Date 
+          ? review.createdAt.toISOString() 
+          : String(review.createdAt)
+      }))
+    };
+
+    dispatch(updateproductDetails(serializableProduct));
+  }
+}, [product, dispatch]);
   
   // Find default variant once
   const defaultVariant = product.variants.find((v) => v.isDefault) || product.variants[0];

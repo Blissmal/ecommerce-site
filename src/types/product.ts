@@ -17,5 +17,7 @@ export type Product = {
     id: string;
     name: string;
     slug: string;
-  }
+  };
+  createdAt?: string; // Add this as string
+  updatedAt?: string; // Add this as string
 };
