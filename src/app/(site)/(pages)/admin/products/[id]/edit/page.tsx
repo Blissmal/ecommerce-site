@@ -3,6 +3,7 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
+import ImageUpload from "@/components/Common/ImageUpload";
 import { updateProduct, getProductById } from "../../../../../../../../lib/product.action";
 import { addVariant, updateVariant, deleteVariant as deleteVariantAction } from "../../../../../../../../lib/variant.action";
 import { generateVariantSKU } from "../../../../../../../..//lib/utils/variant-utils";
@@ -66,7 +67,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [productSku, setProductSku] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [images, setImages] = useState<string[]>([]);
-  const [imageInput, setImageInput] = useState("");
+  // const [imageInput, setImageInput] = useState("");
   
   // Attributes (Restored)
   const [features, setFeatures] = useState<string[]>([]);
@@ -137,8 +138,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   };
 
   // ==================== HANDLERS ====================
-  const addImage = () => { if (imageInput.trim()) { setImages([...images, imageInput.trim()]); setImageInput(""); } };
-  const removeImage = (index: number) => { setImages(images.filter((_, i) => i !== index)); };
+  // const addImage = () => { if (imageInput.trim()) { setImages([...images, imageInput.trim()]); setImageInput(""); } };
+  // const removeImage = (index: number) => { setImages(images.filter((_, i) => i !== index)); };
   
   const addFeature = () => { if (featureInput.trim()) { setFeatures([...features, featureInput.trim()]); setFeatureInput(""); } };
   const removeFeature = (index: number) => { setFeatures(features.filter((_, i) => i !== index)); };
@@ -428,31 +429,39 @@ if (loading || !product) {
             </section>
 
             {/* Media */}
-            <section className={cardStyle}>
-              <h2 className="text-custom-lg font-bold text-dark mb-4">Media</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className={labelStyle}>Main Image URL</label>
-                  <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className={inputStyle} required />
-                  {imageUrl && <img src={imageUrl} alt="Preview" className="mt-3 w-full h-48 object-cover rounded-lg border border-gray-2" />}
-                </div>
-                <div>
-                  <label className={labelStyle}>Additional Images</label>
-                  <div className="flex gap-2 mb-3">
-                    <input type="url" value={imageInput} onChange={(e) => setImageInput(e.target.value)} className={inputStyle} placeholder="https://..." />
-                    <button type="button" onClick={addImage} className="px-3 bg-gray-2 border border-gray-3 rounded-lg font-bold">+</button>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {images.map((img, idx) => (
-                      <div key={idx} className="relative group aspect-square">
-                        <img src={img} className="w-full h-full object-cover rounded-lg border border-gray-2" />
-                        <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-red text-white w-5 h-5 rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">×</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </section>
+            {/* Media Section in page.tsx */}
+<section className={cardStyle}>
+  <h2 className="text-custom-lg font-bold text-dark mb-4">Media</h2>
+  <div className="space-y-6">
+    
+    {/* Main Product Image (Single) */}
+    <div>
+      <label className={labelStyle}>Main Image <span className="text-red">*</span></label>
+      <ImageUpload
+        id="main-product-image"
+        value={imageUrl ? [imageUrl] : []}
+        onChange={(urls) => setImageUrl(urls[0] || "")}
+        maxImages={1}
+      />
+      <p className="text-[10px] text-dark-5 mt-2 italic">
+        This is the primary image shown in search results and thumbnails.
+      </p>
+    </div>
+
+    <hr className="border-gray-2" />
+
+    {/* Additional Product Images (Gallery) */}
+    <div>
+      <label className={labelStyle}>Gallery Images</label>
+      <ImageUpload
+        id="product-gallery"
+        value={images}
+        onChange={(urls) => setImages(urls)}
+        maxImages={10}
+      />
+    </div>
+  </div>
+</section>
 
             {/* Options Management */}
             <section className={cardStyle}>
@@ -542,6 +551,18 @@ if (loading || !product) {
                     </select>
                   </div>
                 </div>
+                <div className="border-t border-gray-2 pt-6">
+    <label className={labelStyle}>Variant Specific Images</label>
+    <ImageUpload
+      id={`variant-upload-${currentVariant.id || 'new'}`}
+      value={currentVariant.images || []}
+      onChange={(urls) => setCurrentVariant({ ...currentVariant, images: urls })}
+      maxImages={4}
+    />
+    <p className="text-[10px] text-dark-5 mt-2">
+      Upload images specific to this color/size (e.g., the red version of the phone).
+    </p>
+  </div>
                 <div className="flex items-center gap-3 p-4 bg-gray-1 rounded-xl">
                   <input type="checkbox" checked={currentVariant.isDefault} onChange={(e) => setCurrentVariant({ ...currentVariant, isDefault: e.target.checked })} className="w-5 h-5 rounded text-blue" />
                   <span className="font-bold text-dark text-custom-sm">Set as Default Variant</span>
