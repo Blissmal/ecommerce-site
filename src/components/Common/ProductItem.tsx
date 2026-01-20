@@ -263,7 +263,7 @@ const ProductItem: React.FC<ProductItemProps> = ({ item }) => {
         {/* Title */}
         <h3 className="font-medium text-dark text-lg leading-tight hover:text-blue transition-colors">
           <Link href={`/shop-details/${item.id}`} className="line-clamp-2">
-            {displayTitle}
+            {item.title}
           </Link>
         </h3>
 
