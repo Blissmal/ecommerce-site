@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import OrderActions from "./OrderActions";
 import OrderModal from "./OrderModal";
-// Assuming you export your generated types
+import Link from "next/link"; // 1. Import Link
 import { Order, OrderStatus } from "@/generated/prisma"; 
 
 interface SingleOrderProps {
-  orderItem: Order & { title?: string }; // Prisma Order doesn't have 'title' by default, usually derived from items
+  orderItem: Order & { title?: string }; 
   smallView?: boolean;
 }
 
@@ -13,15 +13,21 @@ const SingleOrder = ({ orderItem, smallView }: SingleOrderProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
 
-  const toggleDetails = () => setShowDetails(!showDetails);
-  const toggleEdit = () => setShowEdit(!showEdit);
+  const toggleDetails = (e?: React.MouseEvent) => {
+    e?.stopPropagation(); // Prevent Link navigation when clicking buttons
+    setShowDetails(!showDetails);
+  };
+  
+  const toggleEdit = (e?: React.MouseEvent) => {
+    e?.stopPropagation(); // Prevent Link navigation when clicking buttons
+    setShowEdit(!showEdit);
+  };
 
   const toggleModal = (status: boolean) => {
     setShowDetails(status);
     setShowEdit(status);
   };
 
-  // Helper to map Prisma OrderStatus to Tailwind colors
   const getStatusStyles = (status: OrderStatus) => {
     switch (status) {
       case "DELIVERED":
@@ -39,24 +45,27 @@ const SingleOrder = ({ orderItem, smallView }: SingleOrderProps) => {
     }
   };
 
-  const formattedDate = new Date(orderItem.createdAt).toLocaleDateString("en-US", {
+  const formattedDate = new Date(orderItem.createdAt).toLocaleDateString("en-KE", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 
-  const formattedTotal = new Intl.NumberFormat("en-US", {
+  const formattedTotal = new Intl.NumberFormat("en-KE", {
     style: "currency",
-    currency: "USD", // Change to KES if using M-Pesa predominantly
+    currency: "KES", 
   }).format(orderItem.total);
 
   return (
     <>
       {/* Desktop View */}
       {!smallView && (
-        <div className="items-center justify-between border-t border-gray-3 py-5 px-7.5 hidden md:flex">
+        <Link 
+          href={`/order/${orderItem.id}`}
+          className="items-center justify-between border-t border-gray-3 py-5 px-7.5 hidden md:flex hover:bg-gray-1 transition-colors group cursor-pointer"
+        >
           <div className="min-w-[111px]">
-            <p className="text-custom-sm text-red font-medium">
+            <p className="text-custom-sm text-blue font-medium group-hover:underline">
               #{orderItem.id.slice(-8).toUpperCase()}
             </p>
           </div>
@@ -65,14 +74,13 @@ const SingleOrder = ({ orderItem, smallView }: SingleOrderProps) => {
           </div>
 
           <div className="min-w-[128px]">
-            <p className={`inline-block text-custom-sm py-0.5 px-2.5 rounded-[30px] font-medium uppercase ${getStatusStyles(orderItem.status)}`}>
-              {orderItem.status.toLowerCase()}
+            <p className={`inline-block text-[10px] py-0.5 px-2.5 rounded-[30px] font-bold uppercase border ${getStatusStyles(orderItem.status)}`}>
+              {orderItem.status}
             </p>
           </div>
 
           <div className="min-w-[213px]">
             <p className="text-custom-sm text-dark truncate max-w-[200px]">
-              {/* If Order doesn't have a title, you might show the first OrderItem name or Payment Method */}
               {orderItem.paymentMethod}
             </p>
           </div>
@@ -82,19 +90,23 @@ const SingleOrder = ({ orderItem, smallView }: SingleOrderProps) => {
           </div>
 
           <div className="flex gap-5 items-center">
+            {/* We pass the stopped propagation handlers here */}
             <OrderActions toggleDetails={toggleDetails} toggleEdit={toggleEdit} />
           </div>
-        </div>
+        </Link>
       )}
 
       {/* Mobile View */}
       {smallView && (
-        <div className="block md:hidden border-b border-gray-3 last:border-b-0">
+        <Link 
+          href={`/order/${orderItem.id}`}
+          className="block md:hidden border-b border-gray-3 last:border-b-0 hover:bg-gray-1 active:bg-gray-2 transition-colors"
+        >
           <div className="py-4.5 px-7.5 space-y-2">
             <div className="flex justify-between items-center">
               <p className="text-custom-sm text-dark">
                 <span className="font-bold pr-2">Order:</span> 
-                #{orderItem.id.slice(-8).toUpperCase()}
+                <span className="text-blue">#{orderItem.id.slice(-8).toUpperCase()}</span>
               </p>
               <OrderActions toggleDetails={toggleDetails} toggleEdit={toggleEdit} />
             </div>
@@ -114,18 +126,12 @@ const SingleOrder = ({ orderItem, smallView }: SingleOrderProps) => {
 
             <div>
               <p className="text-custom-sm text-dark">
-                <span className="font-bold pr-2">Method:</span> {orderItem.paymentMethod}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-custom-sm text-dark">
                 <span className="font-bold pr-2">Total:</span> 
                 <span className="text-dark font-bold">{formattedTotal}</span>
               </p>
             </div>
           </div>
-        </div>
+        </Link>
       )}
 
       <OrderModal

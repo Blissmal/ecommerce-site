@@ -1,11 +1,12 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import Image from "next/image";
 import AddressModal from "./AddressModal";
 import Orders from "../Orders";
 import Link from "next/link";
 import { useUser } from "@stackframe/stack";
+import { useSearchParams, useRouter } from "next/navigation"; // 2. Add these
 
 export interface UserProfile {
   id: string;
@@ -23,8 +24,27 @@ interface MyAccountProps {
 }
 
 const MyAccount: React.FC<MyAccountProps> = ({userProfile, app}) => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  // const [activeTab, setActiveTab] = useState("dashboard");
   const [addressModal, setAddressModal] = useState(false);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  const tabFromUrl = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabFromUrl || "dashboard");
+
+  useEffect(() => {
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
+  const handleTabChange = (tabName: string) => {
+    setActiveTab(tabName);
+    router.push(`/my-account?tab=${tabName}`, { scroll: false });
+  };
+
+  
 
   const openAddressModal = () => {
     setAddressModal(true);
@@ -116,7 +136,7 @@ const MyAccount: React.FC<MyAccountProps> = ({userProfile, app}) => {
                 <div className="p-4 sm:p-7.5 xl:p-9">
                   <div className="flex flex-wrap xl:flex-nowrap xl:flex-col gap-4">
                     <button
-                      onClick={() => setActiveTab("dashboard")}
+                      onClick={() => handleTabChange("dashboard")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${
                         activeTab === "dashboard"
                           ? "text-white bg-blue"
@@ -159,7 +179,7 @@ const MyAccount: React.FC<MyAccountProps> = ({userProfile, app}) => {
                       Dashboard
                     </button>
                     <button
-                      onClick={() => setActiveTab("orders")}
+                      onClick={() => handleTabChange("orders")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${
                         activeTab === "orders"
                           ? "text-white bg-blue"
@@ -197,7 +217,7 @@ const MyAccount: React.FC<MyAccountProps> = ({userProfile, app}) => {
                     </button>
 
                     <button
-                      onClick={() => setActiveTab("downloads")}
+                      onClick={() => handleTabChange("downloads")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${
                         activeTab === "downloads"
                           ? "text-white bg-blue"
@@ -225,7 +245,7 @@ const MyAccount: React.FC<MyAccountProps> = ({userProfile, app}) => {
                     </button>
 
                     <button
-                      onClick={() => setActiveTab("addresses")}
+                      onClick={() => handleTabChange("addresses")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${
                         activeTab === "addresses"
                           ? "text-white bg-blue"
@@ -255,7 +275,7 @@ const MyAccount: React.FC<MyAccountProps> = ({userProfile, app}) => {
                     </button>
 
                     <button
-                      onClick={() => setActiveTab("account-details")}
+                      onClick={() => handleTabChange("account-details")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${
                         activeTab === "account-details"
                           ? "text-white bg-blue"
