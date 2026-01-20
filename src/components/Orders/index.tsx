@@ -42,7 +42,7 @@ const Orders = () => {
               </div>
 
               <div className="min-w-[213px]">
-                <p className="text-custom-sm text-dark">Title</p>
+                <p className="text-custom-sm text-dark">Payment Method</p>
               </div>
 
               <div className="min-w-[113px]">

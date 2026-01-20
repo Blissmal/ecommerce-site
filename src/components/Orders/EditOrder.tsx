@@ -1,47 +1,78 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
+import { Order, OrderStatus } from "@/generated/prisma";
 
-const EditOrder = ({ order, toggleModal }: any) => {
-  const [currentStatus, setCurrentStatus] = useState(order?.status);
-  const handleChanege = (e: any) => {
-    setCurrentStatus(e.target.value);
+interface EditOrderProps {
+  order: Order;
+  toggleModal: (status: boolean) => void;
+}
+
+const EditOrder = ({ order, toggleModal }: EditOrderProps) => {
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order?.status);
+  const [loading, setLoading] = useState(false);
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCurrentStatus(e.target.value as OrderStatus);
   };
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
-    if (!currentStatus) {
-      toast.error("Please select a status");
-      return;
+    try {
+      const res = await fetch(`/api/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: currentStatus }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update order");
+
+      toast.success(`Order marked as ${currentStatus.toLowerCase()}`);
+      toggleModal(false);
+      // Optional: Refresh parent data here
+    } catch (error) {
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
     }
-
-    toggleModal(false);
   };
 
   return (
     <div className="w-full px-10">
-      <p className="pb-2 font-medium text-dark">Order Status</p>
-      <div className="w-full">
+      <div className="mb-5 text-center">
+        <h3 className="text-lg font-bold text-dark">Update Order Status</h3>
+        <p className="text-sm">Order #{order.id.slice(-8).toUpperCase()}</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="w-full">
+        <label className="pb-2 block text-custom-sm font-medium text-dark">
+          Select New Status
+        </label>
         <select
-          className="w-full rounded-[10px] border border-gray-3 bg-gray-1 text-dark py-3.5 px-5 text-custom-sm"
-          name="status"
-          id="status"
+          value={currentStatus}
+          onChange={handleStatusChange}
+          className="w-full rounded-[10px] border border-gray-3 bg-gray-1 text-dark py-3.5 px-5 text-custom-sm outline-none focus:border-blue"
           required
-          onChange={handleChanege}
         >
-          <option value="processing">Processing</option>
-          <option value="on-hold">On Hold</option>
-          <option value="delivered">Delivered</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="PENDING">Pending</option>
+          <option value="PROCESSING">Processing</option>
+          <option value="PAID">Paid</option>
+          <option value="SHIPPED">Shipped</option>
+          <option value="DELIVERED">Delivered</option>
+          <option value="CANCELLED">Cancelled</option>
+          <option value="FAILED">Failed</option>
         </select>
 
         <button
-          className="mt-5 w-full rounded-[10px] border border-blue-1 bg-blue-1 text-white py-3.5 px-5 text-custom-sm bg-blue"
-          onClick={handleSubmit}
+          type="submit"
+          disabled={loading}
+          className={`mt-6 w-full rounded-[10px] py-3.5 px-5 text-custom-sm font-medium text-white transition-all 
+            ${loading ? "bg-gray-4" : "bg-blue hover:bg-blue-dark"}`}
         >
-          Save Changes
+          {loading ? "Updating..." : "Update Status"}
         </button>
-      </div>
+      </form>
     </div>
   );
 };

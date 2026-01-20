@@ -1,76 +1,70 @@
 import React from "react";
+import { Order, OrderItem, Product } from "@/generated/prisma";
 
-const OrderDetails = ({ orderItem }: any) => {
+// Defining the expected extended Order type from Prisma
+type OrderWithItems = Order & {
+  orderItems: (OrderItem & {
+    product: Product;
+  })[];
+};
+
+const OrderDetails = ({ orderItem }: { orderItem: OrderWithItems }) => {
   return (
-    <>
-      <div className="items-center justify-between py-4.5 px-7.5 hidden md:flex ">
-        <div className="min-w-[113px]">
-          <p className="text-custom-sm text-dark">Order</p>
-        </div>
-        <div className="min-w-[113px]">
-          <p className="text-custom-sm text-dark">Date</p>
-        </div>
-
-        <div className="min-w-[113px]">
-          <p className="text-custom-sm text-dark">Status</p>
-        </div>
-
-        {/* <div className="min-w-[113px]">
-          <p className="text-custom-sm text-dark">Title</p>
-        </div> */}
-
-        <div className="min-w-[113px]">
-          <p className="text-custom-sm text-dark">Total</p>
-        </div>
-
-        {/* <div className="min-w-[113px]">
-          <p className="text-custom-sm text-dark">Action</p>
-        </div> */}
+    <div className="w-full max-h-[60vh] overflow-y-auto custom-scrollbar px-4 sm:px-7.5">
+      <div className="mb-6 border-b border-gray-3 pb-4">
+        <h3 className="text-lg font-bold text-dark">Order Items</h3>
+        <p className="text-sm text-gray-500">Transaction ID: {orderItem.id}</p>
       </div>
 
-      <div className="items-center justify-between border-t border-gray-3 py-5 px-7.5 hidden md:flex">
-        <div className="min-w-[111px]">
-          <p className="text-custom-sm text-red">
-            #{orderItem.id.slice(-8)}
-          </p>
-        </div>
-        <div className="min-w-[175px]">
-          <p className="text-custom-sm text-dark">
-            {orderItem.createdAt}
-          </p>
-        </div>
+      <div className="flex flex-col gap-4">
+        {orderItem.orderItems?.map((item, index) => {
+          // Parsing the variant snapshot for display
+          const snapshot = item.variantSnapshot as any;
 
-        <div className="min-w-[128px]">
-          <p
-            className={`inline-block text-custom-sm  py-0.5 px-2.5 rounded-[30px] capitalize ${
-              orderItem.status === "DELIVERED"
-                ? "text-green bg-green-light-6"
-                : orderItem.status === "CANCELLED"
-                ? "text-red bg-red-light-6"
-                : orderItem.status === "PROCESSING"
-                ? "text-yellow bg-yellow-light-4"
-                : "Unknown Status"
-            }`}
-          >
-            {orderItem.status}
-          </p>
+          return (
+            <div key={item.id} className="flex items-center gap-4 py-3 border-b border-gray-2 last:border-0">
+              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-gray-3">
+                <img
+                  src={item.product.imageUrl}
+                  alt={item.product.title}
+                  className="h-full w-full object-cover object-center"
+                />
+              </div>
+
+              <div className="flex flex-1 flex-col">
+                <div>
+                  <div className="flex justify-between text-base font-medium text-dark">
+                    <h4 className="text-custom-sm font-bold">{item.product.title}</h4>
+                    <p className="ml-4 text-custom-sm">${item.price.toFixed(2)}</p>
+                  </div>
+                  {snapshot && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      {snapshot.color && `Color: ${snapshot.color}`}
+                      {snapshot.size && ` | Size: ${snapshot.size}`}
+                      {snapshot.storage && ` | Storage: ${snapshot.storage}`}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-1 items-end justify-between text-sm">
+                  <p className="text-gray-500">Qty {item.quantity}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-6 space-y-2 bg-gray-1 p-4 rounded-lg">
+        <div className="flex justify-between text-custom-sm">
+          <span className="text-dark">Payment Method:</span>
+          <span className="font-medium text-dark">{orderItem.paymentMethod}</span>
         </div>
-
-        {/* <div className="min-w-[213px]">
-          <p className="text-custom-sm text-dark">{orderItem.orderTitle}</p>
-        </div> */}
-
-        <div className="min-w-[113px]">
-          <p className="text-custom-sm text-dark">
-            {orderItem.total}
-          </p>
+        <div className="flex justify-between text-base font-bold border-t border-gray-3 pt-2 mt-2">
+          <span className="text-dark">Total:</span>
+          <span className="text-red">${orderItem.total.toFixed(2)}</span>
         </div>
       </div>
-      <div className="px-7.5 w-full">
-        <p className="font-bold">Shipping Address:</p>{" "}
-        <p>{orderItem.billingAddress}</p>
-      </div>
-    </>
+    </div>
   );
 };
 
