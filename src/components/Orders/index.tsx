@@ -49,9 +49,9 @@ const Orders = () => {
                 <p className="text-custom-sm text-dark">Total</p>
               </div>
 
-              <div className="min-w-[113px]">
+              {/* <div className="min-w-[113px]">
                 <p className="text-custom-sm text-dark">Action</p>
-              </div>
+              </div> */}
             </div>
           )}
           {orders?.length > 0 ? (

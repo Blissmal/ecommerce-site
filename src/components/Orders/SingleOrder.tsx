@@ -91,7 +91,7 @@ const SingleOrder = ({ orderItem, smallView }: SingleOrderProps) => {
 
           <div className="flex gap-5 items-center">
             {/* We pass the stopped propagation handlers here */}
-            <OrderActions toggleDetails={toggleDetails} toggleEdit={toggleEdit} />
+            {/* <OrderActions toggleDetails={toggleDetails} toggleEdit={toggleEdit} /> */}
           </div>
         </Link>
       )}
@@ -108,7 +108,7 @@ const SingleOrder = ({ orderItem, smallView }: SingleOrderProps) => {
                 <span className="font-bold pr-2">Order:</span> 
                 <span className="text-blue">#{orderItem.id.slice(-8).toUpperCase()}</span>
               </p>
-              <OrderActions toggleDetails={toggleDetails} toggleEdit={toggleEdit} />
+              {/* <OrderActions toggleDetails={toggleDetails} toggleEdit={toggleEdit} /> */}
             </div>
 
             <div>
@@ -134,12 +134,12 @@ const SingleOrder = ({ orderItem, smallView }: SingleOrderProps) => {
         </Link>
       )}
 
-      <OrderModal
+      {/* <OrderModal
         showDetails={showDetails}
         showEdit={showEdit}
         toggleModal={toggleModal}
         order={orderItem}
-      />
+      /> */}
     </>
   );
 };
