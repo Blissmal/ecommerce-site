@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/stack';
 import { prisma } from '../../../../lib/prisma';
 
-// 🔹 GET — Fetch all cart items for the user (with variants)
 export async function GET(req: NextRequest) {
   try {
     const user = await stackServerApp.getUser();
@@ -12,16 +11,31 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const userIdObj = await prisma.user.findUnique({
+    // 1. Try to find the user in your Prisma DB
+    let dbUser = await prisma.user.findUnique({
       where: { authId: user.id },
       select: { id: true },
     });
 
-    const userId = userIdObj?.id;
-    if (!userId) {
-      return NextResponse.json({ message: 'User not found in DB' }, { status: 404 });
+    // 2. Just-in-Time Sync: If user doesn't exist in Prisma, create them now
+    if (!dbUser) {
+      console.log(`User ${user.id} not found in DB, performing auto-sync...`);
+      dbUser = await prisma.user.create({
+        data: {
+          authId: user.id,
+          email: user.primaryEmail || null,
+          name: user.displayName || user.primaryEmail?.split("@")[0] || "User",
+          verified: user.primaryEmailVerified || false,
+          role: "USER",
+          createdAt: user.signedUpAt,
+        },
+        select: { id: true },
+      });
     }
 
+    const userId = dbUser.id;
+
+    // 3. Fetch cart items using the confirmed userId
     const cartItems = await prisma.cartItem.findMany({
       where: { userId },
       include: {
@@ -31,39 +45,18 @@ export async function GET(req: NextRequest) {
             title: true,
             imageUrl: true,
             discount: true,
-            category: {
-              select: {
-                name: true
-              }
-            }
+            category: { select: { name: true } }
           }
         },
-        variant: {
-          select: {
-            id: true,
-            sku: true,
-            price: true,
-            stock: true,
-            color: true,
-            size: true,
-            storage: true,
-            images: true,
-          }
-        }
+        variant: true, // simplified for brevity, keep your specific selects if preferred
       },
     });
 
-    // Transform cart items to include calculated discountedPrice
+    // 4. Transform data
     const transformedCartItems = cartItems.map((item) => {
-      // Use variant price if available, otherwise product base price
       const basePrice = item.variant?.price || 0;
       const discount = item.product.discount || 0;
-      
-      // Calculate discounted price
-      const hasDiscount = discount > 0;
-      const discountedPrice = hasDiscount
-        ? basePrice * (1 - discount / 100)
-        : basePrice;
+      const discountedPrice = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
 
       return {
         id: item.id,
@@ -73,25 +66,17 @@ export async function GET(req: NextRequest) {
         quantity: item.quantity,
         image: item.variant?.images?.[0] || item.product.imageUrl,
         stock: item.variant?.stock || 0,
-        
-        // Variant details
         variantId: item.variantId,
         color: item.variant?.color,
         size: item.variant?.size,
         storage: item.variant?.storage,
         sku: item.variant?.sku,
-        
         product: {
-          id: item.product.id,
-          discount: item.product.discount,
-          imageUrl: item.product.imageUrl,
-          title: item.product.title,
+          ...item.product,
           category: item.product.category.name,
         },
       };
     });
-
-    console.log("Cart items fetched for user:", userId, transformedCartItems);
 
     return NextResponse.json(transformedCartItems);
   } catch (error) {
