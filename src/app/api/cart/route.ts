@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     // 2. Just-in-Time Sync: If user doesn't exist in Prisma, create them now
     if (!dbUser) {
-      console.log(`User ${user.id} not found in DB, performing auto-sync...`);
+      // console.log(`User ${user.id} not found in DB, performing auto-sync...`);
       dbUser = await prisma.user.create({
         data: {
           authId: user.id,
@@ -322,7 +322,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ message: 'Cart item ID required' }, { status: 400 });
     }
 
-    console.log("Deleting cart item for user:", userId, "cartItemId:", cartItemId);
+    // console.log("Deleting cart item for user:", userId, "cartItemId:", cartItemId);
 
     await prisma.cartItem.delete({
       where: {

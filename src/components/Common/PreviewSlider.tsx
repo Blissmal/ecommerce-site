@@ -13,7 +13,7 @@ const PreviewSliderModal = () => {
 
   // Get product data from Redux
   const product = useAppSelector((state) => state.productDetailsReducer.value);
-  console.log("PreviewSliderModal product:", product);
+  // console.log("PreviewSliderModal product:", product);
 
   const sliderRef = useRef<any>(null);
 

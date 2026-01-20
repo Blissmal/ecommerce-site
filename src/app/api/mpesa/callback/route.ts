@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     const { Body } = body;
     const { stkCallback } = Body;
 
-    console.log('M-Pesa Callback:', JSON.stringify(stkCallback, null, 2));
+    // console.log('M-Pesa Callback:', JSON.stringify(stkCallback, null, 2));
 
     const { CheckoutRequestID, ResultCode, ResultDesc } = stkCallback;
 
@@ -84,12 +84,12 @@ export async function POST(req: NextRequest) {
 
       if (updatedOrder) {
         await clearUserCart(updatedOrder.userId);
-        console.log(`✅ Payment successful for order ${updatedOrder.id}: ${receiptNumber}`);
+        // console.log(`✅ Payment successful for order ${updatedOrder.id}: ${receiptNumber}`);
       }
     } else {
       // Payment failed or cancelled
       await updateOrderPaymentStatus(CheckoutRequestID, 'FAILED');
-      console.log('❌ Payment failed:', ResultDesc);
+      // console.log('❌ Payment failed:', ResultDesc);
     }
 
     // M-Pesa requires 200 with ResultCode 0

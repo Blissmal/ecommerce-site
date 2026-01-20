@@ -345,7 +345,7 @@ class MpesaService {
         TransactionDesc: transactionDesc
       };
 
-      console.log('STK Push Payload:', JSON.stringify(payload, null, 2));
+      // console.log('STK Push Payload:', JSON.stringify(payload, null, 2));
 
       const response = await fetch(`${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`, {
         method: 'POST',
@@ -357,7 +357,7 @@ class MpesaService {
       });
 
       const data = await response.json();
-      console.log('STK Push Response:', JSON.stringify(data, null, 2));
+      // console.log('STK Push Response:', JSON.stringify(data, null, 2));
       
       // Check for specific callback URL error
       if (data.errorCode === '400.002.02' || data.errorMessage?.includes('CallBackURL')) {
@@ -404,7 +404,7 @@ class MpesaService {
       }
 
       const data = await response.json();
-      console.log('Transaction Status Response:', JSON.stringify(data, null, 2));
+      // console.log('Transaction Status Response:', JSON.stringify(data, null, 2));
       
       return data;
     } catch (error) {

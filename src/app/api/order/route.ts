@@ -82,7 +82,7 @@ export async function GET() {
       paymentCompletedAt: order.paymentCompletedAt?.toISOString(),
     }));
 
-    console.log("User Orders:", transformedOrders);
+    // console.log("User Orders:", transformedOrders);
 
     return NextResponse.json(transformedOrders);
   } catch (error) {
@@ -195,7 +195,7 @@ export async function POST(req: NextRequest) {
         price: finalPrice,
       };
     });
-    console.log("Total Amount:", totalAmount);
+    // console.log("Total Amount:", totalAmount);
 
     // Create order using server action
     const { createOrder } = await import("../../../../lib/order.action");
