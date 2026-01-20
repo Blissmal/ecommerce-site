@@ -56,7 +56,8 @@ export async function GET(req: NextRequest) {
     const transformedCartItems = cartItems.map((item) => {
       const basePrice = item.variant?.price || 0;
       const discount = item.product.discount || 0;
-      const discountedPrice = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+      const rawDiscountedPrice = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+      const discountedPrice = Math.round((rawDiscountedPrice + Number.EPSILON) * 100) / 100;
 
       return {
         id: item.id,

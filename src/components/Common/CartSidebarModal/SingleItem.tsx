@@ -33,7 +33,7 @@ const SingleItem = ({ item, removeItemFromCart, removeFromCartAsync, closeCartMo
           <h3 className="font-medium text-dark mb-1 ease-out duration-200 hover:text-blue">
             <a href="#"> {item.product.title} </a>
           </h3>
-          <p className="text-custom-sm">Price: ${item.price}</p>
+          <p className="text-custom-sm">Price: ${item.discountedPrice}</p>
         </div>) : (<p className="text-sm text-gray-400">Loading product...</p>)}
       </div>
 
