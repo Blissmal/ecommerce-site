@@ -158,47 +158,47 @@ const Header = () => {
 
   // Initialization effect with proper cleanup
   useEffect(() => {
-    isMountedRef.current = true;
-    let loadingTimer: NodeJS.Timeout;
+  isMountedRef.current = true;
+  let loadingTimer: NodeJS.Timeout;
 
-    const initData = async () => {
-      try {
-        await Promise.all([
-          fetch("/api/login-check")
-            .then((res) => res.json())
-            .then((data) => {
-              if (isMountedRef.current) {
-                setUser(data.user);
-              }
-            })
-            .catch((err) => console.error("Auth check failed", err)),
-          
-          dispatch(fetchCartItems())
-        ]);
-      } catch (err) {
-        console.error("Initialization error", err);
-      } finally {
-        // Only set loading state if component is still mounted
-        if (isMountedRef.current) {
-          loadingTimer = setTimeout(() => {
-            if (isMountedRef.current) {
-              setIsLoading(false);
-            }
-          }, 300);
-        }
-      }
-    };
-    
-    initData();
+  const initData = async () => {
+    try {
+      // 1. Check Login Status first
+      const authRes = await fetch("/api/login-check");
+      const authData = await authRes.json();
+      
+      if (isMountedRef.current && authData.user) {
+        setUser(authData.user);
 
-    // Cleanup function
-    return () => {
-      isMountedRef.current = false;
-      if (loadingTimer) {
-        clearTimeout(loadingTimer);
+        // 2. ONLY once authed, Sync the User
+        // We wait for this to finish to ensure the DB record exists
+        await fetch("/api/sync-user");
+
+        // 3. ONLY once synced, fetch the Cart
+        // This ensures /api/cart findUnique { authId } won't 404
+        await dispatch(fetchCartItems());
+        
+        // 4. Fetch other dependent data like orders
+        // dispatch(fetchOrders()); 
       }
-    };
-  }, [dispatch, setIsLoading]);
+    } catch (err) {
+      console.error("Initialization error", err);
+    } finally {
+      if (isMountedRef.current) {
+        loadingTimer = setTimeout(() => {
+          if (isMountedRef.current) setIsLoading(false);
+        }, 300);
+      }
+    }
+  };
+
+  initData();
+
+  return () => {
+    isMountedRef.current = false;
+    if (loadingTimer) clearTimeout(loadingTimer);
+  };
+}, [dispatch, setIsLoading]);
 
   // Close mobile menu when clicking outside or on navigation
   useEffect(() => {
