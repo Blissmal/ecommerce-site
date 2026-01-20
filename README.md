@@ -250,148 +250,86 @@ npx prisma migrate reset
 
 ```
 ecommerce-site-main/
-├── lib/                                   # Server actions and utilities
-│   ├── prisma.ts                          # Prisma client
-│   ├── db.ts                              # Database utilities
-│   ├── product.action.ts                  # Product CRUD
-│   ├── variant.action.ts                  # Variant CRUD
-│   ├── order.action.ts                    # Order operations
-│   ├── category.actions.ts                # Category operations
-│   ├── user.actions.ts                    # User operations
-│   ├── serializedProduct.ts               # Product serialization
+├── lib/
 │   └── utils/
-│       └── variant-utils.ts               # SKU generation, formatting
 ├── prisma/
-│   ├── schema.prisma                      # Database schema
-│   └── README.md                          # Prisma documentation
 ├── public/
-│   └── images/                            # Static images
+│   └── images/
 ├── services/
-│   └── mpesaService.ts                    # M-Pesa integration
-├── src/
-│   ├── app/
-│   │   ├── (site)/
-│   │   │   └── (pages)/
-│   │   │       ├── admin/                 # Admin panel
-│   │   │       │   ├── page.tsx           # Dashboard
-│   │   │       │   ├── layout.tsx         # Admin layout
-│   │   │       │   ├── categories/        # Category management
-│   │   │       │   │   └── page.tsx
-│   │   │       │   ├── orders/            # Order management
-│   │   │       │   │   └── page.tsx
-│   │   │       │   ├── products/          # Product management
-│   │   │       │   │   ├── page.tsx       # Products list
-│   │   │       │   │   ├── add/           # Add product
-│   │   │       │   │   │   └── page.tsx
-│   │   │       │   │   └── [id]/          # Edit product
-│   │   │       │   │       └── edit/
-│   │   │       │   │           └── page.tsx
-│   │   │       │   └── users/             # User management
-│   │   │       │       └── page.tsx
-│   │   │       ├── cart/                  # Shopping cart
-│   │   │       │   └── page.tsx
-│   │   │       ├── checkout/              # Checkout page
-│   │   │       │   └── page.tsx
-│   │   │       ├── contact/               # Contact page
-│   │   │       │   └── page.tsx
-│   │   │       ├── error/                 # Error page
-│   │   │       │   └── page.tsx
-│   │   │       ├── handler/               # Stack Auth handler
-│   │   │       │   └── [...stack]/
-│   │   │       │       └── page.tsx
-│   │   │       ├── mail-success/          # Email success page
-│   │   │       │   └── page.tsx
-│   │   │       ├── my-account/            # User account
-│   │   │       │   └── page.tsx
-│   │   │       ├── order-success/         # Order confirmation
-│   │   │       │   └── page.tsx
-│   │   │       ├── shop-details/          # Product details
-│   │   │       │   └── [id]/
-│   │   │       │       └── page.tsx
-│   │   │       ├── shop-with-sidebar/     # Shop page
-│   │   │       │   └── page.tsx
-│   │   │       ├── signin/                # Sign in
-│   │   │       │   └── page.tsx
-│   │   │       ├── signup/                # Sign up
-│   │   │       │   └── page.tsx
-│   │   │       └── wishlist/              # Wishlist
-│   │   │           └── page.tsx
-│   │   ├── api/                           # API routes
-│   │   │   ├── cart/                      # Cart API
-│   │   │   │   └── route.ts
-│   │   │   ├── get-billing-data/          # Get billing info
-│   │   │   │   └── route.ts
-│   │   │   ├── login-check/               # Check login status
-│   │   │   │   └── route.ts
-│   │   │   ├── mpesa/                     # M-Pesa payment
-│   │   │   │   ├── callback/              # Payment callback
-│   │   │   │   │   └── route.ts
-│   │   │   │   ├── check-status/          # Check payment status
-│   │   │   │   │   └── route.ts
-│   │   │   │   └── initiate-payment/      # Initiate payment
-│   │   │   │       └── route.ts
-│   │   │   ├── order/                     # Order API
-│   │   │   │   ├── route.ts
-│   │   │   │   └── [orderId]/             # Single order
-│   │   │   │       └── route.ts
-│   │   │   ├── sync-user/                 # Sync user data
-│   │   │   │   └── route.ts
-│   │   │   ├── update-billing/            # Update billing info
-│   │   │   │   └── route.ts
-│   │   │   └── upload-image/              # Image upload
-│   │   │       └── route.ts
-│   │   ├── context/                       # React contexts
-│   │   ├── css/                           # Global styles
-│   │   ├── fonts/                         # Custom fonts
-│   │   ├── layout.tsx                     # Root layout
-│   │   ├── page.tsx                       # Homepage
-│   │   └── globals.css                    # Global CSS
-│   ├── components/                        # React components
-│   │   ├── Auth/                          # Authentication
-│   │   │   ├── Signin/
-│   │   │   └── Signup/
-│   │   ├── Cart/                          # Cart components
-│   │   │   ├── index.tsx                  # Cart page
-│   │   │   └── SingleItem.tsx             # Cart item with variants
-│   │   ├── Checkout/                      # Checkout components
-│   │   ├── Common/                        # Shared components
-│   │   │   └── CartSidebarModal/
-│   │   ├── Contact/                       # Contact form
-│   │   ├── Error/                         # Error pages
-│   │   ├── Footer/                        # Footer
-│   │   ├── Header/                        # Header/navigation
-│   │   ├── Home/                          # Homepage components
-│   │   │   ├── Categories/
-│   │   │   ├── Countdown/
-│   │   │   ├── Hero/
-│   │   │   ├── NewArrivals/
-│   │   │   ├── PromoBanner/
-│   │   │   └── Testimonials/
-│   │   ├── MailSuccess/                   # Email success
-│   │   ├── MyAccount/                     # Account components
-│   │   ├── Orders/                        # Order components
-│   │   ├── Shop/                          # Shop components
-│   │   ├── ShopDetails/                   # Product details
-│   │   │   └── RecentlyViewd/
-│   │   ├── ShopWithoutSidebar/            # Shop without filters
-│   │   ├── ShopWithSidebar/               # Shop with filters
-│   │   └── Wishlist/                      # Wishlist components
-│   ├── redux/                             # Redux store
-│   │   ├── store.ts                       # Store config
-│   │   └── features/
-│   │       └── cart-slice.ts              # Cart state with variants
-│   └── types/                             # TypeScript types
-├── .env.local                             # Environment variables (not in repo)
-├── .env.example                           # Example environment file
-├── .gitignore
-├── components.json                        # shadcn/ui config
-├── eslint.config.mjs
-├── next.config.js
-├── package.json
-├── postcss.config.js
-├── tailwind.config.ts
-├── tsconfig.json
-└── README.md
+└── src/
+    ├── app/
+    │   ├── (site)/
+    │   │   └── (pages)/
+    │   │       ├── admin/
+    │   │       │   ├── categories/
+    │   │       │   ├── orders/
+    │   │       │   ├── products/
+    │   │       │   │   ├── add/
+    │   │       │   │   └── [id]/
+    │   │       │   │       └── edit/
+    │   │       │   └── users/
+    │   │       ├── cart/
+    │   │       ├── checkout/
+    │   │       ├── contact/
+    │   │       ├── error/
+    │   │       ├── handler/
+    │   │       │   └── [...stack]/
+    │   │       ├── mail-success/
+    │   │       ├── my-account/
+    │   │       ├── order-success/
+    │   │       ├── shop-details/
+    │   │       │   └── [id]/
+    │   │       ├── shop-with-sidebar/
+    │   │       ├── signin/
+    │   │       ├── signup/
+    │   │       └── wishlist/
+    │   ├── api/
+    │   │   ├── cart/
+    │   │   ├── get-billing-data/
+    │   │   ├── login-check/
+    │   │   ├── mpesa/
+    │   │   │   ├── callback/
+    │   │   │   ├── check-status/
+    │   │   │   └── initiate-payment/
+    │   │   ├── order/
+    │   │   │   └── [orderId]/
+    │   │   ├── sync-user/
+    │   │   ├── update-billing/
+    │   │   └── upload-image/
+    │   ├── context/
+    │   ├── css/
+    │   └── fonts/
+    ├── components/
+    │   ├── Auth/
+    │   │   ├── Signin/
+    │   │   └── Signup/
+    │   ├── Cart/
+    │   ├── Checkout/
+    │   ├── Common/
+    │   │   └── CartSidebarModal/
+    │   ├── Contact/
+    │   ├── Error/
+    │   ├── Footer/
+    │   ├── Header/
+    │   ├── Home/
+    │   │   ├── Categories/
+    │   │   ├── Countdown/
+    │   │   ├── Hero/
+    │   │   ├── NewArrivals/
+    │   │   ├── PromoBanner/
+    │   │   └── Testimonials/
+    │   ├── MailSuccess/
+    │   ├── MyAccount/
+    │   ├── Orders/
+    │   ├── Shop/
+    │   ├── ShopDetails/
+    │   │   └── RecentlyViewd/
+    │   ├── ShopWithoutSidebar/
+    │   ├── ShopWithSidebar/
+    │   └── Wishlist/
+    ├── redux/
+    │   └── features/
+    └── types/
 ```
 
 ### **Key Directories**
