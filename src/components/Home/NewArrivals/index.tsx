@@ -1,6 +1,7 @@
 import React from 'react'
 import NewArrivalClient from './NewArrivalClient'
 import { prisma } from '../../../../lib/prisma';
+import CounDown from '../Countdown';
 
 const NewArrival = async () => {
   const products = await prisma.product.findMany({
@@ -60,8 +61,23 @@ const NewArrival = async () => {
     }
   });
 
+  const featuredProduct = mappedProducts
+    .filter(p => p.discountExpiry && p.discount > 0)
+    .sort((a, b) => (b.discount || 0) - (a.discount || 0))[0] || null;
+
   return (
-    <NewArrivalClient products={mappedProducts} />
+    <>
+      <NewArrivalClient products={mappedProducts} />
+      {featuredProduct && (
+        <CounDown 
+          deadline={featuredProduct.discountExpiry} 
+          title={featuredProduct.title}
+          id={featuredProduct.id}
+          imageUrl={featuredProduct.imageUrl}
+          discount={featuredProduct.discount}
+        />
+      )}
+    </>
   )
 }
 
