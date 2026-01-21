@@ -16,8 +16,6 @@ import EmptyCart from "./EmptyCart";
 const CartSidebarModal = () => {
   const { isCartModalOpen, closeCartModal } = useCartModalContext();
   const cartItems = useAppSelector((state) => state.cartReducer.items);
-  // console.log("Cart Items in Sidebar Modal:", cartItems);
-
   const totalPrice = useSelector(selectTotalPrice);
 
   useEffect(() => {
@@ -38,14 +36,26 @@ const CartSidebarModal = () => {
   }, [isCartModalOpen, closeCartModal]);
 
   return (
-    <div
-      className={`fixed top-0 left-0 z-99999 overflow-y-auto no-scrollbar w-full h-screen bg-dark/70 backdrop-blur-md ease-linear duration-300 ${
-        isCartModalOpen ? "translate-x-0" : "translate-x-full"
-      }`}
-    >
-      <div className="flex items-center justify-end">
-        <div className="w-full max-w-[500px] shadow-1 bg-white px-4 sm:px-7.5 lg:px-11 relative modal-content">
-          <div className="sticky top-0 bg-white flex items-center justify-start space-x-2 pb-7 pt-4 sm:pt-7.5 lg:pt-11 border-b border-gray-3 mb-7.5">
+    <>
+      {/* 1. Backdrop Overlay - Fades and Blurs in place */}
+      <div
+        className={`fixed inset-0 z-[9999] bg-dark/40 transition-all duration-500 ease-in-out ${
+          isCartModalOpen 
+            ? "opacity-100 backdrop-blur-sm pointer-events-auto" 
+            : "opacity-0 backdrop-blur-0 pointer-events-none"
+        }`}
+        onClick={closeCartModal} // Clicking the background closes the modal
+      />
+
+      {/* 2. Sidebar Drawer - Slides independently */}
+      <div
+        className={`fixed top-0 right-0 z-[10000] h-screen w-full max-w-[500px] bg-white shadow-2xl transition-transform duration-500 ease-out transform ${
+          isCartModalOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex flex-col h-full modal-content">
+          {/* Header - Sticky */}
+          <div className="sticky top-0 bg-white flex items-center justify-start space-x-2 pb-7 pt-4 sm:pt-7.5 lg:pt-11 border-b border-gray-3 px-4 sm:px-7.5 lg:px-11">
             <button
               onClick={() => closeCartModal()}
               aria-label="button for close modal"
@@ -74,12 +84,11 @@ const CartSidebarModal = () => {
             <h2 className="font-medium text-dark text-lg sm:text-2xl">
               Cart View
             </h2>
-            
           </div>
 
-          <div className="h-[66vh] overflow-y-auto no-scrollbar">
+          {/* Cart Items - Scrollable */}
+          <div className="flex-grow overflow-y-auto px-4 sm:px-7.5 lg:px-11 py-6 no-scrollbar">
             <div className="flex flex-col gap-6">
-              {/* <!-- cart item --> */}
               {cartItems.length > 0 ? (
                 cartItems.map((item, key) => (
                   <SingleItem
@@ -96,10 +105,10 @@ const CartSidebarModal = () => {
             </div>
           </div>
 
-          <div className="border-y border-gray-3 bg-white pt-5 pb-4 sm:pb-7.5 lg:pb-11 mt-7.5 sticky bottom-0">
+          {/* Footer - Sticky Bottom */}
+          <div className="border-y border-gray-3 bg-white pt-5 pb-4 sm:pb-7.5 lg:pb-11 px-4 sm:px-7.5 lg:px-11 sticky bottom-0 shadow-[0_-10px_40px_rgba(0,0,0,0.04)]">
             <div className="flex items-center justify-between gap-5 mb-6">
               <p className="font-medium text-xl text-dark">Subtotal:</p>
-
               <p className="font-medium text-xl text-dark">${totalPrice}</p>
             </div>
 
@@ -123,7 +132,7 @@ const CartSidebarModal = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
