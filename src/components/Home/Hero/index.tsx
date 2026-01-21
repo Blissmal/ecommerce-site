@@ -15,7 +15,7 @@ const Hero = () => {
           {/* 1. Content Side */}
           <div className="order-2 lg:order-1 text-center lg:text-left space-y-8">
             <div className="flex flex-wrap justify-center lg:justify-start gap-3">
-              <span className="px-3 py-1 rounded-full bg-gray-1 border border-gray-2 text-dark-5 text-[10px] font-bold uppercase tracking-widest">
+              <span className="px-3 py-1 rounded-full bg-gray-1 border border-gray-2 text-body text-[10px] font-bold uppercase tracking-widest">
                 #1 Marketplace
               </span>
               <span className="px-3 py-1 rounded-full bg-blue-light-6 border border-blue-light-4 text-blue-dark text-[10px] font-bold uppercase tracking-widest">
@@ -28,7 +28,7 @@ const Hero = () => {
               <span className="text-blue">Every Lifestyle.</span>
             </h1>
 
-            <p className="text-body text-dark-5 max-w-xl mx-auto lg:mx-0 text-lg leading-relaxed">
+            <p className="text-body max-w-xl mx-auto lg:mx-0 text-lg leading-relaxed">
               From the latest <span className="text-dark font-semibold">Mobiles</span> to premium 
               <span className="text-dark font-semibold"> Footwear</span>. Explore 
               curated collections designed for your daily needs.
@@ -83,11 +83,11 @@ const Hero = () => {
               
               {/* Floats for visual interest - reinforces category diversity */}
               <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-3 hidden sm:block animate-bounce-slow">
-                <p className="text-[10px] font-bold text-dark-5 uppercase">Next Gen</p>
+                <p className="text-[10px] font-bold text-body uppercase">Next Gen</p>
                 <p className="text-sm font-bold text-dark">Mobile Tech</p>
               </div>
               <div className="absolute -top-6 -right-6 bg-white p-4 rounded-2xl shadow-3 hidden sm:block animate-bounce-slow delay-700">
-                <p className="text-[10px] font-bold text-dark-5 uppercase">Premium</p>
+                <p className="text-[10px] font-bold text-body uppercase">Premium</p>
                 <p className="text-sm font-bold text-dark">Footwear</p>
               </div>
             </div>

@@ -68,7 +68,7 @@ const NewArrivalClient = ({ products }: { products: Product[] }) => {
             <h2 className="text-heading-3 md:text-heading-2 font-bold text-dark mb-3 tracking-tight leading-none">
               New Arrivals
             </h2>
-            <p className="text-body text-dark-5 max-w-md text-base md:text-lg">
+            <p className="text-body max-w-md text-base md:text-lg">
               The freshest drops, hand-picked for the modern lifestyle.
             </p>
           </div>
@@ -97,7 +97,7 @@ const NewArrivalClient = ({ products }: { products: Product[] }) => {
                     "whitespace-nowrap flex items-center gap-2.5 px-6 py-3 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all duration-300 border",
                     isActive
                       ? "bg-dark text-white border-dark shadow-xl -translate-y-0.5"
-                      : "bg-white border-gray-2 text-dark-5 hover:border-dark hover:text-dark"
+                      : "bg-white border-gray-2 text-body hover:border-dark hover:text-dark"
                   )}
                 >
                   {category}
