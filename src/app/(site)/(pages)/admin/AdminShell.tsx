@@ -69,7 +69,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         <div className="absolute bottom-6 left-4 right-4 p-4 bg-dark-3 rounded-2xl border border-white/5">
           <p className="text-2xs font-bold text-dark-5 uppercase tracking-widest mb-1">Support</p>
           <p className="text-custom-xs text-body-dark">Need help with the panel?</p>
-          <button className="mt-3 text-custom-xs font-bold text-blue hover:text-white transition-colors">
+          <button className="mt-3 text-custom-xs font-bold text-blue-light-2 hover:text-white transition-colors">
             Contact Developer
           </button>
         </div>
