@@ -55,7 +55,7 @@ const SingleItem: React.FC<CartItemProps> = ({ item }) => {
     : 0;
 
   // Fallback slug logic
-  const productUrl = `/product/${item.product?.slug || item.product?.id || "#"}`;
+  const productUrl = `/shop-details/${item.product?.slug || item.product?.id || "#"}`;
 
   const handleQuantityChange = async (newQuantity: number) => {
     if (newQuantity < 1 || isUpdating) return;
@@ -75,6 +75,8 @@ const SingleItem: React.FC<CartItemProps> = ({ item }) => {
       await dispatch(
         updateCartItemAsync({ cartItemId: item.id, quantity: newQuantity })
       ).unwrap();
+      setIsUpdating(false);
+      toast.success("Quantity updated");
     } catch (error) {
       console.error("Error updating quantity:", error);
       toast.error("Failed to update quantity");
@@ -92,6 +94,7 @@ const SingleItem: React.FC<CartItemProps> = ({ item }) => {
 
     try {
       await dispatch(removeCartItemAsync(item.id)).unwrap();
+      setIsUpdating(false);
       toast.success("Item removed from cart");
     } catch (error) {
       console.error("Error removing item:", error);
