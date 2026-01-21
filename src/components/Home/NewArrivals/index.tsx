@@ -2,8 +2,6 @@ import React from 'react'
 import NewArrivalClient from './NewArrivalClient'
 import { prisma } from '../../../../lib/prisma';
 
-export const revalidate = 30; // Revalidate this page every 30 seconds
-
 const NewArrival = async () => {
   const products = await prisma.product.findMany({
     where: {
