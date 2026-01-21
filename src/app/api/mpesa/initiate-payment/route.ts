@@ -20,10 +20,26 @@ export async function POST(req) {
 
     // 3. Process items and calculate total
     let totalAmount = 0;
+    const now = new Date();
+
     const itemsWithSnapshots = cartItems.map(item => {
-      const basePrice = item.variant?.price || item.product.price;
-      const discountAmount = item.product.discount ? (basePrice * item.product.discount) / 100 : 0;
-      const finalPrice = basePrice - discountAmount;
+      // Get base price from variant or product
+      const basePrice = item.variant?.price || item.product.price || 0;
+
+      // 🔹 MATCH CART API LOGIC: Check expiry
+      const isExpired = 
+        item.product.discountExpiry && 
+        new Date(item.product.discountExpiry) < now;
+      
+      const activeDiscount = isExpired ? 0 : (item.product.discount || 0);
+
+      // Calculate final discounted price
+      const rawDiscountedPrice = activeDiscount > 0 
+        ? basePrice * (1 - activeDiscount / 100) 
+        : basePrice;
+      
+      // Round to 2 decimal places to match Cart API
+      const finalPrice = Math.round((rawDiscountedPrice + Number.EPSILON) * 100) / 100;
       
       totalAmount += (finalPrice * item.quantity);
 
