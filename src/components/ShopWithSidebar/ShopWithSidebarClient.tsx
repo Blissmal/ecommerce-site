@@ -15,75 +15,41 @@ import Breadcrumb from "../Common/Breadcrumb";
 import ProductItem from "../Common/ProductItem";
 
 type Product = {
-
   id: string;
-
   title: string;
-
   description: string;
-
   price: number;
-
   discount: number | null;
-
+  discountExpiry: string | null;
   stock: number;
-
   imageUrl: string;
-
   images: string[];
-
   category: {
-
     id: string;
-
     name: string;
-
     slug: string;
-
   };
-
   reviews?: number;
-
   discountedPrice?: number;
-
   // Legacy fields for backwards compatibility
-
   imgs?: {
-
     thumbnails?: string[];
-
     previews?: string[];
-
   };
-
 };
-
-
 
 type Category = {
-
   id: string;
-
   name: string;
-
   slug: string;
-
   _count: {
-
     products: number;
-
   };
-
 };
 
-
-
 interface Props {
-
   products: Product[];
-
   categories: Category[];
-
 }
 
 const ShopWithSidebarClient = ({ products, categories }: Props) => {
@@ -97,6 +63,17 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
   const [sortBy, setSortBy] = useState("latest");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // NEW: Track current time for discount expiry checks
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // NEW: Update current time every minute to check discount expiries
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
   const maxPriceLimit = useMemo(() => Math.max(...products.map((p) => p.price), 1000), [products]);
 
   useEffect(() => {
@@ -105,31 +82,63 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // NEW: Process products to handle expired discounts
+  const processedProducts = useMemo(() => {
+    return products.map((product) => {
+      const hasExpired = product.discountExpiry && new Date(product.discountExpiry) < currentTime;
+      const activeDiscount = hasExpired ? 0 : product.discount;
+      
+      return {
+        ...product,
+        discount: activeDiscount,
+        discountedPrice: activeDiscount 
+          ? product.price - (product.price * activeDiscount) / 100
+          : product.price,
+      };
+    });
+  }, [products, currentTime]);
+
   const filteredProducts = useMemo(() => {
-    let filtered = [...products];
+    let filtered = [...processedProducts];
+    
     if (searchTerm) {
       filtered = filtered.filter((p) =>
         p.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+    
     if (selectedCategories.length > 0) {
       filtered = filtered.filter((p) => selectedCategories.includes(p.category.id));
     }
-    filtered = filtered.filter((p) => p.price >= priceRange.min && p.price <= priceRange.max);
+    
+    // NEW: Filter by discounted price if discount exists, otherwise regular price
+    filtered = filtered.filter((p) => {
+      const effectivePrice = p.discountedPrice || p.price;
+      return effectivePrice >= priceRange.min && effectivePrice <= priceRange.max;
+    });
 
     return filtered.sort((a, b) => {
-      if (sortBy === "price-low") return a.price - b.price;
-      if (sortBy === "price-high") return b.price - a.price;
+      const priceA = a.discountedPrice || a.price;
+      const priceB = b.discountedPrice || b.price;
+      
+      if (sortBy === "price-low") return priceA - priceB;
+      if (sortBy === "price-high") return priceB - priceA;
       if (sortBy === "name-asc") return a.title.localeCompare(b.title);
+      if (sortBy === "discount") return (b.discount || 0) - (a.discount || 0);
       return 0;
     });
-  }, [products, searchTerm, selectedCategories, priceRange, sortBy]);
+  }, [processedProducts, searchTerm, selectedCategories, priceRange, sortBy]);
 
   const clearFilters = () => {
     setSelectedCategories([]);
     setPriceRange({ min: 0, max: maxPriceLimit });
     setSearchTerm("");
   };
+
+  // NEW: Count products with active discounts
+  const discountedCount = useMemo(() => {
+    return processedProducts.filter(p => p.discount && p.discount > 0).length;
+  }, [processedProducts]);
 
   return (
     <div className="bg-white font-euclid-circular-a">
@@ -148,6 +157,19 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
                 <h2 className="text-custom-1 font-bold text-dark">Filters</h2>
                 <button onClick={() => setIsSidebarOpen(false)}><X className="text-dark" /></button>
               </div>
+
+              {/* NEW: Discount Badge */}
+              {discountedCount > 0 && (
+                <div className="p-4 bg-gradient-to-br from-blue-light-6 to-blue-light-5 rounded-xl border border-blue-light-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xl">🔥</span>
+                    <h3 className="text-custom-sm font-bold text-dark">Active Deals</h3>
+                  </div>
+                  <p className="text-2xs text-dark-5">
+                    <span className="font-bold text-blue">{discountedCount}</span> products on sale
+                  </p>
+                </div>
+              )}
 
               {/* Search */}
               <div className="space-y-4">
@@ -260,6 +282,7 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
                     <option value="latest">Newest First</option>
                     <option value="price-low">Price: Low to High</option>
                     <option value="price-high">Price: High to Low</option>
+                    <option value="discount">Best Discount</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-5 pointer-events-none" size={16} />
                 </div>
@@ -269,8 +292,6 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
             {/* Product Grid */}
             <AnimatePresence mode="wait">
               <motion.div
-                // CHANGE: The key now includes selectedCategories and searchTerm
-                // This forces Framer Motion to re-animate the container whenever filters change
                 key={`${productStyle}-${selectedCategories.join(",")}-${searchTerm}`}
                 initial="hidden"
                 animate="show"
@@ -280,7 +301,7 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
                   show: {
                     opacity: 1,
                     transition: {
-                      staggerChildren: 0.05 // This creates the "one-by-one" pop-in effect
+                      staggerChildren: 0.05
                     }
                   },
                   exit: { opacity: 0, transition: { duration: 0.2 } }
@@ -304,7 +325,6 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
                     </motion.div>
                   ))
                 ) : (
-                  // Empty State Animation
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
