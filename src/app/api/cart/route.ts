@@ -1,14 +1,15 @@
 // app/api/cart/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { stackServerApp } from '@/stack';
-import { prisma } from '../../../../lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { stackServerApp } from "@/stack";
+import { prisma } from "../../../../lib/prisma";
 
+// 🔹 GET — Fetch cart items
 export async function GET(req: NextRequest) {
   try {
     const user = await stackServerApp.getUser();
 
     if (!user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // 1. Try to find the user in your Prisma DB
@@ -45,25 +46,37 @@ export async function GET(req: NextRequest) {
             title: true,
             imageUrl: true,
             discount: true,
-            category: { select: { name: true } }
-          }
+            discountExpiry: true,
+            category: { select: { name: true } },
+          },
         },
         variant: true, // simplified for brevity, keep your specific selects if preferred
       },
     });
 
+    const now = new Date();
+
     // 4. Transform data
     const transformedCartItems = cartItems.map((item) => {
       const basePrice = item.variant?.price || 0;
-      const discount = item.product.discount || 0;
-      const rawDiscountedPrice = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
-      const discountedPrice = Math.round((rawDiscountedPrice + Number.EPSILON) * 100) / 100;
+
+      // 3. Apply the Virtual Override Logic
+      const isExpired =
+        item.product.discountExpiry &&
+        new Date(item.product.discountExpiry) < now;
+      const activeDiscount = isExpired ? 0 : item.product.discount || 0;
+
+      const rawDiscountedPrice =
+        activeDiscount > 0 ? basePrice * (1 - activeDiscount / 100) : basePrice;
+      const discountedPrice =
+        Math.round((rawDiscountedPrice + Number.EPSILON) * 100) / 100;
 
       return {
         id: item.id,
         title: item.product.title,
         price: basePrice,
         discountedPrice: discountedPrice,
+        activeDiscount: activeDiscount,
         quantity: item.quantity,
         image: item.variant?.images?.[0] || item.product.imageUrl,
         stock: item.variant?.stock || 0,
@@ -81,8 +94,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(transformedCartItems);
   } catch (error) {
-    console.error('[CART_GET_ERROR]', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    console.error("[CART_GET_ERROR]", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -92,7 +108,7 @@ export async function POST(req: NextRequest) {
     const user = await stackServerApp.getUser();
 
     if (!user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userIdObj = await prisma.user.findUnique({
@@ -102,24 +118,27 @@ export async function POST(req: NextRequest) {
     const userId = userIdObj?.id;
 
     if (!userId) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
     const body = await req.json();
     const { productId, variantId, quantity } = body;
 
     if (!productId || !quantity || quantity < 1) {
-      return NextResponse.json({ message: 'Invalid input' }, { status: 400 });
+      return NextResponse.json({ message: "Invalid input" }, { status: 400 });
     }
 
     // Verify product exists
-    const product = await prisma.product.findUnique({ 
+    const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, discount: true, imageUrl: true, title: true }
+      select: { id: true, discount: true, imageUrl: true, title: true },
     });
-    
+
     if (!product) {
-      return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+      return NextResponse.json(
+        { message: "Product not found" },
+        { status: 404 },
+      );
     }
 
     // Verify variant exists if variantId provided
@@ -136,18 +155,24 @@ export async function POST(req: NextRequest) {
           size: true,
           storage: true,
           images: true,
-        }
+        },
       });
-      
+
       if (!variant) {
-        return NextResponse.json({ message: 'Variant not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: "Variant not found" },
+          { status: 404 },
+        );
       }
-      
+
       // Check stock
       if (variant.stock < quantity) {
-        return NextResponse.json({ 
-          message: `Only ${variant.stock} items in stock` 
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            message: `Only ${variant.stock} items in stock`,
+          },
+          { status: 400 },
+        );
       }
     }
 
@@ -178,7 +203,8 @@ export async function POST(req: NextRequest) {
             title: true,
             imageUrl: true,
             discount: true,
-          }
+            discountExpiry: true,
+          },
         },
         variant: {
           select: {
@@ -190,18 +216,21 @@ export async function POST(req: NextRequest) {
             size: true,
             storage: true,
             images: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     // Calculate discounted price for response
+    const now = new Date();
+    const isExpired =
+      cartItem.product.discountExpiry &&
+      new Date(cartItem.product.discountExpiry) < now;
+    const activeDiscount = isExpired ? 0 : cartItem.product.discount || 0;
+
     const basePrice = cartItem.variant?.price || 0;
-    const discount = cartItem.product.discount || 0;
-    const hasDiscount = discount > 0;
-    const discountedPrice = hasDiscount
-      ? basePrice * (1 - discount / 100)
-      : basePrice;
+    const discountedPrice =
+      activeDiscount > 0 ? basePrice * (1 - activeDiscount / 100) : basePrice;
 
     // Return structured response with discountedPrice
     const response = {
@@ -213,27 +242,30 @@ export async function POST(req: NextRequest) {
         quantity: cartItem.quantity,
         image: cartItem.variant?.images?.[0] || cartItem.product.imageUrl,
         stock: cartItem.variant?.stock || 0,
-        
+
         // Variant details
         variantId: cartItem.variantId,
         color: cartItem.variant?.color,
         size: cartItem.variant?.size,
         storage: cartItem.variant?.storage,
         sku: cartItem.variant?.sku,
-        
+
         product: {
           id: cartItem.product.id,
           discount: cartItem.product.discount,
           imageUrl: cartItem.product.imageUrl,
           title: cartItem.product.title,
         },
-      }
+      },
     };
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('[CART_POST_ERROR]', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    console.error("[CART_POST_ERROR]", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -243,7 +275,7 @@ export async function PUT(req: NextRequest) {
     const user = await stackServerApp.getUser();
 
     if (!user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userIdObj = await prisma.user.findUnique({
@@ -253,14 +285,14 @@ export async function PUT(req: NextRequest) {
     const userId = userIdObj?.id;
 
     if (!userId) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
     const body = await req.json();
     const { cartItemId, quantity } = body;
 
     if (!cartItemId || !quantity || quantity < 1) {
-      return NextResponse.json({ message: 'Invalid input' }, { status: 400 });
+      return NextResponse.json({ message: "Invalid input" }, { status: 400 });
     }
 
     // Get cart item with variant to check stock
@@ -268,20 +300,26 @@ export async function PUT(req: NextRequest) {
       where: { id: cartItemId },
       include: {
         variant: {
-          select: { stock: true }
-        }
-      }
+          select: { stock: true },
+        },
+      },
     });
 
     if (!cartItem) {
-      return NextResponse.json({ message: 'Cart item not found' }, { status: 404 });
+      return NextResponse.json(
+        { message: "Cart item not found" },
+        { status: 404 },
+      );
     }
 
     // Check stock if variant exists
     if (cartItem.variant && cartItem.variant.stock < quantity) {
-      return NextResponse.json({ 
-        message: `Only ${cartItem.variant.stock} items in stock` 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          message: `Only ${cartItem.variant.stock} items in stock`,
+        },
+        { status: 400 },
+      );
     }
 
     const updated = await prisma.cartItem.update({
@@ -291,8 +329,11 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, updated });
   } catch (error) {
-    console.error('[CART_PUT_ERROR]', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    console.error("[CART_PUT_ERROR]", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -302,7 +343,7 @@ export async function DELETE(req: NextRequest) {
     const user = await stackServerApp.getUser();
 
     if (!user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userIdObj = await prisma.user.findUnique({
@@ -312,14 +353,17 @@ export async function DELETE(req: NextRequest) {
     const userId = userIdObj?.id;
 
     if (!userId) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
     const body = await req.json();
     const { cartItemId } = body;
 
     if (!cartItemId) {
-      return NextResponse.json({ message: 'Cart item ID required' }, { status: 400 });
+      return NextResponse.json(
+        { message: "Cart item ID required" },
+        { status: 400 },
+      );
     }
 
     // console.log("Deleting cart item for user:", userId, "cartItemId:", cartItemId);
@@ -333,8 +377,11 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[CART_DELETE_ERROR]', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    console.error("[CART_DELETE_ERROR]", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -344,7 +391,7 @@ export async function PATCH(req: NextRequest) {
     const user = await stackServerApp.getUser();
 
     if (!user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userIdObj = await prisma.user.findUnique({
@@ -354,7 +401,7 @@ export async function PATCH(req: NextRequest) {
     const userId = userIdObj?.id;
 
     if (!userId) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
     await prisma.cartItem.deleteMany({
@@ -363,7 +410,10 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[CART_CLEAR_ERROR]', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    console.error("[CART_CLEAR_ERROR]", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

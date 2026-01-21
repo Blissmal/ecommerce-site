@@ -169,8 +169,8 @@ export async function updateProduct(productId: string, data: {
         shortDescription: data.shortDescription,
         imageUrl: data.imageUrl,
         images: data.images || [],
-        discount: data.discount || null,
-        discountExpiry: data.discountExpiry || null,
+        discount: data.discount ?? null,
+        discountExpiry: data.discountExpiry ?? null,
         categoryId: data.categoryId,
         
         // Product details
