@@ -1,8 +1,9 @@
 // components/Cart/SingleItem.tsx
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import {
@@ -22,49 +23,70 @@ interface CartItemProps {
     quantity: number;
     image: string;
     stock: number;
-    
+    activeDiscount?: number;
     // Variant details
     variantId?: string | null;
     color?: string | null;
     size?: string | null;
     storage?: string | null;
     sku?: string | null;
-    
     product?: {
       id: string;
       discount: number | null;
+      discountExpiry?: string | null;
       imageUrl: string;
       title: string;
       category?: string;
+      slug?: string;
     };
   };
 }
 
 const SingleItem: React.FC<CartItemProps> = ({ item }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const originalDiscount = item.product?.discount || 0;
+  const isExpired = originalDiscount > 0 && item.activeDiscount === 0;
+  const hasActiveDiscount = (item.activeDiscount || 0) > 0;
+  const hasDiscount = item.product?.discount && item.product.discount > 0;
+  const savings = hasDiscount
+    ? (item.price - item.discountedPrice) * item.quantity
+    : 0;
+
+  // Fallback slug logic
+  const productUrl = `/product/${item.product?.slug || item.product?.id || "#"}`;
 
   const handleQuantityChange = async (newQuantity: number) => {
-    if (newQuantity < 1) return;
+    if (newQuantity < 1 || isUpdating) return;
     if (newQuantity > item.stock) {
       toast.error(`Only ${item.stock} items available`);
       return;
     }
 
+    setIsUpdating(true);
+    
     // Optimistic update
-    dispatch(updateQuantityOptimistic({ cartItemId: item.id, quantity: newQuantity }));
+    dispatch(
+      updateQuantityOptimistic({ cartItemId: item.id, quantity: newQuantity })
+    );
 
     try {
       await dispatch(
         updateCartItemAsync({ cartItemId: item.id, quantity: newQuantity })
       ).unwrap();
-      toast.success("Quantity updated");
     } catch (error) {
       console.error("Error updating quantity:", error);
       toast.error("Failed to update quantity");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const handleRemove = async () => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+
     // Optimistic update
     dispatch(removeItemOptimistic(item.id));
 
@@ -74,82 +96,86 @@ const SingleItem: React.FC<CartItemProps> = ({ item }) => {
     } catch (error) {
       console.error("Error removing item:", error);
       toast.error("Failed to remove item");
+      setIsUpdating(false);
     }
   };
 
-  const hasDiscount = item.product?.discount && item.product.discount > 0;
-  const savings = hasDiscount ? (item.price - item.discountedPrice) * item.quantity : 0;
-
   // Build variant description
-  const variantDescription = [
-    item.color,
-    item.size,
-    item.storage,
-  ]
+  const variantDescription = [item.color, item.size, item.storage]
     .filter(Boolean)
     .join(" • ");
 
   return (
-    <div className="flex items-center border-t border-gray-3 py-5 px-7.5">
-      {/* Product Info Section */}
+    <div className={`flex items-center border-t border-gray-3 py-5 px-7.5 transition-opacity duration-200 ${isUpdating ? 'opacity-60 pointer-events-none' : ''}`}>
+      
+      {/* --- Section 1: Product Info (Fixed Width) --- */}
       <div className="min-w-[400px]">
-        <div className="flex items-center justify-between gap-5">
-          <div className="w-full flex items-center gap-5.5">
-            {/* Product Image */}
-            <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5 relative">
-              <Image 
-                width={80} 
-                height={70} 
-                src={item.image || item.product?.imageUrl} 
-                alt={item.title}
-                className="object-contain"
-                onError={(e) => {
-                  e.currentTarget.src = "/images/products/product-1-bg-1.png";
-                }}
-              />
-              {hasDiscount && (
-                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded">
-                  -{item.product?.discount}%
-                </div>
-              )}
-            </div>
+        <div className="flex items-center gap-5.5">
+          {/* Product Image */}
+          <Link
+            href={productUrl}
+            className="group relative flex h-17.5 w-full max-w-[80px] shrink-0 items-center justify-center overflow-hidden rounded-[5px] border border-gray-3 bg-gray-2"
+          >
+            <Image
+              width={80}
+              height={70}
+              src={item.image || item.product?.imageUrl || "/images/placeholder.png"}
+              alt={item.title}
+              className="h-full w-full object-contain p-1 transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                e.currentTarget.src = "/images/products/product-1-bg-1.png";
+              }}
+            />
+            {hasActiveDiscount ? (
+              <div className="absolute -right-1 -top-1 rounded bg-blue px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                -{item.activeDiscount}%
+              </div>
+            ) : isExpired ? (
+              <div className="absolute -right-1 -top-1 rounded bg-gray-5 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white shadow-sm">
+                Ended
+              </div>
+            ) : null}
+          </Link>
 
-            {/* Product Details */}
-            <div>
-              <h3 className="text-dark font-medium ease-out duration-200 hover:text-blue mb-1">
-                {item.title}
-              </h3>
-              
-              {/* Variant Details */}
-              {variantDescription && (
-                <p className="text-sm text-gray-600 mb-1">{variantDescription}</p>
-              )}
-              
-              {/* SKU */}
-              {item.sku && (
-                <p className="text-xs text-gray-500 mb-1">SKU: {item.sku}</p>
-              )}
-              
-              {/* Category */}
-              {item.product?.category && (
-                <p className="text-xs text-gray-500">
-                  <span className="text-blue">{item.product.category}</span>
-                </p>
-              )}
-              
-              {/* Stock Status */}
+          {/* Product Details */}
+          <div className="flex flex-col">
+            <Link
+              href={productUrl}
+              className="mb-1 font-medium text-dark duration-200 ease-out hover:text-blue line-clamp-1"
+            >
+              {item.title}
+            </Link>
+
+            {/* Variant Details */}
+            {variantDescription && (
+              <p className="mb-1 text-sm text-body">{variantDescription}</p>
+            )}
+
+            {/* Category */}
+            {item.product?.category && (
+              <p className="text-xs text-body">
+                Category:{" "}
+                <span className="text-dark hover:text-blue transition-colors cursor-pointer">
+                  {item.product.category}
+                </span>
+              </p>
+            )}
+
+            {/* Stock Status */}
+            <div className="mt-1">
               {item.stock > 0 ? (
-                <span className="text-xs text-green-600 font-medium">
-                  {item.stock <= 5 ? `Only ${item.stock} left!` : "In Stock"}
+                <span
+                  className={`text-xs font-medium ${
+                    item.stock <= 5 ? "text-orange" : "text-green"
+                  }`}
+                >
+                  {item.stock <= 5
+                    ? `Only ${item.stock} left!`
+                    : "In Stock"}
                 </span>
               ) : (
-                <span className="text-xs text-red-600 font-medium">Out of Stock</span>
-              )}
-
-              {/* Discount Badge */}
-              {hasDiscount && (
-                <span className="text-xs text-green block mt-1">
-                  {item.product?.discount}% off applied
+                <span className="text-xs font-medium text-red">
+                  Out of Stock
                 </span>
               )}
             </div>
@@ -157,85 +183,106 @@ const SingleItem: React.FC<CartItemProps> = ({ item }) => {
         </div>
       </div>
 
-      {/* Unit Price */}
+      {/* --- Section 2: Unit Price (Fixed Width) --- */}
       <div className="min-w-[180px]">
-        {hasDiscount ? (
+        {hasActiveDiscount ? (
           <div className="flex flex-col">
-            <p className="text-dark font-medium">${item.discountedPrice.toFixed(2)}</p>
-            <p className="text-sm text-gray-500 line-through">
+            <p className="font-medium text-dark">
+              ${item.discountedPrice.toFixed(2)}
+            </p>
+            <p className="text-sm text-body line-through decoration-red/40">
               ${item.price.toFixed(2)}
             </p>
           </div>
         ) : (
-          <p className="text-dark font-medium">${item.discountedPrice.toFixed(2)}</p>
+          <div className="flex flex-col">
+            <p className="font-medium text-dark">${item.price.toFixed(2)}</p>
+            {isExpired && (
+              <p className="text-[10px] italic text-gray-5">
+                Reverted to original
+              </p>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Quantity Controls */}
+      {/* --- Section 3: Quantity Controls (Fixed Width) --- */}
       <div className="min-w-[275px]">
-        <div className="w-max flex items-center rounded-md border border-gray-3">
+        <div className="flex w-max items-center rounded-md border border-gray-3 bg-white shadow-sm">
           <button
             onClick={() => handleQuantityChange(item.quantity - 1)}
-            disabled={item.quantity <= 1}
-            aria-label="button for remove product"
-            className="flex items-center justify-center w-11.5 h-11.5 ease-out duration-200 hover:text-blue disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={item.quantity <= 1 || isUpdating}
+            aria-label="Decrease quantity"
+            className="flex h-11.5 w-11.5 items-center justify-center text-body duration-200 ease-out hover:bg-gray-2 hover:text-dark disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <svg 
-              className="fill-current" 
-              width="20" 
-              height="20" 
-              viewBox="0 0 20 20" 
+            <svg
+              className="fill-current"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
               fill="none"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M3.33301 10.0001C3.33301 9.53984 3.7061 9.16675 4.16634 9.16675H15.833C16.2932 9.16675 16.6663 9.53984 16.6663 10.0001C16.6663 10.4603 16.2932 10.8334 15.833 10.8334H4.16634C3.7061 10.8334 3.33301 10.4603 3.33301 10.0001Z" />
+              <path
+                d="M2.5 8H13.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
 
-          <span className="flex items-center justify-center w-16 h-11.5 border-x border-gray-4 font-medium">
+          <span className="flex h-11.5 w-16 items-center justify-center border-x border-gray-3 font-medium text-dark select-none">
             {item.quantity}
           </span>
 
           <button
             onClick={() => handleQuantityChange(item.quantity + 1)}
-            disabled={item.quantity >= item.stock}
-            aria-label="button for add product"
-            className="flex items-center justify-center w-11.5 h-11.5 ease-out duration-200 hover:text-blue disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={item.quantity >= item.stock || isUpdating}
+            aria-label="Increase quantity"
+            className="flex h-11.5 w-11.5 items-center justify-center text-body duration-200 ease-out hover:bg-gray-2 hover:text-dark disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <svg 
-              className="fill-current" 
-              width="20" 
-              height="20" 
-              viewBox="0 0 20 20" 
+            <svg
+              className="fill-current"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
               fill="none"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M3.33301 10C3.33301 9.5398 3.7061 9.16671 4.16634 9.16671H15.833C16.2932 9.16671 16.6663 9.5398 16.6663 10C16.6663 10.4603 16.2932 10.8334 15.833 10.8334H4.16634C3.7061 10.8334 3.33301 10.4603 3.33301 10Z" />
-              <path d="M9.99967 16.6667C9.53944 16.6667 9.16634 16.2936 9.16634 15.8334L9.16634 4.16671C9.16634 3.70647 9.53944 3.33337 9.99967 3.33337C10.4599 3.33337 10.833 3.70647 10.833 4.16671L10.833 15.8334C10.833 16.2936 10.4599 16.6667 9.99967 16.6667Z" />
+              <path
+                d="M8 2.5V13.5M2.5 8H13.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
       </div>
 
-      {/* Total Price */}
+      {/* --- Section 4: Total Price (Fixed Width) --- */}
       <div className="min-w-[200px]">
-        <p className="text-dark font-medium text-lg">
+        <p className="text-custom-lg font-bold text-dark">
           ${(item.discountedPrice * item.quantity).toFixed(2)}
         </p>
         {hasDiscount && (
-          <p className="text-xs text-green-600 font-medium mt-1">
+          <p className="mt-1 text-xs font-medium text-green">
             Save ${savings.toFixed(2)}
           </p>
         )}
-        <p className="text-xs text-gray-500 mt-1">
-          ${item.discountedPrice.toFixed(2)} each
+        <p className="mt-1 text-xs text-body">
+          ${item.discountedPrice.toFixed(2)} / each
         </p>
       </div>
 
-      {/* Remove Button */}
-      <div className="min-w-[50px] flex justify-end">
+      {/* --- Section 5: Remove Button (Fixed Width) --- */}
+      <div className="flex min-w-[50px] justify-end">
         <button
           onClick={handleRemove}
-          aria-label="remove product"
-          className="flex items-center justify-center rounded-lg max-w-[38px] w-full h-9.5 bg-gray-2 border border-gray-3 text-dark ease-out duration-200 hover:bg-red-light-6 hover:border-red-light-4 hover:text-red"
+          disabled={isUpdating}
+          aria-label="Remove product"
+          className="flex h-9.5 w-full max-w-[38px] items-center justify-center rounded-lg border border-gray-3 bg-white text-body duration-200 ease-out hover:border-red-light-4 hover:bg-red-light-6 hover:text-red disabled:opacity-50 transition-colors"
         >
           <svg
             className="fill-current"
