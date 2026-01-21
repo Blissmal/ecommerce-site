@@ -50,8 +50,7 @@ export async function POST(req: NextRequest) {
 
     if (!order) {
       return NextResponse.json(
-        { message: 'Order not found' },
-        { status: 404 }
+        { status: 'PENDING', message: 'Order not found' },
       );
     }
 

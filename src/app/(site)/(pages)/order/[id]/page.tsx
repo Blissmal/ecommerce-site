@@ -16,6 +16,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "../../../../../../lib/prisma";
+import PaymentAction from "@/components/Checkout/PaymentAction";
 
 const getStatusConfig = (status: string) => {
   const configs: Record<string, { icon: any; color: string; label: string; step: number }> = {
@@ -45,6 +46,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const config = getStatusConfig(order.status);
   const isTerminal = ["CANCELLED", "FAILED", "DELIVERED"].includes(order.status);
   const isCancelled = ["CANCELLED", "FAILED"].includes(order.status);
+  const needsPayment = ["PENDING", "FAILED"].includes(order.status);
 
   return (
     <div className="min-h-screen bg-white font-euclid-circular-a pt-20 pb-24">
@@ -160,6 +162,14 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
 
           {/* RIGHT COLUMN: Sidebar Logic */}
           <div className="space-y-6">
+
+            {needsPayment && (
+              <PaymentAction 
+                orderId={order.id} 
+                amount={order.total}
+                initialPhoneNumber={order.phoneNumber} 
+              />
+            )}
             
             {/* Shipping Logic: Only show Address if NOT cancelled */}
             {!isCancelled ? (
