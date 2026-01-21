@@ -77,7 +77,7 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
     if (!product.discountExpiry || activeDiscount === 0) return;
 
     const expiryTime = new Date(product.discountExpiry).getTime();
-    
+
     const checkExpiry = () => {
       const now = Date.now();
       if (now >= expiryTime) {
@@ -86,10 +86,10 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
           icon: '⏰',
           duration: 5000
         });
-        
+
         // Refresh server data to ensure the 'Add to Cart' logic 
         // matches the new non-discounted price
-        router.refresh(); 
+        router.refresh();
         return true;
       }
       return false;
@@ -108,77 +108,77 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
   }, [product.discountExpiry, activeDiscount, router]);
 
   // Replace your existing useMemos for availableColors, availableSizes, availableStorage
-const allAvailableColors = product.availableColors;
-const allAvailableSizes = product.availableSizes;
-const allAvailableStorage = product.availableStorage;
+  const allAvailableColors = product.availableColors;
+  const allAvailableSizes = product.availableSizes;
+  const allAvailableStorage = product.availableStorage;
 
-// Helper to check if a specific attribute choice is valid with CURRENT other selections
-const isOptionCompatible = (type: 'color' | 'size' | 'storage', value: string) => {
-  return product.variants.some((v) => {
-    if (type === 'color') {
-      return v.color === value && 
-             (!selectedSize || v.size === selectedSize) && 
-             (!selectedStorage || v.storage === selectedStorage);
+  // Helper to check if a specific attribute choice is valid with CURRENT other selections
+  const isOptionCompatible = (type: 'color' | 'size' | 'storage', value: string) => {
+    return product.variants.some((v) => {
+      if (type === 'color') {
+        return v.color === value &&
+          (!selectedSize || v.size === selectedSize) &&
+          (!selectedStorage || v.storage === selectedStorage);
+      }
+      if (type === 'size') {
+        return v.size === value &&
+          (!selectedColor || v.color === selectedColor) &&
+          (!selectedStorage || v.storage === selectedStorage);
+      }
+      if (type === 'storage') {
+        return v.storage === value &&
+          (!selectedColor || v.color === selectedColor) &&
+          (!selectedSize || v.size === selectedSize);
+      }
+      return false;
+    });
+  };
+
+  // Replace handleColorChange, handleSizeChange, handleStorageChange
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color);
+    setPreviewImg(0);
+  };
+
+  const handleSizeChange = (size: string) => {
+    setSelectedSize(size);
+  };
+
+  const handleStorageChange = (storage: string) => {
+    setSelectedStorage(storage);
+  };
+
+  const dispatch = useDispatch<AppDispatch>();
+  const { openPreviewModal } = usePreviewSlider();
+
+  // Sync the product prop to the Redux store so the Modal can see it
+
+  useEffect(() => {
+    if (product) {
+      const serializableProduct = {
+        ...product,
+        variants: product.variants.map(variant => ({
+          ...variant,
+          // Convert Date objects to strings safely
+          createdAt: variant.createdAt instanceof Date
+            ? variant.createdAt.toISOString()
+            : String(variant.createdAt || ""),
+          updatedAt: (variant as any).updatedAt instanceof Date
+            ? (variant as any).updatedAt.toISOString()
+            : String((variant as any).updatedAt || "")
+        })),
+        reviews: product.reviews?.map(review => ({
+          ...review,
+          createdAt: review.createdAt instanceof Date
+            ? review.createdAt.toISOString()
+            : String(review.createdAt)
+        }))
+      };
+
+      dispatch(updateproductDetails(serializableProduct));
     }
-    if (type === 'size') {
-      return v.size === value && 
-             (!selectedColor || v.color === selectedColor) && 
-             (!selectedStorage || v.storage === selectedStorage);
-    }
-    if (type === 'storage') {
-      return v.storage === value && 
-             (!selectedColor || v.color === selectedColor) && 
-             (!selectedSize || v.size === selectedSize);
-    }
-    return false;
-  });
-};
+  }, [product, dispatch]);
 
-// Replace handleColorChange, handleSizeChange, handleStorageChange
-const handleColorChange = (color: string) => {
-  setSelectedColor(color);
-  setPreviewImg(0);
-};
-
-const handleSizeChange = (size: string) => {
-  setSelectedSize(size);
-};
-
-const handleStorageChange = (storage: string) => {
-  setSelectedStorage(storage);
-};
-
-const dispatch = useDispatch<AppDispatch>();
-const { openPreviewModal } = usePreviewSlider();
-
-// Sync the product prop to the Redux store so the Modal can see it
-
-useEffect(() => {
-  if (product) {
-    const serializableProduct = {
-      ...product,
-      variants: product.variants.map(variant => ({
-        ...variant,
-        // Convert Date objects to strings safely
-        createdAt: variant.createdAt instanceof Date 
-          ? variant.createdAt.toISOString() 
-          : String(variant.createdAt || ""),
-        updatedAt: (variant as any).updatedAt instanceof Date 
-          ? (variant as any).updatedAt.toISOString() 
-          : String((variant as any).updatedAt || "")
-      })),
-      reviews: product.reviews?.map(review => ({
-        ...review,
-        createdAt: review.createdAt instanceof Date 
-          ? review.createdAt.toISOString() 
-          : String(review.createdAt)
-      }))
-    };
-
-    dispatch(updateproductDetails(serializableProduct));
-  }
-}, [product, dispatch]);
-  
   // Find default variant once
   const defaultVariant = product.variants.find((v) => v.isDefault) || product.variants[0];
 
@@ -186,7 +186,7 @@ useEffect(() => {
   const [previewImg, setPreviewImg] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("tabOne");
-  
+
   // Initialize state directly with default variant
   const [selectedColor, setSelectedColor] = useState<string | null>(defaultVariant?.color || null);
   const [selectedSize, setSelectedSize] = useState<string | null>(defaultVariant?.size || null);
@@ -212,22 +212,22 @@ useEffect(() => {
   // Get all images (variant images or product images)
   const allImages = useMemo(() => {
     const imgs: string[] = [];
-    
+
     // Add variant-specific images first
     if (selectedVariant?.images && selectedVariant.images.length > 0) {
       imgs.push(...selectedVariant.images);
     }
-    
+
     // Add main product image
     if (product.imageUrl) {
       imgs.push(product.imageUrl);
     }
-    
+
     // Add additional product images
     if (product.images && product.images.length > 0) {
       imgs.push(...product.images);
     }
-    
+
     // Remove duplicates
     return Array.from(new Set(imgs));
   }, [product.imageUrl, product.images, selectedVariant]);
@@ -242,7 +242,7 @@ useEffect(() => {
 
   // Get available options based on current selection
   const availableColors = useMemo(() => {
-    return product.availableColors.filter(color => 
+    return product.availableColors.filter(color =>
       product.variants.some(v => v.color === color)
     );
   }, [product.availableColors, product.variants]);
@@ -273,14 +273,14 @@ useEffect(() => {
   // const handleColorChange = (color: string) => {
   //   setSelectedColor(color);
   //   setPreviewImg(0);
-    
+
   //   // Check if current size/storage combination exists with new color
   //   const variantExists = product.variants.some(v => 
   //     v.color === color && 
   //     v.size === selectedSize && 
   //     v.storage === selectedStorage
   //   );
-    
+
   //   if (!variantExists) {
   //     // Find the first available variant with this color
   //     const fallbackVariant = product.variants.find(v => v.color === color);
@@ -293,14 +293,14 @@ useEffect(() => {
 
   // const handleSizeChange = (size: string) => {
   //   setSelectedSize(size);
-    
+
   //   // Check if current color/storage combination exists with new size
   //   const variantExists = product.variants.some(v => 
   //     v.color === selectedColor && 
   //     v.size === size && 
   //     v.storage === selectedStorage
   //   );
-    
+
   //   if (!variantExists) {
   //     // Find the first available variant with this size and current color
   //     const fallbackVariant = product.variants.find(v => 
@@ -319,14 +319,14 @@ useEffect(() => {
 
   // const handleStorageChange = (storage: string) => {
   //   setSelectedStorage(storage);
-    
+
   //   // Check if current color/size combination exists with new storage
   //   const variantExists = product.variants.some(v => 
   //     v.color === selectedColor && 
   //     v.size === selectedSize && 
   //     v.storage === storage
   //   );
-    
+
   //   if (!variantExists) {
   //     // Find the first available variant with this storage and current color/size
   //     const fallbackVariant = product.variants.find(v => 
@@ -463,9 +463,8 @@ useEffect(() => {
                     <button
                       onClick={() => setPreviewImg(key)}
                       key={key}
-                      className={`flex items-center justify-center w-15 sm:w-25 h-15 sm:h-25 overflow-hidden rounded-lg bg-gray-2 shadow-1 ease-out duration-200 border-2 hover:border-blue ${
-                        key === previewImg ? "border-blue" : "border-transparent"
-                      }`}
+                      className={`flex items-center justify-center w-15 sm:w-25 h-15 sm:h-25 overflow-hidden rounded-lg bg-gray-2 shadow-1 ease-out duration-200 border-2 hover:border-blue ${key === previewImg ? "border-blue" : "border-transparent"
+                        }`}
                     >
                       <Image
                         width={100}
@@ -491,10 +490,10 @@ useEffect(() => {
                 </h2>
 
                 {hasDiscount && (
-        <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
-          {activeDiscount}% OFF
-        </div>
-      )}
+                  <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
+                    {activeDiscount}% OFF
+                  </div>
+                )}
               </div>
 
               {/* Brand/Model */}
@@ -564,87 +563,105 @@ useEffect(() => {
               <div className="space-y-4 mb-6">
                 {/* Color Selector */}
                 {/* Example for Color Selector - Repeat this pattern for Size and Storage */}
-<div>
-  <label className="block text-sm font-medium mb-2">Color</label>
-  <div className="flex flex-wrap gap-2">
-    {allAvailableColors.map((color) => {
-      const compatible = isOptionCompatible('color', color);
-      return (
-        <button
-          key={color}
-          onClick={() => handleColorChange(color)}
-          className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${
-            selectedColor === color
-              ? "border-blue bg-blue text-white"
-              : "border-gray-300 hover:border-blue"
-          } ${!compatible ? "opacity-30 cursor-not-allowed bg-gray-100" : ""}`}
-        >
-          {color}
-        </button>
-      );
-    })}
-  </div>
-</div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Color</label>
+                  <div className="flex flex-wrap gap-2">
+                    {allAvailableColors.map((color) => {
+                      const compatible = isOptionCompatible('color', color);
+                      return (
+                        <button
+                          key={color}
+                          onClick={() => handleColorChange(color)}
+                          className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${selectedColor === color
+                              ? "border-blue bg-blue text-white"
+                              : "border-gray-300 hover:border-blue"
+                            } ${!compatible ? "opacity-30 cursor-not-allowed bg-gray-100" : ""}`}
+                        >
+                          {color}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 {/* Size Selector */}
                 {/* Example for Color Selector - Repeat this pattern for Size and Storage */}
-<div>
-  <label className="block text-sm font-medium mb-2">Size</label>
-  <div className="flex flex-wrap gap-2">
-    {allAvailableSizes.map((size) => {
-      const compatible = isOptionCompatible('size', size);
-      return (
-        <button
-          key={size}
-          onClick={() => handleSizeChange(size)}
-          className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${
-            selectedSize === size
-              ? "border-blue bg-blue text-white"
-              : "border-gray-300 hover:border-blue"
-          } ${!compatible ? "opacity-30 cursor-not-allowed bg-gray-100" : ""}`}
-        >
-          {size}
-        </button>
-      );
-    })}
-  </div>
-</div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Size</label>
+                  <div className="flex flex-wrap gap-2">
+                    {allAvailableSizes.map((size) => {
+                      const compatible = isOptionCompatible('size', size);
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => handleSizeChange(size)}
+                          className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${selectedSize === size
+                              ? "border-blue bg-blue text-white"
+                              : "border-gray-300 hover:border-blue"
+                            } ${!compatible ? "opacity-30 cursor-not-allowed bg-gray-100" : ""}`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 {/* Storage Selector */}
                 {/* Example for Color Selector - Repeat this pattern for Size and Storage */}
-<div>
-  <label className="block text-sm font-medium mb-2">Storage</label>
-  <div className="flex flex-wrap gap-2">
-    {allAvailableStorage.map((storage) => {
-      const compatible = isOptionCompatible('storage', storage);
-      return (
-        <button
-          key={storage}
-          onClick={() => handleStorageChange(storage)}
-          className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${
-            selectedStorage === storage
-              ? "border-blue bg-blue text-white"
-              : "border-gray-300 hover:border-blue"
-          } ${!compatible ? "opacity-30 cursor-not-allowed bg-gray-100" : ""}`}
-        >
-          {storage}
-        </button>
-      );
-    })}
-  </div>
-</div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Storage</label>
+                  <div className="flex flex-wrap gap-2">
+                    {allAvailableStorage.map((storage) => {
+                      const compatible = isOptionCompatible('storage', storage);
+                      return (
+                        <button
+                          key={storage}
+                          onClick={() => handleStorageChange(storage)}
+                          className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${selectedStorage === storage
+                              ? "border-blue bg-blue text-white"
+                              : "border-gray-300 hover:border-blue"
+                            } ${!compatible ? "opacity-30 cursor-not-allowed bg-gray-100" : ""}`}
+                        >
+                          {storage}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 {/* Selected Variant Info */}
+                {/* Selected Variant Confirmation - IMPROVED VERSION */}
                 {selectedVariant && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">SKU:</span> {selectedVariant.sku}
-                    </p>
-                    {selectedVariant.weight && (
-                      <p className="text-sm text-gray-700">
-                        <span className="font-medium">Weight:</span> {selectedVariant.weight}kg
-                      </p>
-                    )}
+                  <div className="bg-green-light-6 border border-green-light-4 rounded-lg p-4 flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-dark mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <p className="font-bold text-green-dark text-sm mb-1">✓ Product Configuration Selected</p>
+                      <div className="flex flex-wrap gap-2 text-xs text-dark-5">
+                        {selectedVariant.color && (
+                          <span className="bg-white px-2 py-1 rounded border border-green-light-4">
+                            {selectedVariant.color}
+                          </span>
+                        )}
+                        {selectedVariant.size && (
+                          <span className="bg-white px-2 py-1 rounded border border-green-light-4">
+                            {selectedVariant.size}
+                          </span>
+                        )}
+                        {selectedVariant.storage && (
+                          <span className="bg-white px-2 py-1 rounded border border-green-light-4">
+                            {selectedVariant.storage}
+                          </span>
+                        )}
+                        {selectedVariant.weight && (
+                          <span className="bg-white px-2 py-1 rounded border border-green-light-4">
+                            {selectedVariant.weight}kg
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -728,8 +745,8 @@ useEffect(() => {
                     {currentStock === 0
                       ? "Out of Stock"
                       : !selectedVariant
-                      ? "Select Options"
-                      : "Add to Cart"}
+                        ? "Select Options"
+                        : "Add to Cart"}
                   </button>
 
                   {/* Wishlist Button */}
@@ -803,11 +820,10 @@ useEffect(() => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`font-medium lg:text-lg ease-out duration-200 hover:text-blue relative before:h-0.5 before:bg-blue before:absolute before:left-0 before:bottom-0 before:ease-out before:duration-200 hover:before:w-full ${
-                  activeTab === tab.id
+                className={`font-medium lg:text-lg ease-out duration-200 hover:text-blue relative before:h-0.5 before:bg-blue before:absolute before:left-0 before:bottom-0 before:ease-out before:duration-200 hover:before:w-full ${activeTab === tab.id
                     ? "text-blue before:w-full"
                     : "text-dark before:w-0"
-                }`}
+                  }`}
               >
                 {tab.title}
               </button>
@@ -826,56 +842,56 @@ useEffect(() => {
 
             {/* Specifications Tab */}
             {activeTab === "tabTwo" && (
-  <div className="rounded-2xl bg-white shadow-2 border border-gray-2 overflow-hidden font-euclid-circular-a">
-    {/* Header with Background Tint */}
-    <div className="px-8 py-6 border-b border-gray-2 bg-gray-1/30">
-      <h3 className="text-heading-6 font-bold text-dark">Technical Specifications</h3>
-      <p className="text-custom-xs text-body mt-1">Detailed breakdown of hardware and features.</p>
-    </div>
+              <div className="rounded-2xl bg-white shadow-2 border border-gray-2 overflow-hidden font-euclid-circular-a">
+                {/* Header with Background Tint */}
+                <div className="px-8 py-6 border-b border-gray-2 bg-gray-1/30">
+                  <h3 className="text-heading-6 font-bold text-dark">Technical Specifications</h3>
+                  <p className="text-custom-xs text-body mt-1">Detailed breakdown of hardware and features.</p>
+                </div>
 
-    <div className="p-8">
-      {product.specifications && typeof product.specifications === "object" ? (
-        <div className="space-y-12">
-          {Object.entries(product.specifications).map(([section, specs]) => (
-            <div key={section} className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
-              
-              {/* Section Branding: Sticky-ish labels on the left for desktop */}
-              <div className="lg:col-span-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-1.5 h-6 bg-blue rounded-full" /> {/* Accent bar */}
-                  <h4 className="font-bold text-dark text-lg capitalize">{section}</h4>
+                <div className="p-8">
+                  {product.specifications && typeof product.specifications === "object" ? (
+                    <div className="space-y-12">
+                      {Object.entries(product.specifications).map(([section, specs]) => (
+                        <div key={section} className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
+
+                          {/* Section Branding: Sticky-ish labels on the left for desktop */}
+                          <div className="lg:col-span-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-1.5 h-6 bg-blue rounded-full" /> {/* Accent bar */}
+                              <h4 className="font-bold text-dark text-lg capitalize">{section}</h4>
+                            </div>
+                          </div>
+
+                          {/* Specs Grid: 2 columns on medium screens */}
+                          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                            {typeof specs === "object" &&
+                              Object.entries(specs as any).map(([key, value]) => (
+                                <div
+                                  key={key}
+                                  className="flex flex-col py-3 border-b border-gray-1 group hover:border-blue-light-4 transition-colors"
+                                >
+                                  <span className="text-2xs font-bold text-dark-5 uppercase tracking-widest mb-1 group-hover:text-blue transition-colors">
+                                    {key}
+                                  </span>
+                                  <span className="text-custom-sm font-medium text-dark leading-relaxed">
+                                    {String(value)}
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center flex flex-col items-center">
+                      <div className="w-12 h-12 bg-gray-1 rounded-full flex items-center justify-center text-xl mb-3">📋</div>
+                      <p className="text-custom-sm font-bold text-dark-5">No specifications available for this model.</p>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Specs Grid: 2 columns on medium screens */}
-              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-                {typeof specs === "object" &&
-                  Object.entries(specs as any).map(([key, value]) => (
-                    <div 
-                      key={key} 
-                      className="flex flex-col py-3 border-b border-gray-1 group hover:border-blue-light-4 transition-colors"
-                    >
-                      <span className="text-2xs font-bold text-dark-5 uppercase tracking-widest mb-1 group-hover:text-blue transition-colors">
-                        {key}
-                      </span>
-                      <span className="text-custom-sm font-medium text-dark leading-relaxed">
-                        {String(value)}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="py-12 text-center flex flex-col items-center">
-          <div className="w-12 h-12 bg-gray-1 rounded-full flex items-center justify-center text-xl mb-3">📋</div>
-          <p className="text-custom-sm font-bold text-dark-5">No specifications available for this model.</p>
-        </div>
-      )}
-    </div>
-  </div>
-)}
+            )}
 
             {/* Reviews Tab */}
             {activeTab === "tabThree" && (
