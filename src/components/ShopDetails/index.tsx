@@ -11,6 +11,7 @@ import { AppDispatch } from "@/redux/store";
 import { addItemOptimistic, addItemToCartAsync } from "@/redux/features/cart-slice";
 import { toast } from "react-hot-toast";
 import { updateproductDetails } from "@/redux/features/product-details";
+import { useRouter } from "next/navigation";
 
 // Type definitions
 interface ProductVariant {
@@ -34,6 +35,7 @@ interface Product {
   shortDescription?: string | null;
   price: number;
   discount: number | null;
+  discountExpiry: string | null;
   stock: number;
   imageUrl: string;
   images: string[];
@@ -67,6 +69,43 @@ interface ShopDetailsClientProps {
 }
 
 const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
+  const router = useRouter();
+
+  const [activeDiscount, setActiveDiscount] = useState(product.discount || 0);
+  useEffect(() => {
+    // If no discount or no expiry, do nothing
+    if (!product.discountExpiry || activeDiscount === 0) return;
+
+    const expiryTime = new Date(product.discountExpiry).getTime();
+    
+    const checkExpiry = () => {
+      const now = Date.now();
+      if (now >= expiryTime) {
+        setActiveDiscount(0); // Instantly update UI
+        toast.error("The special offer for this product has ended.", {
+          icon: '⏰',
+          duration: 5000
+        });
+        
+        // Refresh server data to ensure the 'Add to Cart' logic 
+        // matches the new non-discounted price
+        router.refresh(); 
+        return true;
+      }
+      return false;
+    };
+
+    // Check immediately on mount
+    if (checkExpiry()) return;
+
+    // Set a timer for the exact moment it expires
+    const timeRemaining = expiryTime - Date.now();
+    const timer = setTimeout(() => {
+      checkExpiry();
+    }, timeRemaining);
+
+    return () => clearTimeout(timer);
+  }, [product.discountExpiry, activeDiscount, router]);
 
   // Replace your existing useMemos for availableColors, availableSizes, availableStorage
 const allAvailableColors = product.availableColors;
@@ -195,9 +234,9 @@ useEffect(() => {
 
   // Calculate prices based on selected variant
   const currentPrice = selectedVariant?.price || product.price;
-  const hasDiscount = product.discount && product.discount > 0;
+  const hasDiscount = activeDiscount > 0; // Use local state
   const finalPrice = hasDiscount
-    ? currentPrice * (1 - product.discount / 100)
+    ? currentPrice * (1 - activeDiscount / 100) // Use local state
     : currentPrice;
   const currentStock = selectedVariant?.stock || product.stock;
 
@@ -452,10 +491,10 @@ useEffect(() => {
                 </h2>
 
                 {hasDiscount && (
-                  <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
-                    {product.discount}% OFF
-                  </div>
-                )}
+        <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
+          {activeDiscount}% OFF
+        </div>
+      )}
               </div>
 
               {/* Brand/Model */}

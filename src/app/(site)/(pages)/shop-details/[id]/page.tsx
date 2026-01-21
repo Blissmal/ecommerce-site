@@ -64,6 +64,7 @@ export default async function ShopDetailsPage(props: { params: Params }) {
     shortDescription: true, // Added
     price: true,
     discount: true,
+    discountExpiry: true,
     stock: true,
     imageUrl: true,
     images: true,
@@ -102,10 +103,15 @@ export default async function ShopDetailsPage(props: { params: Params }) {
       notFound();
     }
 
+    const now = new Date();
+    const isExpired = product.discountExpiry && new Date(product.discountExpiry) < now;
+
     // Transform product data (serialize for client)
     // Transform product data (serialize for client)
 const serializedProduct = {
   ...product, // Spreading is easier if keys match
+  discount: isExpired ? 0 : product.discount, // Set to 0 if already passed
+  discountExpiry: product.discountExpiry ? product.discountExpiry.toISOString() : null,
   images: product.images || [],
   category: {
     id: product.category.id,

@@ -2,6 +2,7 @@ import React from 'react'
 import NewArrivalClient from './NewArrivalClient'
 import { prisma } from '../../../../lib/prisma';
 import CounDown from '../Countdown';
+import PriceSyncNotifier from '@/components/Common/PriceSyncNotifier';
 
 const NewArrival = async () => {
   const products = await prisma.product.findMany({
@@ -65,8 +66,11 @@ const NewArrival = async () => {
     .filter(p => p.discountExpiry && p.discount > 0)
     .sort((a, b) => (b.discount || 0) - (a.discount || 0))[0] || null;
 
+  const allExpiries = mappedProducts.map(p => p.discountExpiry); // Collect all expiry dates
+
   return (
     <>
+      <PriceSyncNotifier expiryDates={allExpiries} /> {/* Inject notifier for price sync */}
       <NewArrivalClient products={mappedProducts} />
       {featuredProduct && (
         <CounDown 
