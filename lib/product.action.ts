@@ -52,6 +52,7 @@ export async function addProduct(data: {
   
   // Calculated from variants
   discount?: number; // Applied to all variants
+  discountExpiry?: Date | null;
 }) {
   try {
     // Calculate base price and total stock from variants
@@ -71,6 +72,7 @@ export async function addProduct(data: {
           imageUrl: data.imageUrl,
           images: data.images || [],
           discount: data.discount || null,
+          discountExpiry: data.discountExpiry || null,
           categoryId: data.categoryId,
           
           // Product details
@@ -113,6 +115,7 @@ export async function addProduct(data: {
       return newProduct;
     });
     
+    revalidatePath('/'); 
     revalidatePath('/admin/products');
     revalidatePath('/shop-with-sidebar');
     return { success: true, productId: product.id };
@@ -155,6 +158,7 @@ export async function updateProduct(productId: string, data: {
   
   // Discount
   discount?: number;
+  discountExpiry?: Date | null;
 }) {
   try {
     await prisma.product.update({
@@ -166,6 +170,7 @@ export async function updateProduct(productId: string, data: {
         imageUrl: data.imageUrl,
         images: data.images || [],
         discount: data.discount || null,
+        discountExpiry: data.discountExpiry || null,
         categoryId: data.categoryId,
         
         // Product details
@@ -189,6 +194,8 @@ export async function updateProduct(productId: string, data: {
       },
     });
     
+    revalidatePath('/');                     // Refresh Homepage (New Arrivals)
+    revalidatePath('/cart');                 // Prevent price mismatch in cart
     revalidatePath('/admin/products');
     revalidatePath('/shop-with-sidebar');
     revalidatePath(`/shop-details/${productId}`);

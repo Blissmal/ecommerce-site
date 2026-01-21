@@ -79,6 +79,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [weight, setWeight] = useState("");
   const [dimensions, setDimensions] = useState("");
   const [discount, setDiscount] = useState("");
+  const [discountExpiry, setDiscountExpiry] = useState("");
   
   // Options
   const [availableColors, setAvailableColors] = useState<string[]>([]);
@@ -125,6 +126,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       setWeight(data.weight?.toString() || "");
       setDimensions(data.dimensions || "");
       setDiscount(data.discount?.toString() || "");
+      setDiscountExpiry(data.discountExpiry ? new Date(data.discountExpiry).toISOString().slice(0, 16) : "");
       setAvailableColors(data.availableColors || []);
       setAvailableSizes(data.availableSizes || []);
       setAvailableStorage(data.availableStorage || []);
@@ -199,6 +201,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         specifications: Object.keys(specifications).length > 0 ? specifications : undefined, 
         availableColors, availableSizes, availableStorage, 
         discount: discount ? parseFloat(discount) : undefined, 
+        discountExpiry: discountExpiry ? new Date(discountExpiry) : null,
       });
       toast.success("Product updated successfully!"); router.push("/admin/products");
     } catch (error) { toast.error("Failed to update product"); } finally { setSaving(false); }
@@ -425,6 +428,16 @@ if (loading || !product) {
                   <label className={labelStyle}>Discount (%)</label>
                   <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} className={inputStyle} />
                 </div>
+                <div>
+  <label className={labelStyle}>Discount Expiry Date</label>
+  <input 
+    type="datetime-local" 
+    value={discountExpiry} 
+    onChange={(e) => setDiscountExpiry(e.target.value)} 
+    className={inputStyle} 
+  />
+  <p className="text-[10px] text-dark-5 mt-1">Discount resets to 0 after this time.</p>
+</div>
               </div>
             </section>
 

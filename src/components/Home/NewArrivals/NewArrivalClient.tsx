@@ -9,6 +9,7 @@ type Product = {
   title: string;
   price: number;
   discount: number | null;
+  discountExpiry: string | null;
   reviews: number;
   imageUrl: string;
   images: string[];

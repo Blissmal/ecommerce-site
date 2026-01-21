@@ -19,6 +19,7 @@ const NewArrival = async () => {
       title: true,
       price: true,
       discount: true,
+      discountExpiry: true,
       reviews: true,
       imageUrl: true,
       images: true, // Add images array
@@ -32,25 +33,32 @@ const NewArrival = async () => {
         },
       },
     },
-  }); 
+  });
+
+  const now = new Date();
 
   // Map reviews to their count and ensure clean serializable data
-  const mappedProducts = products.map((product) => ({
-    id: product.id,
-    title: product.title,
-    price: product.price,
-    discount: product.discount,
-    reviews: product.reviews.length,
-    imageUrl: product.imageUrl,
-    images: product.images || [],
-    description: product.description,
-    stock: product.stock,
-    category: {
-      id: product.category.id,
-      name: product.category.name,
-      slug: product.category.slug,
-    },
-  }));
+  const mappedProducts = products.map((product) => {
+    const hasExpired = product.discountExpiry && new Date(product.discountExpiry) < now;
+    const activeDiscount = hasExpired ? 0 : product.discount;
+    return {
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      discount: activeDiscount,
+      discountExpiry: product.discountExpiry ? new Date(product.discountExpiry).toISOString() : null,
+      reviews: product.reviews.length,
+      imageUrl: product.imageUrl,
+      images: product.images || [],
+      description: product.description,
+      stock: product.stock,
+      category: {
+        id: product.category.id,
+        name: product.category.name,
+        slug: product.category.slug,
+      },
+    }
+  });
 
   return (
     <NewArrivalClient products={mappedProducts} />

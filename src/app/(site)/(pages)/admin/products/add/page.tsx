@@ -36,6 +36,7 @@ export default function AddProductPage() {
   const [model, setModel] = useState("");
   const [productSku, setProductSku] = useState("");
   const [discount, setDiscount] = useState("");
+  const [discountExpiry, setDiscountExpiry] = useState("");
   
   // Physical & Meta
   const [weight, setWeight] = useState("");
@@ -189,6 +190,7 @@ export default function AddProductPage() {
         specifications: Object.keys(specifications).length ? specifications : undefined,
         availableColors, availableSizes, availableStorage,
         discount: discount ? parseFloat(discount) : undefined,
+        discountExpiry: discountExpiry ? new Date(discountExpiry) : undefined,
         variants: variants.map(v => ({ ...v, color: v.color || undefined, size: v.size || undefined, storage: v.storage || undefined }))
       });
       toast.success("Product created!");
@@ -436,6 +438,16 @@ export default function AddProductPage() {
                   <label className={labelStyle}>Discount (%)</label>
                   <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} className={inputStyle} />
                 </div>
+                <div>
+  <label className={labelStyle}>Discount Expiry Date</label>
+  <input 
+    type="datetime-local" 
+    value={discountExpiry} 
+    onChange={(e) => setDiscountExpiry(e.target.value)} 
+    className={inputStyle} 
+  />
+  <p className="text-[10px] text-dark-5 mt-1">Leave blank for no expiry.</p>
+</div>
               </div>
             </section>
 

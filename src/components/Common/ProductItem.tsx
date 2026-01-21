@@ -10,6 +10,7 @@ import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 import { updateQuickView } from "@/redux/features/quickView-slice";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { toast } from "react-hot-toast";
+import DiscountTimer from "./DiscountTimer";
 
 interface ProductVariant {
   id: string;
@@ -24,6 +25,7 @@ interface ProductItemProps {
     title: string;
     price: number;
     discount?: number | null;
+    discountExpiry?: string | null;
     stock: number;
     imageUrl: string;
     brand?: string | null;
@@ -170,6 +172,11 @@ const ProductItem: React.FC<ProductItemProps> = ({ item }) => {
     <div className="group bg-white rounded-lg">
       {/* --- Image Section --- */}
       <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-gray-1 min-h-[270px] mb-4">
+        {item.discountExpiry && item.discount! > 0 && (
+          <div className="absolute top-2 right-2 z-10">
+            <DiscountTimer endDate={item.discountExpiry} />
+          </div>
+        )}
         <Link href={`/shop-details/${item.id}`} className="w-full h-full flex justify-center items-center">
           <Image
             src={item.imageUrl || "/images/products/product-1-bg-1.png"}
