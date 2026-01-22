@@ -463,7 +463,7 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
     }
 
     setSubmittingReview(true);
-    console.log("userId:", user.id);
+    // console.log("userId:", user.id);
 
     try {
       const result = await submitReview({

@@ -280,7 +280,7 @@ export default function ProductsListPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-custom-sm font-medium text-dark bg-blue-light-5 text-blue-dark px-2 py-1 rounded-md border border-blue-light-4">
+                        <span className="text-custom-sm font-medium bg-blue-light-5 text-blue-dark px-2 py-1 rounded-md border border-blue-light-4">
                           {product._count.variants}
                         </span>
                       </td>
