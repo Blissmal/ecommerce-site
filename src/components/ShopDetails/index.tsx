@@ -6,12 +6,14 @@ import Breadcrumb from "../Common/Breadcrumb";
 import Image from "next/image";
 import Newsletter from "../Common/Newsletter";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/redux/store";
 import { addItemOptimistic, addItemToCartAsync } from "@/redux/features/cart-slice";
 import { toast } from "react-hot-toast";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { useRouter } from "next/navigation";
+import { useUser } from "@stackframe/stack";
+import { submitReview } from "../../../lib/product.action";
 
 // Type definitions
 interface ProductVariant {
@@ -25,7 +27,7 @@ interface ProductVariant {
   images: string[];
   weight?: number | null;
   isDefault: boolean;
-  createdAt?: string | Date; // Add this if the backend sends it
+  createdAt?: string | Date;
 }
 
 interface Product {
@@ -68,12 +70,73 @@ interface ShopDetailsClientProps {
   product: Product;
 }
 
+// Star Rating Component
+const StarRating: React.FC<{
+  rating: number;
+  onRatingChange?: (rating: number) => void;
+  interactive?: boolean;
+  size?: number;
+}> = ({ rating, onRatingChange, interactive = false, size = 18 }) => {
+  const [hoverRating, setHoverRating] = useState(0);
+  const displayRating = interactive && hoverRating > 0 ? hoverRating : rating;
+
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => interactive && onRatingChange?.(star)}
+          onMouseEnter={() => interactive && setHoverRating(star)}
+          onMouseLeave={() => interactive && setHoverRating(0)}
+          className={`${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'}`}
+          disabled={!interactive}
+        >
+          <svg
+            width={size}
+            height={size}
+            viewBox="0 0 18 18"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className={star <= displayRating ? "fill-[#FFA645]" : "fill-gray-300"}
+          >
+            <g clipPath="url(#clip0_375_9172)">
+              <path
+                d="M16.7906 6.72187L11.7 5.93438L9.39377 1.09688C9.22502 0.759375 8.77502 0.759375 8.60627 1.09688L6.30002 5.9625L1.23752 6.72187C0.871891 6.77812 0.731266 7.25625 1.01252 7.50938L4.69689 11.3063L3.82502 16.6219C3.76877 16.9875 4.13439 17.2969 4.47189 17.0719L9.05627 14.5687L13.6125 17.0719C13.9219 17.2406 14.3156 16.9594 14.2313 16.6219L13.3594 11.3063L17.0438 7.50938C17.2688 7.25625 17.1563 6.77812 16.7906 6.72187Z"
+                fill=""
+              />
+            </g>
+          </svg>
+        </button>
+      ))}
+    </div>
+  );
+};
+
 const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const { openPreviewModal } = usePreviewSlider();
+  const user = useUser();
+  
+  // Get cart items from Redux store
+  const cartItems = useSelector((state: RootState) => state.cartReducer.items);
+
+  // Calculate average rating
+  const averageRating = useMemo(() => {
+    if (!product.reviews || product.reviews.length === 0) return 5;
+    const sum = product.reviews.reduce((acc, review) => acc + review.rating, 0);
+    return Math.round(sum / product.reviews.length);
+  }, [product.reviews]);
 
   const [activeDiscount, setActiveDiscount] = useState(product.discount || 0);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+
   useEffect(() => {
-    // If no discount or no expiry, do nothing
     if (!product.discountExpiry || activeDiscount === 0) return;
 
     const expiryTime = new Date(product.discountExpiry).getTime();
@@ -81,24 +144,19 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
     const checkExpiry = () => {
       const now = Date.now();
       if (now >= expiryTime) {
-        setActiveDiscount(0); // Instantly update UI
+        setActiveDiscount(0);
         toast.error("The special offer for this product has ended.", {
           icon: '⏰',
           duration: 5000
         });
-
-        // Refresh server data to ensure the 'Add to Cart' logic 
-        // matches the new non-discounted price
         router.refresh();
         return true;
       }
       return false;
     };
 
-    // Check immediately on mount
     if (checkExpiry()) return;
 
-    // Set a timer for the exact moment it expires
     const timeRemaining = expiryTime - Date.now();
     const timer = setTimeout(() => {
       checkExpiry();
@@ -107,12 +165,10 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
     return () => clearTimeout(timer);
   }, [product.discountExpiry, activeDiscount, router]);
 
-  // Replace your existing useMemos for availableColors, availableSizes, availableStorage
   const allAvailableColors = product.availableColors;
   const allAvailableSizes = product.availableSizes;
   const allAvailableStorage = product.availableStorage;
 
-  // Helper to check if a specific attribute choice is valid with CURRENT other selections
   const isOptionCompatible = (type: 'color' | 'size' | 'storage', value: string) => {
     return product.variants.some((v) => {
       if (type === 'color') {
@@ -134,7 +190,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
     });
   };
 
-  // Replace handleColorChange, handleSizeChange, handleStorageChange
   const handleColorChange = (color: string) => {
     setSelectedColor(color);
     setPreviewImg(0);
@@ -148,18 +203,12 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
     setSelectedStorage(storage);
   };
 
-  const dispatch = useDispatch<AppDispatch>();
-  const { openPreviewModal } = usePreviewSlider();
-
-  // Sync the product prop to the Redux store so the Modal can see it
-
   useEffect(() => {
     if (product) {
       const serializableProduct = {
         ...product,
         variants: product.variants.map(variant => ({
           ...variant,
-          // Convert Date objects to strings safely
           createdAt: variant.createdAt instanceof Date
             ? variant.createdAt.toISOString()
             : String(variant.createdAt || ""),
@@ -179,27 +228,22 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
     }
   }, [product, dispatch]);
 
-  // Find default variant once
   const defaultVariant = product.variants.find((v) => v.isDefault) || product.variants[0];
 
-  // State
   const [previewImg, setPreviewImg] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("tabOne");
 
-  // Initialize state directly with default variant
   const [selectedColor, setSelectedColor] = useState<string | null>(defaultVariant?.color || null);
   const [selectedSize, setSelectedSize] = useState<string | null>(defaultVariant?.size || null);
   const [selectedStorage, setSelectedStorage] = useState<string | null>(defaultVariant?.storage || null);
 
-  // Tabs configuration
   const tabs = [
     { id: "tabOne", title: "Description" },
     { id: "tabTwo", title: "Specifications" },
     { id: "tabThree", title: "Reviews" },
   ];
 
-  // Find currently selected variant
   const selectedVariant = useMemo(() => {
     return product.variants.find(
       (variant) =>
@@ -209,38 +253,44 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
     );
   }, [product.variants, selectedColor, selectedSize, selectedStorage]);
 
-  // Get all images (variant images or product images)
+  // Calculate quantity already in cart for this specific variant
+  const quantityInCart = useMemo(() => {
+    if (!selectedVariant) return 0;
+    const cartItem = cartItems.find(item => item.variantId === selectedVariant.id);
+    return cartItem ? cartItem.quantity : 0;
+  }, [cartItems, selectedVariant]);
+
+  // Calculate available stock (variant stock minus what's already in cart)
+  const availableStock = useMemo(() => {
+    if (!selectedVariant) return 0;
+    return Math.max(0, selectedVariant.stock - quantityInCart);
+  }, [selectedVariant, quantityInCart]);
+
   const allImages = useMemo(() => {
     const imgs: string[] = [];
 
-    // Add variant-specific images first
     if (selectedVariant?.images && selectedVariant.images.length > 0) {
       imgs.push(...selectedVariant.images);
     }
 
-    // Add main product image
     if (product.imageUrl) {
       imgs.push(product.imageUrl);
     }
 
-    // Add additional product images
     if (product.images && product.images.length > 0) {
       imgs.push(...product.images);
     }
 
-    // Remove duplicates
     return Array.from(new Set(imgs));
   }, [product.imageUrl, product.images, selectedVariant]);
 
-  // Calculate prices based on selected variant
   const currentPrice = selectedVariant?.price || product.price;
-  const hasDiscount = activeDiscount > 0; // Use local state
+  const hasDiscount = activeDiscount > 0;
   const finalPrice = hasDiscount
-    ? currentPrice * (1 - activeDiscount / 100) // Use local state
+    ? currentPrice * (1 - activeDiscount / 100)
     : currentPrice;
   const currentStock = selectedVariant?.stock || product.stock;
 
-  // Get available options based on current selection
   const availableColors = useMemo(() => {
     return product.availableColors.filter(color =>
       product.variants.some(v => v.color === color)
@@ -248,7 +298,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
   }, [product.availableColors, product.variants]);
 
   const availableSizes = useMemo(() => {
-    // Filter sizes that are available for the selected color (and storage if selected)
     return product.availableSizes.filter(size =>
       product.variants.some(v => {
         const colorMatch = !selectedColor || v.color === selectedColor;
@@ -259,7 +308,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
   }, [product.availableSizes, product.variants, selectedColor, selectedStorage]);
 
   const availableStorage = useMemo(() => {
-    // Filter storage options that are available for the selected color and size
     return product.availableStorage.filter(storage =>
       product.variants.some(v => {
         const colorMatch = !selectedColor || v.color === selectedColor;
@@ -269,84 +317,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
     );
   }, [product.availableStorage, product.variants, selectedColor, selectedSize]);
 
-  // Handle variant selection with smart fallback
-  // const handleColorChange = (color: string) => {
-  //   setSelectedColor(color);
-  //   setPreviewImg(0);
-
-  //   // Check if current size/storage combination exists with new color
-  //   const variantExists = product.variants.some(v => 
-  //     v.color === color && 
-  //     v.size === selectedSize && 
-  //     v.storage === selectedStorage
-  //   );
-
-  //   if (!variantExists) {
-  //     // Find the first available variant with this color
-  //     const fallbackVariant = product.variants.find(v => v.color === color);
-  //     if (fallbackVariant) {
-  //       setSelectedSize(fallbackVariant.size || null);
-  //       setSelectedStorage(fallbackVariant.storage || null);
-  //     }
-  //   }
-  // };
-
-  // const handleSizeChange = (size: string) => {
-  //   setSelectedSize(size);
-
-  //   // Check if current color/storage combination exists with new size
-  //   const variantExists = product.variants.some(v => 
-  //     v.color === selectedColor && 
-  //     v.size === size && 
-  //     v.storage === selectedStorage
-  //   );
-
-  //   if (!variantExists) {
-  //     // Find the first available variant with this size and current color
-  //     const fallbackVariant = product.variants.find(v => 
-  //       v.size === size && 
-  //       (!selectedColor || v.color === selectedColor)
-  //     );
-  //     if (fallbackVariant) {
-  //       setSelectedStorage(fallbackVariant.storage || null);
-  //       // Only change color if no color was selected
-  //       if (!selectedColor) {
-  //         setSelectedColor(fallbackVariant.color || null);
-  //       }
-  //     }
-  //   }
-  // };
-
-  // const handleStorageChange = (storage: string) => {
-  //   setSelectedStorage(storage);
-
-  //   // Check if current color/size combination exists with new storage
-  //   const variantExists = product.variants.some(v => 
-  //     v.color === selectedColor && 
-  //     v.size === selectedSize && 
-  //     v.storage === storage
-  //   );
-
-  //   if (!variantExists) {
-  //     // Find the first available variant with this storage and current color/size
-  //     const fallbackVariant = product.variants.find(v => 
-  //       v.storage === storage && 
-  //       (!selectedColor || v.color === selectedColor) &&
-  //       (!selectedSize || v.size === selectedSize)
-  //     );
-  //     if (fallbackVariant) {
-  //       // Only change unselected attributes
-  //       if (!selectedColor) {
-  //         setSelectedColor(fallbackVariant.color || null);
-  //       }
-  //       if (!selectedSize) {
-  //         setSelectedSize(fallbackVariant.size || null);
-  //       }
-  //     }
-  //   }
-  // };
-
-  // Handle add to cart
   const handleAddToCart = async () => {
     if (!selectedVariant) {
       toast.error("Please select all product options");
@@ -358,10 +328,17 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
       return;
     }
 
-    if (quantity > currentStock) {
-      toast.error(`Only ${currentStock} items available`);
+    if (availableStock === 0) {
+      toast.error("You've already added the maximum available quantity to your cart");
       return;
     }
+
+    if (quantity > availableStock) {
+      toast.error(`Only ${availableStock} more item(s) can be added (${quantityInCart} already in cart)`);
+      return;
+    }
+
+    setAddingToCart(true);
 
     // Optimistic update
     dispatch(
@@ -396,14 +373,120 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
         })
       ).unwrap();
 
-      toast.success(`Added ${quantity} item(s) to cart`);
+      // Success toast with cart icon
+      toast.success(
+        <div className="flex items-center gap-3">
+          <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+          </svg>
+          <div>
+            <p className="font-bold">Added to cart!</p>
+            <p className="text-xs">{quantity} × {product.title}</p>
+          </div>
+        </div>,
+        {
+          duration: 3000,
+          icon: '✓',
+        }
+      );
+
+      // Show stock warning if there are items in cart after adding
+      const newQuantityInCart = quantityInCart + quantity;
+      const newAvailableStock = currentStock - newQuantityInCart;
+      
+      if (newAvailableStock > 0 && newAvailableStock < currentStock) {
+        setTimeout(() => {
+          toast(
+            <div>
+              <p className="font-bold text-orange-dark">⚠️ Stock Update</p>
+              <p className="text-xs text-dark-5">You now have {newQuantityInCart} item(s) in cart. {newAvailableStock} more available.</p>
+            </div>,
+            {
+              duration: 4000,
+              icon: '📦',
+              style: {
+                background: '#FFF7ED',
+                border: '1px solid #FDBA74',
+              }
+            }
+          );
+        }, 500);
+      } else if (newAvailableStock === 0) {
+        setTimeout(() => {
+          toast(
+            <div>
+              <p className="font-bold text-orange-dark">⚠️ Maximum Reached</p>
+              <p className="text-xs text-dark-5">You have all {currentStock} available items in your cart.</p>
+            </div>,
+            {
+              duration: 4000,
+              icon: '🛑',
+              style: {
+                background: '#FFF7ED',
+                border: '1px solid #FDBA74',
+              }
+            }
+          );
+        }, 500);
+      }
+      
+      // Reset quantity to 1 after successful add
+      setQuantity(1);
     } catch (err) {
       toast.error("Failed to add item to cart");
       console.error("Add to cart error:", err);
+    } finally {
+      setAddingToCart(false);
     }
   };
 
-  // Get display title
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Check if user is signed in
+    if (!user) {
+      toast.error("Please sign in to submit a review");
+      setShowReviewModal(false);
+      // Optionally redirect to sign in
+      router.push('/handler/sign-in');
+      return;
+    }
+
+    if (reviewRating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+
+    if (!reviewComment.trim()) {
+      toast.error("Please write a comment");
+      return;
+    }
+
+    setSubmittingReview(true);
+    console.log("userId:", user.id);
+
+    try {
+      const result = await submitReview({
+        productId: product.id,
+        userId: user.id,
+        rating: reviewRating,
+        comment: reviewComment,
+      });
+
+      toast.success(result.message || "Review submitted successfully!");
+      setShowReviewModal(false);
+      setReviewRating(0);
+      setReviewComment("");
+      router.refresh();
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to submit review";
+      toast.error(errorMessage);
+      console.error("Review submission error:", error);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   const displayTitle = useMemo(() => {
     if (product.brand && product.model) {
       return `${product.brand} ${product.model}`;
@@ -420,7 +503,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
           <div className="flex flex-col lg:flex-row gap-7.5 xl:gap-17.5">
             {/* Image Gallery Section */}
             <div className="lg:max-w-[570px] w-full">
-              {/* Main Image Display */}
               <div className="lg:min-h-[512px] rounded-lg shadow-1 bg-gray-2 p-4 sm:p-7.5 relative flex items-center justify-center">
                 <button
                   onClick={openPreviewModal}
@@ -456,7 +538,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                 />
               </div>
 
-              {/* Thumbnail Images */}
               {allImages.length > 1 && (
                 <div className="flex flex-wrap sm:flex-nowrap gap-4.5 mt-6">
                   {allImages.map((img, key) => (
@@ -483,7 +564,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
 
             {/* Product Content Section */}
             <div className="max-w-[539px] w-full">
-              {/* Title and Discount Badge */}
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-semibold text-xl sm:text-2xl xl:text-custom-3 text-dark">
                   {product.title} | {product.model}
@@ -496,41 +576,19 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                 )}
               </div>
 
-              {/* Brand/Model */}
               {product.brand && (
                 <p className="text-gray-600 mb-2">
                   by <span className="font-medium text-dark">{product.brand}</span>
                 </p>
               )}
 
-              {/* Short Description */}
               {product.shortDescription && (
                 <p className="text-gray-600 mb-4">{product.shortDescription}</p>
               )}
 
-              {/* Stock and Rating */}
               <div className="flex flex-wrap items-center gap-5.5 mb-4.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className="fill-[#FFA645]"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <g clipPath="url(#clip0_375_9172)">
-                          <path
-                            d="M16.7906 6.72187L11.7 5.93438L9.39377 1.09688C9.22502 0.759375 8.77502 0.759375 8.60627 1.09688L6.30002 5.9625L1.23752 6.72187C0.871891 6.77812 0.731266 7.25625 1.01252 7.50938L4.69689 11.3063L3.82502 16.6219C3.76877 16.9875 4.13439 17.2969 4.47189 17.0719L9.05627 14.5687L13.6125 17.0719C13.9219 17.2406 14.3156 16.9594 14.2313 16.6219L13.3594 11.3063L17.0438 7.50938C17.2688 7.25625 17.1563 6.77812 16.7906 6.72187Z"
-                            fill=""
-                          />
-                        </g>
-                      </svg>
-                    ))}
-                  </div>
+                  <StarRating rating={averageRating} size={18} />
                   <span>({product.reviews?.length || 0} reviews)</span>
                 </div>
 
@@ -562,7 +620,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
               {/* Variant Selectors */}
               <div className="space-y-4 mb-6">
                 {/* Color Selector */}
-                {/* Example for Color Selector - Repeat this pattern for Size and Storage */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Color</label>
                   <div className="flex flex-wrap gap-2">
@@ -585,7 +642,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                 </div>
 
                 {/* Size Selector */}
-                {/* Example for Color Selector - Repeat this pattern for Size and Storage */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Size</label>
                   <div className="flex flex-wrap gap-2">
@@ -608,7 +664,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                 </div>
 
                 {/* Storage Selector */}
-                {/* Example for Color Selector - Repeat this pattern for Size and Storage */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Storage</label>
                   <div className="flex flex-wrap gap-2">
@@ -630,8 +685,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                   </div>
                 </div>
 
-                {/* Selected Variant Info */}
-                {/* Selected Variant Confirmation - IMPROVED VERSION */}
                 {selectedVariant && (
                   <div className="bg-green-light-6 border border-green-light-4 rounded-lg p-4 flex items-start gap-3">
                     <svg className="w-5 h-5 text-green-dark mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -690,7 +743,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
               {/* Quantity and Add to Cart */}
               <form onSubmit={(e) => e.preventDefault()}>
                 <div className="flex flex-wrap items-center gap-4.5">
-                  {/* Quantity Selector */}
                   <div className="flex items-center rounded-md border border-gray-3">
                     <button
                       type="button"
@@ -716,10 +768,10 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
 
                     <button
                       type="button"
-                      onClick={() => quantity < currentStock && setQuantity(quantity + 1)}
+                      onClick={() => quantity < availableStock && setQuantity(quantity + 1)}
                       aria-label="increase quantity"
-                      className="flex items-center justify-center w-12 h-12 ease-out duration-200 hover:text-blue"
-                      disabled={quantity >= currentStock}
+                      className="flex items-center justify-center w-12 h-12 ease-out duration-200 hover:text-blue disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={quantity >= availableStock}
                     >
                       <svg
                         className="fill-current"
@@ -735,21 +787,31 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                     </button>
                   </div>
 
-                  {/* Add to Cart Button */}
                   <button
                     type="button"
                     onClick={handleAddToCart}
-                    disabled={currentStock === 0 || !selectedVariant}
-                    className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    disabled={currentStock === 0 || !selectedVariant || addingToCart || availableStock === 0}
+                    className="inline-flex items-center justify-center gap-2 font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
-                    {currentStock === 0
-                      ? "Out of Stock"
-                      : !selectedVariant
-                        ? "Select Options"
-                        : "Add to Cart"}
+                    {addingToCart ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Adding...
+                      </>
+                    ) : currentStock === 0 ? (
+                      "Out of Stock"
+                    ) : !selectedVariant ? (
+                      "Select Options"
+                    ) : availableStock === 0 ? (
+                      "Max Qty in Cart"
+                    ) : (
+                      "Add to Cart"
+                    )}
                   </button>
 
-                  {/* Wishlist Button */}
                   <button
                     type="button"
                     aria-label="add to wishlist"
@@ -774,7 +836,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                 </div>
               </form>
 
-              {/* Features */}
               {product.features && product.features.length > 0 && (
                 <div className="mt-6">
                   <h3 className="font-semibold text-lg mb-3">Key Features:</h3>
@@ -799,7 +860,6 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                 </div>
               )}
 
-              {/* Category Badge */}
               <div className="mt-6">
                 <span className="text-sm text-gray-600">
                   Category:{" "}
@@ -811,10 +871,9 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
         </div>
       </section>
 
-      {/* Tabs Section */}
+      {/* Tabs Section - Continuing in next message due to length */}
       <section className="overflow-hidden bg-gray-2 py-20">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
-          {/* Tab Header */}
           <div className="flex flex-wrap items-center bg-white rounded-[10px] shadow-1 gap-5 xl:gap-12.5 py-4.5 px-4 sm:px-6">
             {tabs.map((tab) => (
               <button
@@ -830,9 +889,7 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
             ))}
           </div>
 
-          {/* Tab Content */}
           <div className="mt-10">
-            {/* Description Tab */}
             {activeTab === "tabOne" && (
               <div className="rounded-xl bg-white shadow-1 p-6">
                 <h3 className="font-medium text-2xl text-dark mb-4">Description</h3>
@@ -840,10 +897,8 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
               </div>
             )}
 
-            {/* Specifications Tab */}
             {activeTab === "tabTwo" && (
               <div className="rounded-2xl bg-white shadow-2 border border-gray-2 overflow-hidden font-euclid-circular-a">
-                {/* Header with Background Tint */}
                 <div className="px-8 py-6 border-b border-gray-2 bg-gray-1/30">
                   <h3 className="text-heading-6 font-bold text-dark">Technical Specifications</h3>
                   <p className="text-custom-xs text-body mt-1">Detailed breakdown of hardware and features.</p>
@@ -854,16 +909,13 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                     <div className="space-y-12">
                       {Object.entries(product.specifications).map(([section, specs]) => (
                         <div key={section} className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
-
-                          {/* Section Branding: Sticky-ish labels on the left for desktop */}
                           <div className="lg:col-span-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <div className="w-1.5 h-6 bg-blue rounded-full" /> {/* Accent bar */}
+                              <div className="w-1.5 h-6 bg-blue rounded-full" />
                               <h4 className="font-bold text-dark text-lg capitalize">{section}</h4>
                             </div>
                           </div>
 
-                          {/* Specs Grid: 2 columns on medium screens */}
                           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
                             {typeof specs === "object" &&
                               Object.entries(specs as any).map(([key, value]) => (
@@ -893,12 +945,20 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
               </div>
             )}
 
-            {/* Reviews Tab */}
             {activeTab === "tabThree" && (
               <div className="rounded-xl bg-white shadow-1 p-6">
-                <h3 className="font-medium text-2xl text-dark mb-6">
-                  Customer Reviews ({product.reviews?.length || 0})
-                </h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-medium text-2xl text-dark">
+                    Customer Reviews ({product.reviews?.length || 0})
+                  </h3>
+                  <button
+                    onClick={() => setShowReviewModal(true)}
+                    className="px-6 py-2.5 bg-blue text-white rounded-lg font-medium hover:bg-blue-dark transition-all"
+                  >
+                    Write a Review
+                  </button>
+                </div>
+                
                 {product.reviews && product.reviews.length > 0 ? (
                   <div className="space-y-4">
                     {product.reviews.map((review) => (
@@ -906,22 +966,11 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                         key={review.id}
                         className="border-b border-gray-200 pb-4 last:border-0"
                       >
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-3 mb-2">
                           <span className="font-semibold text-dark">
                             {review.user.name || "Anonymous"}
                           </span>
-                          <div className="flex items-center">
-                            {[...Array(review.rating)].map((_, i) => (
-                              <span key={i} className="text-yellow-500">
-                                ★
-                              </span>
-                            ))}
-                            {[...Array(5 - review.rating)].map((_, i) => (
-                              <span key={i} className="text-gray-300">
-                                ★
-                              </span>
-                            ))}
-                          </div>
+                          <StarRating rating={review.rating} size={16} />
                         </div>
                         <p className="text-gray-600 mb-2">{review.comment}</p>
                         <p className="text-xs text-gray-400">
@@ -931,15 +980,108 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500">
-                    No reviews yet. Be the first to review this product!
-                  </p>
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-1 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">⭐</div>
+                    <p className="text-gray-500 mb-4">
+                      No reviews yet. Be the first to review this product!
+                    </p>
+                    <button
+                      onClick={() => setShowReviewModal(true)}
+                      className="px-8 py-3 bg-blue text-white rounded-lg font-medium hover:bg-blue-dark transition-all"
+                    >
+                      Write the First Review
+                    </button>
+                  </div>
                 )}
               </div>
             )}
           </div>
         </div>
       </section>
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-dark/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-[500px] rounded-2xl bg-white p-8 shadow-3 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-heading-6 font-bold text-dark">Write a Review</h3>
+              <button
+                onClick={() => {
+                  setShowReviewModal(false);
+                  setReviewRating(0);
+                  setReviewComment("");
+                }}
+                className="text-dark-5 hover:text-dark transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReview}>
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-3">Your Rating *</label>
+                <StarRating 
+                  rating={reviewRating} 
+                  onRatingChange={setReviewRating}
+                  interactive={true}
+                  size={32}
+                />
+                {reviewRating > 0 && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    {reviewRating === 1 ? "Poor" : reviewRating === 2 ? "Fair" : reviewRating === 3 ? "Good" : reviewRating === 4 ? "Very Good" : "Excellent"}
+                  </p>
+                )}
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">Your Review *</label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  rows={5}
+                  placeholder="Share your experience with this product..."
+                  className="w-full p-3 border border-gray-3 rounded-lg focus:ring-2 focus:ring-blue outline-none resize-none"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReviewModal(false);
+                    setReviewRating(0);
+                    setReviewComment("");
+                  }}
+                  disabled={submittingReview}
+                  className="flex-1 rounded-xl border border-gray-3 py-3 text-custom-sm font-bold text-dark hover:bg-gray-2 transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingReview || reviewRating === 0}
+                  className="flex-1 flex items-center justify-center rounded-xl bg-blue py-3 text-custom-sm font-bold text-white hover:bg-blue-dark shadow-2 transition-all disabled:bg-gray-400"
+                >
+                  {submittingReview ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Review"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <Newsletter />
     </>

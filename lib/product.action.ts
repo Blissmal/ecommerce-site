@@ -426,3 +426,144 @@ export async function recalculateProductPrice(productId: string) {
     throw new Error("Failed to recalculate price");
   }
 }
+
+// ==================== REVIEW ACTIONS ====================
+
+/**
+ * Submit a product review
+ */
+export async function submitReview(data: {
+  productId: string;
+  userId: string;
+  rating: number;
+  comment: string;
+}) {
+  const dbUID = await prisma.user.findUnique({
+    where: { authId: data.userId },
+    select: { id: true }
+  });
+
+  if (!dbUID) {
+    throw new Error("User not found");
+  }
+
+  data.userId = dbUID.id;
+  try {
+    // Validate rating
+    if (data.rating < 1 || data.rating > 5) {
+      throw new Error("Rating must be between 1 and 5");
+    }
+
+    // Validate comment
+    if (!data.comment.trim()) {
+      throw new Error("Review comment is required");
+    }
+
+    // Check if user already reviewed this product
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        userId: data.userId,
+        productId: data.productId,
+      },
+    });
+
+    if (existingReview) {
+      // Update existing review
+      const updatedReview = await prisma.review.update({
+        where: { id: existingReview.id },
+        data: {
+          rating: data.rating,
+          comment: data.comment.trim(),
+        },
+      });
+
+      revalidatePath(`/shop-details/${data.productId}`);
+      revalidatePath('/shop-with-sidebar');
+      
+      return { 
+        success: true, 
+        reviewId: updatedReview.id,
+        message: "Review updated successfully" 
+      };
+    } else {
+      // Create new review
+      const newReview = await prisma.review.create({
+        data: {
+          userId: data.userId,
+          productId: data.productId,
+          rating: data.rating,
+          comment: data.comment.trim(),
+        },
+      });
+
+      revalidatePath(`/shop-details/${data.productId}`);
+      revalidatePath('/shop-with-sidebar');
+      
+      return { 
+        success: true, 
+        reviewId: newReview.id,
+        message: "Review submitted successfully" 
+      };
+    }
+  } catch (error) {
+    console.error("Failed to submit review:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get reviews for a product
+ */
+export async function getProductReviews(productId: string, limit = 10) {
+  try {
+    const reviews = await prisma.review.findMany({
+      where: { productId },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    return reviews;
+  } catch (error) {
+    console.error("Failed to fetch reviews:", error);
+    throw new Error("Failed to fetch reviews");
+  }
+}
+
+/**
+ * Delete a review (user can delete their own review)
+ */
+export async function deleteReview(reviewId: string, userId: string) {
+  try {
+    // Check if the review belongs to the user
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+    });
+
+    if (!review) {
+      throw new Error("Review not found");
+    }
+
+    if (review.userId !== userId) {
+      throw new Error("You can only delete your own reviews");
+    }
+
+    await prisma.review.delete({
+      where: { id: reviewId },
+    });
+
+    revalidatePath(`/shop-details/${review.productId}`);
+    
+    return { success: true, message: "Review deleted successfully" };
+  } catch (error) {
+    console.error("Failed to delete review:", error);
+    throw error;
+  }
+}
