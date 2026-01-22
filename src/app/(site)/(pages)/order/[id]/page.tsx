@@ -17,6 +17,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "../../../../../../lib/prisma";
 import PaymentAction from "@/components/Checkout/PaymentAction";
+import DownloadInvoiceButton from "@/components/Common/DownloadInvoiceButton";
 
 const getStatusConfig = (status: string) => {
   const configs: Record<string, { icon: any; color: string; label: string; step: number }> = {
@@ -219,9 +220,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 Having issues with your order or payment? Our 24/7 support team is here to help.
               </p>
               <div className="space-y-3">
-                <button className="w-full py-4 bg-white text-dark border border-blue/10 rounded-2xl font-bold text-sm hover:bg-white/50 transition-all flex items-center justify-center gap-2">
-                  <FileText className="w-4 h-4" /> Download Invoice
-                </button>
+                <DownloadInvoiceButton order={order} />
                 <button className="w-full py-4 bg-blue text-white rounded-2xl font-bold text-sm hover:shadow-lg hover:shadow-blue/20 transition-all">
                   Contact Support
                 </button>
