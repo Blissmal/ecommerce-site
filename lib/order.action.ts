@@ -175,6 +175,9 @@ export async function createOrder(data: CreateOrderData) {
 
     revalidatePath("/admin/orders");
     revalidatePath("/my-account");
+    revalidatePath("/cart");
+    revalidatePath("/checkout");
+    revalidatePath("/");
     return { success: true, orderId: order.id, order };
   } catch (error) {
     console.error("Failed to create order:", error);
