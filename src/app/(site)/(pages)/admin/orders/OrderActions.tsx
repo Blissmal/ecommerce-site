@@ -47,18 +47,59 @@ interface Order {
 export default function OrderActions({ order }: { order: Order }) {
   const [loading, setLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  
+  // New state for confirmation modal
+  const [confirmationState, setConfirmationState] = useState<{
+    isOpen: boolean;
+    pendingStatus: OrderStatus | null;
+  }>({
+    isOpen: false,
+    pendingStatus: null,
+  });
+
   const router = useRouter();
 
-  const handleStatusChange = async (newStatus: OrderStatus) => {
+  // 1. Trigger the confirmation modal
+  const handleStatusChange = (newStatus: OrderStatus) => {
+    setConfirmationState({
+      isOpen: true,
+      pendingStatus: newStatus,
+    });
+  };
+
+  // 2. Actually execute the update after confirmation
+  const confirmStatusUpdate = async () => {
+    if (!confirmationState.pendingStatus) return;
+    
+    const newStatus = confirmationState.pendingStatus;
     setLoading(true);
+    
     try {
       await updateOrderStatus(order.id, newStatus);
       toast.success(`Order updated to ${newStatus}`);
       router.refresh();
+      // Close confirmation modal
+      setConfirmationState({ isOpen: false, pendingStatus: null });
     } catch (error) {
       toast.error("Failed to update status");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper to get description for the confirmation modal
+  const getStatusDescription = (status: OrderStatus | null) => {
+    switch (status) {
+      case 'PROCESSING':
+        return "You are about to approve this payment. This will mark the order as Processing and allow fulfillment to begin.";
+      case 'SHIPPED':
+        return "You are marking this order as Shipped. Ensure the package has been handed to the courier.";
+      case 'DELIVERED':
+        return "You are confirming this order has been received by the customer. This completes the order lifecycle.";
+      case 'CANCELLED':
+        return "Are you sure? This will cancel the order and cannot be undone.";
+      default:
+        return `Are you sure you want to change the status to ${status}?`;
     }
   };
 
@@ -149,6 +190,51 @@ export default function OrderActions({ order }: { order: Order }) {
         )}
       </button>
 
+      {/* --- CONFIRMATION MODAL --- */}
+      {confirmationState.isOpen && (
+        <div className="fixed inset-0 bg-dark/70 backdrop-blur-sm flex items-center justify-center z-[10000] p-4">
+          {/* Changed max-w-sm to max-w-md to allow more width for the text */}
+          <div className="bg-white rounded-xl shadow-2 max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-light-6 mb-4">
+                <svg className="h-6 w-6 text-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-dark mb-2">
+                Confirm Action
+              </h3>
+              {/* Added 'px-2' for internal padding and 'leading-relaxed' for readability */}
+              <p className="text-sm text-body mb-6 px-2 leading-relaxed whitespace-normal break-words">
+                {getStatusDescription(confirmationState.pendingStatus)}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmationState({ isOpen: false, pendingStatus: null })}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-gray-1 border border-gray-3 text-dark font-bold rounded-lg hover:bg-gray-2 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmStatusUpdate}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-blue text-white font-bold rounded-lg hover:bg-blue-dark transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                >
+                  {loading && (
+                    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  )}
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Order Details Modal */}
       {showDetails && (
         <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
@@ -202,22 +288,10 @@ export default function OrderActions({ order }: { order: Order }) {
                         disabled={loading}
                         className="flex items-center gap-2 bg-gradient-to-r from-blue to-blue-dark text-white text-2xs font-bold px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
                       >
-                        {loading ? (
-                          <>
-                            <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                            </svg>
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Approve & Start Processing
-                          </>
-                        )}
+                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                         </svg>
+                         Approve & Start Processing
                       </button>
                     </div>
                   </div>
@@ -243,19 +317,10 @@ export default function OrderActions({ order }: { order: Order }) {
                       disabled={loading}
                       className="flex items-center gap-2 bg-gradient-to-r from-purple to-purple-dark text-white text-2xs font-bold px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 whitespace-nowrap"
                     >
-                      {loading ? (
-                        <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                      ) : (
-                        <>
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          {order.status === 'PROCESSING' ? 'Mark Shipped' : 'Confirm Delivered'}
-                        </>
-                      )}
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {order.status === 'PROCESSING' ? 'Mark Shipped' : 'Confirm Delivered'}
                     </button>
                   </div>
                 </div>
@@ -392,7 +457,7 @@ export default function OrderActions({ order }: { order: Order }) {
                   disabled={loading}
                   className="flex-1 bg-gradient-to-r from-blue to-blue-dark text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
                 >
-                  {loading ? 'Processing...' : 'Approve Order'}
+                  Approve Order
                 </button>
               )}
             </div>
