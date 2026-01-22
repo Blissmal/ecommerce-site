@@ -1,43 +1,62 @@
+// app/api/mpesa/callback/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { updateOrderPaymentStatus, clearUserCart } from '../../../../../lib/db';
+import { updateOrderStatus, cancelOrder } from '../../../../../lib/order.action';
+import { prisma } from '../../../../../lib/prisma';
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-
     const { Body } = body;
     const { stkCallback } = Body;
 
-    // console.log('M-Pesa Callback:', JSON.stringify(stkCallback, null, 2));
-
     const { CheckoutRequestID, ResultCode, ResultDesc } = stkCallback;
 
+    // Find the order
+    const order = await prisma.order.findUnique({
+      where: { checkoutRequestId: CheckoutRequestID },
+      select: { id: true, status: true },
+    });
+
+    if (!order) {
+      console.error(`Order not found for CheckoutRequestID: ${CheckoutRequestID}`);
+      return NextResponse.json({ ResultCode: 0, ResultDesc: 'Success' });
+    }
+
     if (ResultCode === 0) {
-      // Payment successful
+      // ✅ Payment successful
       const { CallbackMetadata } = stkCallback;
       const metadata = CallbackMetadata.Item || [];
 
       const receiptNumber = metadata.find((item: any) => item.Name === 'MpesaReceiptNumber')?.Value;
 
-      const updatedOrder = await updateOrderPaymentStatus(
-        CheckoutRequestID,
-        'PAID',
-        receiptNumber
-      );
+      // Update order to PAID
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: 'PAID',
+          receipt: receiptNumber,
+          paymentCompletedAt: new Date(),
+        },
+      });
 
-      if (updatedOrder) {
-        await clearUserCart(updatedOrder.userId);
-        // console.log(`✅ Payment successful for order ${updatedOrder.id}: ${receiptNumber}`);
-      }
+      console.log(`✅ Payment successful for order ${order.id}: ${receiptNumber}`);
+
     } else {
-      // Payment failed or cancelled
-      await updateOrderPaymentStatus(CheckoutRequestID, 'FAILED');
-      // console.log('❌ Payment failed:', ResultDesc);
+      // ❌ Payment failed or cancelled
+      console.log(`❌ Payment failed for order ${order.id}: ${ResultDesc}`);
+
+      // Cancel order and restore stock
+      await cancelOrder(order.id);
     }
 
     // M-Pesa requires 200 with ResultCode 0
     return NextResponse.json({ ResultCode: 0, ResultDesc: 'Success' });
+
   } catch (error) {
     console.error('Callback processing error:', error);
-    return NextResponse.json({ ResultCode: 1, ResultDesc: 'Internal server error' }, { status: 500 });
+    
+    // Still return success to M-Pesa to prevent retries
+    // Log the error for manual investigation
+    return NextResponse.json({ ResultCode: 0, ResultDesc: 'Success' });
   }
 }
