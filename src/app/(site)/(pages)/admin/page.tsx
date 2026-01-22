@@ -89,11 +89,11 @@ export default async function AdminDashboard() {
           <p className="text-xs sm:text-custom-sm text-body mt-1">A high-level summary of your store's performance.</p>
         </div>
         <div className="text-xs sm:text-custom-sm font-bold text-dark-5 bg-white px-3 sm:px-4 py-2 rounded-lg border border-gray-3 shadow-1 w-fit">
-          {new Date().toLocaleDateString('en-US', { 
-            weekday: 'short', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          {new Date().toLocaleDateString('en-US', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
           })}
         </div>
       </div>
@@ -166,7 +166,7 @@ export default async function AdminDashboard() {
         <div className="lg:col-span-1 bg-white rounded-xl sm:rounded-2xl shadow-2 border border-gray-3 p-6 sm:p-8 flex flex-col justify-center relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <svg className="w-16 sm:w-20 lg:w-24 h-16 sm:h-20 lg:h-24 text-green-dark" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/>
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z" />
             </svg>
           </div>
           <h3 className="text-2xs font-bold text-dark-5 uppercase tracking-widest mb-3 sm:mb-4">Total Revenue</h3>
@@ -203,8 +203,8 @@ export default async function AdminDashboard() {
                     <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-5 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         {order.status === 'PAID' && (
-                          <span className="flex h-2 w-2 flex-shrink-0">
-                            <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red opacity-75"></span>
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-red"></span>
                           </span>
                         )}
@@ -223,16 +223,15 @@ export default async function AdminDashboard() {
                       KES {order.total.toFixed(2)}
                     </td>
                     <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-5 whitespace-nowrap">
-                      <span className={`inline-flex px-2 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-2xs font-bold rounded-full uppercase tracking-wider border transition-colors ${
-  order.status === 'DELIVERED' ? 'bg-green-light-6 text-green-dark border-green-light-4' :
-  order.status === 'PAID'      ? 'bg-green-light-6 text-green-dark border-green-light-4' :
-  order.status === 'SHIPPED'   ? 'bg-purple-light-6 text-purple-dark border-purple-light-4' :
-  order.status === 'PENDING'   ? 'bg-yellow-light-6 text-yellow-dark border-yellow-light-4' :
-  order.status === 'PROCESSING'? 'bg-blue-light-5 text-blue-dark border-blue-light-4' :
-  order.status === 'FAILED'    ? 'bg-red-light-6 text-red-dark border-red-light-4' :
-  order.status === 'CANCELLED' ? 'bg-gray-2 text-dark-5 border-gray-3' : 
-  'bg-gray-1 text-body border-gray-3'
-}`}>
+                      <span className={`inline-flex px-2 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-2xs font-bold rounded-full uppercase tracking-wider border transition-colors ${order.status === 'DELIVERED' ? 'bg-green-light-6 text-green-dark border-green-light-4' :
+                          order.status === 'PAID' ? 'bg-green-light-6 text-green-dark border-green-light-4' :
+                            order.status === 'SHIPPED' ? 'bg-purple-light-6 text-purple-dark border-purple-light-4' :
+                              order.status === 'PENDING' ? 'bg-yellow-light-6 text-yellow-dark border-yellow-light-4' :
+                                order.status === 'PROCESSING' ? 'bg-blue-light-5 text-blue-dark border-blue-light-4' :
+                                  order.status === 'FAILED' ? 'bg-red-light-6 text-red-dark border-red-light-4' :
+                                    order.status === 'CANCELLED' ? 'bg-gray-2 text-dark-5 border-gray-3' :
+                                      'bg-gray-1 text-body border-gray-3'
+                        }`}>
                         {order.status}
                       </span>
                     </td>
