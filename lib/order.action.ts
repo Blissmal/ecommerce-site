@@ -178,6 +178,10 @@ export async function createOrder(data: CreateOrderData) {
     revalidatePath("/cart");
     revalidatePath("/checkout");
     revalidatePath("/");
+    revalidatePath('/shop-with-sidebar');
+    for (const item of data.items) {
+      revalidatePath(`/shop-details/${item.productId}`);
+    }
     return { success: true, orderId: order.id, order };
   } catch (error) {
     console.error("Failed to create order:", error);
@@ -269,6 +273,22 @@ export async function cancelOrder(orderId: string) {
 
     revalidatePath("/admin/orders");
     revalidatePath("/my-account");
+    revalidatePath("/cart");
+    revalidatePath("/checkout");
+    revalidatePath("/");
+    revalidatePath("/shop-with-sidebar");
+    
+    // ✅ Get the order items to revalidate product pages
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { orderItems: true },
+    });
+
+    if (order) {
+      for (const item of order.orderItems) {
+        revalidatePath(`/shop-details/${item.productId}`);
+      }
+    }
     return { success: true };
   } catch (error) {
     console.error("Failed to cancel order:", error);
