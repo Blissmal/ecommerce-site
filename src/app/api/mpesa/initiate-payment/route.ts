@@ -60,8 +60,8 @@ export async function POST(req: NextRequest) {
     });
 
     // Round total to 2 decimal places
-    totalAmount = Math.round((totalAmount + Number.EPSILON) * 100) / 100;
-    // totalAmount = 2; // For testing M-Pesa with fixed amount
+    //totalAmount = Math.round((totalAmount + Number.EPSILON) * 100) / 100;
+    totalAmount = 2; // For testing M-Pesa with fixed amount
 
     // 4. Format phone number for M-Pesa
     let formattedPhone = phoneNumber.replace(/\D/g, ''); 
