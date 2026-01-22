@@ -327,7 +327,7 @@ if (loading || !product) {
                         <td className="px-4 py-3 text-custom-xs text-body">
                           {[variant.color, variant.size, variant.storage].filter(Boolean).join(" / ") || "Standard"}
                         </td>
-                        <td className="px-4 py-3 text-custom-sm font-bold text-dark">${variant.price.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-custom-sm font-bold text-dark">KES {variant.price.toFixed(2)}</td>
                         <td className="px-4 py-3">
                           <span className={`${variant.stock <= 5 ? 'text-red font-bold' : 'text-body'}`}>{variant.stock}</span>
                           {variant.isDefault && <span className="ml-2 text-2xs bg-blue-light-6 text-blue-dark px-1.5 py-0.5 rounded">Default</span>}
@@ -535,7 +535,7 @@ if (loading || !product) {
                     <input type="text" value={currentVariant.sku} onChange={(e) => setCurrentVariant({ ...currentVariant, sku: e.target.value })} className={inputStyle} />
                   </div>
                   <div>
-                    <label className={labelStyle}>Price ($) <span className="text-red">*</span></label>
+                    <label className={labelStyle}>Price (KES) <span className="text-red">*</span></label>
                     <input type="number" step="0.01" value={currentVariant.price} onChange={(e) => setCurrentVariant({ ...currentVariant, price: parseFloat(e.target.value) || 0 })} className={inputStyle} />
                   </div>
                   <div>

@@ -98,7 +98,7 @@ const StarRating: React.FC<{
             viewBox="0 0 18 18"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className={star <= displayRating ? "fill-[#FFA645]" : "fill-gray-300"}
+            className={star <= displayRating ? "fill-[#FFA645]" : "fill-gray-6"}
           >
             <g clipPath="url(#clip0_375_9172)">
               <path
@@ -724,18 +724,18 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                 {hasDiscount ? (
                   <div className="flex items-center gap-3">
                     <span className="font-medium text-custom-1 text-dark">
-                      ${finalPrice.toFixed(2)}
+                      KES {finalPrice.toFixed(2)}
                     </span>
                     <span className="font-medium text-xl text-dark-4 line-through">
-                      ${currentPrice.toFixed(2)}
+                      KES {currentPrice.toFixed(2)}
                     </span>
                     <span className="text-green-600 font-medium">
-                      Save ${(currentPrice - finalPrice).toFixed(2)}
+                      Save KES {(currentPrice - finalPrice).toFixed(2)}
                     </span>
                   </div>
                 ) : (
                   <span className="font-medium text-custom-1 text-dark">
-                    ${currentPrice.toFixed(2)}
+                    KES {currentPrice.toFixed(2)}
                   </span>
                 )}
               </div>

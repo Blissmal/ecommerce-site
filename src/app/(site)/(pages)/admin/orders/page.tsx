@@ -104,7 +104,7 @@ export default async function OrdersPage() {
                     <div key={order.id} className="bg-white rounded-lg px-4 py-2 border border-gray-3 shadow-sm">
                       <span className="text-2xs font-bold text-blue">#{order.id.slice(-8).toUpperCase()}</span>
                       <span className="text-2xs text-body mx-2">•</span>
-                      <span className="text-2xs text-dark font-medium">${order.total.toFixed(2)}</span>
+                      <span className="text-2xs text-dark font-medium">KES {order.total.toFixed(2)}</span>
                     </div>
                   ))}
                 {paidOrdersCount > 3 && (
@@ -199,7 +199,7 @@ export default async function OrdersPage() {
                           </div>
                         </td>
                         <td className="px-6 py-5 whitespace-nowrap text-custom-sm font-bold text-dark">
-                          ${order.total.toFixed(2)}
+                          KES {order.total.toFixed(2)}
                         </td>
                         <td className="px-6 py-5 whitespace-nowrap">
                           <span className="text-custom-sm font-bold text-red-dark">{timeText} ago</span>
@@ -276,7 +276,7 @@ export default async function OrdersPage() {
                     </div>
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap text-custom-sm font-bold text-dark">
-                    ${order.total.toFixed(2)}
+                    KES {order.total.toFixed(2)}
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">
                     <span className={`inline-flex px-3 py-1 text-2xs font-bold rounded-full uppercase tracking-wider ${getStatusColor(order.status)}`}>

@@ -273,15 +273,15 @@ const QuickViewModal = () => {
                 {product.discount && product.discount > 0 ? (
                   <>
                     <span className="font-bold text-heading-4 text-dark">
-                      ${(product.price * (1 - product.discount / 100)).toFixed(2)}
+                      Kes {(product.price * (1 - product.discount / 100)).toFixed(2)}
                     </span>
                     <span className="font-medium text-xl text-gray-5 line-through">
-                      ${product.price.toFixed(2)}
+                      Kes {product.price.toFixed(2)}
                     </span>
                   </>
                 ) : (
                   <span className="font-bold text-heading-4 text-dark">
-                    ${product.price.toFixed(2)}
+                    Kes {product.price.toFixed(2)}
                   </span>
                 )}
               </div>

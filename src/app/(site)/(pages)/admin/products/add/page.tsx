@@ -317,7 +317,7 @@ export default function AddProductPage() {
                             {[variant.color, variant.size, variant.storage].filter(Boolean).join(" / ") || "Standard"}
                           </td>
                           <td className="px-4 py-3 text-custom-sm font-bold text-dark">
-                            {variant.price > 0 ? `$${variant.price}` : <span className="text-red text-2xs uppercase">Set Price</span>}
+                            {variant.price > 0 ? `KES ${variant.price}` : <span className="text-red text-2xs uppercase">Set Price</span>}
                           </td>
                           <td className="px-4 py-3">
                             <span className={`${variant.stock <= 5 ? 'text-red font-bold' : 'text-body'}`}>{variant.stock}</span>
@@ -542,7 +542,7 @@ export default function AddProductPage() {
                     <input type="text" value={currentVariant.sku} onChange={(e) => setCurrentVariant({ ...currentVariant, sku: e.target.value })} className={inputStyle} />
                   </div>
                   <div>
-                    <label className={labelStyle}>Price ($) <span className="text-red">*</span></label>
+                    <label className={labelStyle}>Price (KES) <span className="text-red">*</span></label>
                     <input type="number" step="0.01" value={currentVariant.price} onChange={(e) => setCurrentVariant({ ...currentVariant, price: parseFloat(e.target.value) || 0 })} className={inputStyle} />
                   </div>
                   <div>

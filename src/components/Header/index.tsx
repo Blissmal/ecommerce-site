@@ -294,7 +294,7 @@ const Header = () => {
               <div className="hidden xsm:block text-left leading-none">
                 <span className="block text-2xs font-bold text-gray-5 uppercase mb-1">My Cart</span>
                 <span className="block font-bold text-custom-sm text-dark">
-                  ${totalPrice.toFixed(2)}
+                  KES {totalPrice.toFixed(2)}
                 </span>
               </div>
             </button>
@@ -325,14 +325,14 @@ const Header = () => {
                 Shop
               </Link>
               <Link 
-                href="#categories" 
+                href="/#categories" 
                 className="hover:text-blue transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Categories
               </Link>
               <Link 
-                href="#newArrivals" 
+                href="/#newArrivals" 
                 className="hover:text-blue transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >

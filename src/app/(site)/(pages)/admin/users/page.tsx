@@ -92,7 +92,7 @@ export default async function UsersPage() {
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">
                       <span className="text-custom-sm font-bold text-dark">
-                        ${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        KES {totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </span>
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap text-custom-sm text-body font-medium">

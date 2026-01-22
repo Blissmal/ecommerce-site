@@ -167,7 +167,7 @@ export default async function AdminDashboard() {
           </div>
           <h3 className="text-2xs font-bold text-dark-5 uppercase tracking-widest mb-4">Total Revenue</h3>
           <p className="text-heading-3 font-bold text-green-dark tracking-tight">
-            ${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            KES{stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </p>
           <div className="mt-4 flex items-center gap-2">
             <span className="flex h-2 w-2 rounded-full bg-green-dark"></span>
@@ -214,7 +214,7 @@ export default async function AdminDashboard() {
                       <div className="text-custom-xs text-body italic">{order.user.email}</div>
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap text-custom-sm font-bold text-dark">
-                      ${order.total.toFixed(2)}
+                      KES{order.total.toFixed(2)}
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">
                       <span className={`inline-flex px-3 py-1 text-2xs font-bold rounded-full uppercase tracking-wider border transition-colors ${

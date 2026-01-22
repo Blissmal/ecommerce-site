@@ -67,7 +67,7 @@ const ProductItem: React.FC<ProductItemProps> = ({ item }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "KES",
       minimumFractionDigits: 2,
     }).format(amount);
   };

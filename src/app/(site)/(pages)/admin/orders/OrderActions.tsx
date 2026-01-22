@@ -83,7 +83,7 @@ export default function OrderActions({ order }: { order: Order }) {
           <button
             onClick={() => handleStatusChange('SHIPPED')}
             disabled={loading}
-            className="flex items-center gap-2 bg-gradient-to-r from-purple to-purple-dark text-white text-2xs font-bold px-3 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-light-2 to-blue text-white text-2xs font-bold px-3 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -325,8 +325,8 @@ export default function OrderActions({ order }: { order: Order }) {
                           <span className="text-custom-xs text-body">Quantity: <span className="font-bold text-dark">{item.quantity}</span></span>
                         </div>
                         <div className="text-right">
-                          <p className="text-custom-sm font-bold text-dark">${(item.price * item.quantity).toFixed(2)}</p>
-                          <p className="text-2xs text-body font-medium">${item.price.toFixed(2)} / unit</p>
+                          <p className="text-custom-sm font-bold text-dark">KES {(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-2xs text-body font-medium">KES {item.price.toFixed(2)} / unit</p>
                         </div>
                       </div>
                     );
@@ -342,7 +342,7 @@ export default function OrderActions({ order }: { order: Order }) {
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t border-gray-3">
                   <span className="text-heading-6 font-bold text-dark">Total Amount</span>
-                  <span className="text-heading-6 font-bold text-blue">${order.total.toFixed(2)}</span>
+                  <span className="text-heading-6 font-bold text-blue">KES {order.total.toFixed(2)}</span>
                 </div>
                 {order.orderNotes && (
                   <div className="mt-4 pt-4 border-t border-gray-3">

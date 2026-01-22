@@ -264,7 +264,7 @@ export default function ProductsListPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-custom-sm font-bold text-dark">${product.price.toFixed(2)}</div>
+                        <div className="text-custom-sm font-bold text-dark">KES {product.price.toFixed(2)}</div>
                         {product.discount && product.discount > 0 && (
                           <span className="text-2xs font-bold text-green-dark bg-green-light-6 px-1.5 py-0.5 rounded">
                             {product.discount}% OFF
