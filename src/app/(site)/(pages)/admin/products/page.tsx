@@ -40,6 +40,9 @@ export default function ProductsListPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -58,18 +61,26 @@ export default function ProductsListPage() {
     }
   };
 
-  const handleDelete = async (productId: string, productTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${productTitle}"? This will also delete all its variants.`)) {
-      return;
-    }
+  const handleDeleteClick = (productId: string, productTitle: string) => {
+    setProductToDelete({ id: productId, title: productTitle });
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!productToDelete) return;
 
     try {
-      await deleteProduct(productId);
+      setDeleting(true);
+      await deleteProduct(productToDelete.id);
       toast.success("Product deleted successfully");
+      setShowDeleteModal(false);
+      setProductToDelete(null);
       loadProducts();
     } catch (error) {
       console.error("Error deleting product:", error);
       toast.error("Failed to delete product");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -288,7 +299,7 @@ export default function ProductsListPage() {
                             Edit
                           </Link>
                           <button
-                            onClick={() => handleDelete(product.id, product.title)}
+                            onClick={() => handleDeleteClick(product.id, product.title)}
                             className="text-custom-sm font-bold text-red hover:text-red-dark transition-colors"
                           >
                             Delete
@@ -328,6 +339,62 @@ export default function ProductsListPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && productToDelete && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-dark/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-[400px] rounded-2xl bg-white p-8 shadow-3 animate-in fade-in zoom-in duration-200">
+            <div className="text-center">
+              {/* Warning Icon */}
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-red-light-6 text-red">
+                <svg
+                  className="fill-current"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+              </div>
+
+              <h3 className="mb-2 text-heading-6 font-bold text-dark">Confirm Deletion</h3>
+              <p className="mb-2 text-custom-sm text-dark font-bold">
+                {productToDelete.title}
+              </p>
+              <p className="mb-8 text-custom-sm text-dark-4">
+                This will permanently delete this product and all its variants. This action cannot be undone.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  disabled={deleting}
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setProductToDelete(null);
+                  }}
+                  className="flex-1 rounded-xl border border-gray-3 py-3 text-custom-sm font-bold text-dark hover:bg-gray-2 transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={deleting}
+                  onClick={handleDeleteConfirm}
+                  className="flex-1 flex items-center justify-center rounded-xl bg-red py-3 text-custom-sm font-bold text-white hover:bg-red-dark shadow-2 transition-all disabled:bg-red/70"
+                >
+                  {deleting ? (
+                    <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  ) : (
+                    "Yes, Delete"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
