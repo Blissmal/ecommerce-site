@@ -235,9 +235,9 @@ const Header = () => {
 
           {/* 2. Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-9.5 text-custom-sm font-semibold uppercase tracking-wider text-gray-6">
-            <Link href="#" className="hover:text-blue transition-colors">Shop</Link>
-            <Link href="#categories" className="hover:text-blue transition-colors">Categories</Link>
-            <Link href="#newArrivals" className="hover:text-blue transition-colors">New Arrivals</Link>
+            <Link href="/shop-with-sidebar" className="hover:text-blue transition-colors">Shop</Link>
+            <Link href="/#categories" className="hover:text-blue transition-colors">Categories</Link>
+            <Link href="/#newArrivals" className="hover:text-blue transition-colors">New Arrivals</Link>
           </nav>
 
           {/* 3. Action Group */}

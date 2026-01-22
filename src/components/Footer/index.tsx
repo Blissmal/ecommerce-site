@@ -54,7 +54,7 @@ const Footer = () => {
             <ul className="space-y-4">
               {["Mobiles & Tablets", "Men's Shoes", "Women's Fashion", "Electronics", "New Arrivals"].map((link) => (
                 <li key={link}>
-                  <Link href="#" className="text-body hover:text-blue text-sm transition-all flex items-center gap-0 hover:gap-2 group">
+                  <Link href="/shop-with-sidebar" className="text-body hover:text-blue text-sm transition-all flex items-center gap-0 hover:gap-2 group">
                     <span className="w-0 h-[1.5px] bg-blue transition-all group-hover:w-3" />
                     {link}
                   </Link>
