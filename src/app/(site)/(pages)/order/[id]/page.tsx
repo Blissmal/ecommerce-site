@@ -1,13 +1,13 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { 
-  CheckCircle2, 
-  Clock, 
-  Package, 
-  Truck, 
-  XCircle, 
-  CreditCard, 
-  MapPin, 
+import {
+  CheckCircle2,
+  Clock,
+  Package,
+  Truck,
+  XCircle,
+  CreditCard,
+  MapPin,
   FileText,
   ArrowLeft,
   HelpCircle,
@@ -20,13 +20,13 @@ import PaymentAction from "@/components/Checkout/PaymentAction";
 
 const getStatusConfig = (status: string) => {
   const configs: Record<string, { icon: any; color: string; label: string; step: number }> = {
-    "PENDING": { icon: Clock, color: "text-amber-500 bg-amber-50 border-amber-100", label: "Awaiting Payment", step: 1 },
-    "PAID": { icon: CheckCircle2, color: "text-blue bg-blue/5 border-blue/10", label: "Payment Confirmed", step: 2 },
-    "PROCESSING": { icon: Package, color: "text-blue bg-blue/5 border-blue/10", label: "Preparing Items", step: 3 },
-    "SHIPPED": { icon: Truck, color: "text-indigo-600 bg-indigo-50 border-indigo-100", label: "In Transit", step: 4 },
-    "DELIVERED": { icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 border-emerald-100", label: "Delivered", step: 5 },
-    "CANCELLED": { icon: XCircle, color: "text-red-600 bg-red-50 border-red-100", label: "Order Cancelled", step: 0 },
-    "FAILED": { icon: AlertCircle, color: "text-red-600 bg-red-50 border-red-100", label: "Payment Failed", step: 0 },
+    "PENDING": { icon: Clock, color: "text-yellow-dark bg-yellow-light-2 border-yellow-light-1", label: "Awaiting Payment", step: 1 },
+    "PAID": { icon: CheckCircle2, color: "text-blue bg-blue-light-5 border-blue-light-4", label: "Payment Confirmed", step: 2 },
+    "PROCESSING": { icon: Package, color: "text-blue-dark bg-blue-light-5 border-blue-light-3", label: "Preparing Items", step: 3 },
+    "SHIPPED": { icon: Truck, color: "text-blue bg-blue-light-5 border-blue-light-4", label: "In Transit", step: 4 },
+    "DELIVERED": { icon: CheckCircle2, color: "text-green-dark bg-green-light-6 border-green-light-5", label: "Delivered", step: 5 },
+    "CANCELLED": { icon: XCircle, color: "text-red-dark bg-red-light-6 border-red-light-4", label: "Order Cancelled", step: 0 },
+    "FAILED": { icon: AlertCircle, color: "text-red-dark bg-red-light-6 border-red-light-4", label: "Payment Failed", step: 0 },
   };
   return configs[status] || configs["PENDING"];
 };
@@ -46,22 +46,22 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const config = getStatusConfig(order.status);
   const isTerminal = ["CANCELLED", "FAILED", "DELIVERED"].includes(order.status);
   const isCancelled = ["CANCELLED", "FAILED"].includes(order.status);
-  const needsPayment = ["PENDING", "FAILED"].includes(order.status);
+  const needsPayment = ["PENDING"].includes(order.status);
 
   return (
     <div className="min-h-screen bg-white font-euclid-circular-a pt-20 pb-24">
       {/* Visual Decor */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue/5 rounded-full blur-[120px] -z-10 opacity-50" />
-      
+
       <div className="max-w-5xl mx-auto px-6 pt-12">
-        
+
         {/* Navigation & Header */}
         <div className="flex flex-col gap-6 mb-10">
           <Link href="/my-account?tab=orders" className="flex items-center gap-2 text-sm font-bold text-dark-5 hover:text-blue transition-colors group">
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
             BACK TO ORDERS
           </Link>
-          
+
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -69,7 +69,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               </div>
               <p className="text-dark-5 font-medium">Placed on {new Date(order.createdAt).toLocaleDateString('en-KE', { dateStyle: 'long' })}</p>
             </div>
-            
+
             <div className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border ${config.color} font-bold text-sm shadow-sm`}>
               <config.icon className="w-5 h-5" />
               {config.label}
@@ -78,10 +78,10 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          
+
           {/* LEFT COLUMN: Order Items */}
           <div className="lg:col-span-2 space-y-8">
-            
+
             {/* Logic: Only show Progress Tracker if NOT cancelled */}
             {!isCancelled && (
               <div className="bg-gray-1 border border-gray-2 rounded-[2rem] p-8">
@@ -133,23 +133,22 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               </div>
               <div className="p-8 bg-dark text-white flex justify-between items-center">
                 {/* Total Section */}
-<div>
-  <p className={`text-[10px] font-bold uppercase tracking-widest ${
-    order.status === 'PAID' ? 'text-green' : 
-    (order.status === 'FAILED' || order.status === 'CANCELLED') ? 'text-red' : 
-    'text-dark-4'
-  }`}>
-    {order.status === 'PAID' || order.status === 'DELIVERED' 
-      ? "Total Amount Paid" 
-      : order.status === 'FAILED' || order.status === 'CANCELLED'
-      ? "Total Amount (Unpaid)"
-      : "Total Amount Due"
-    }
-  </p>
-  <p className="text-custom-2xl font-black text-white">
-    KES {order.total.toLocaleString()}
-  </p>
-</div>
+                <div>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${order.status === 'PAID' ? 'text-green' :
+                      (order.status === 'FAILED' || order.status === 'CANCELLED') ? 'text-red' :
+                        'text-dark-4'
+                    }`}>
+                    {order.status === 'PAID' || order.status === 'DELIVERED'
+                      ? "Total Amount Paid"
+                      : order.status === 'FAILED' || order.status === 'CANCELLED'
+                        ? "Total Amount (Unpaid)"
+                        : "Total Amount Due"
+                    }
+                  </p>
+                  <p className="text-custom-2xl font-black text-white">
+                    KES {order.total.toLocaleString()}
+                  </p>
+                </div>
                 {order.paymentMethod && (
                   <div className="text-right">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Method</p>
@@ -164,13 +163,13 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           <div className="space-y-6">
 
             {needsPayment && (
-              <PaymentAction 
-                orderId={order.id} 
+              <PaymentAction
+                orderId={order.id}
                 amount={order.total}
-                initialPhoneNumber={order.phoneNumber} 
+                initialPhoneNumber={order.phoneNumber}
               />
             )}
-            
+
             {/* Shipping Logic: Only show Address if NOT cancelled */}
             {!isCancelled ? (
               <div className="bg-white rounded-3xl border border-gray-2 p-8 shadow-sm relative overflow-hidden">
@@ -195,12 +194,17 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               </div>
             ) : (
               /* Cancellation Notice */
-              <div className="bg-red-50 border border-red-100 rounded-3xl p-8">
-                <h3 className="font-black text-red-600 text-xs uppercase tracking-[0.2em] mb-4">Shipping Terminated</h3>
-                <p className="text-sm text-red-700 leading-relaxed mb-6">
+              <div className="bg-red-light-6 border border-red-light-3 rounded-3xl p-8">
+                <h3 className="font-black text-red-dark text-xs uppercase tracking-[0.2em] mb-4">
+                  Shipping Terminated
+                </h3>
+                <p className="text-sm text-red-dark leading-relaxed mb-6">
                   This order was {order.status.toLowerCase()}. No shipping information is available as the transaction did not complete.
                 </p>
-                <Link href="/shop-with-sidebar" className="block w-full py-4 bg-red-600 text-white rounded-2xl font-bold text-sm text-center hover:bg-red-700 transition-all">
+                <Link
+                  href="/shop-with-sidebar"
+                  className="block w-full py-4 bg-red text-white rounded-2xl font-bold text-sm text-center hover:bg-red-dark transition-all"
+                >
                   Re-order Items
                 </Link>
               </div>
@@ -226,8 +230,8 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
 
             {order.orderNotes && (
               <div className="px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 italic">
-                 <p className="text-[10px] font-bold text-dark-5 uppercase tracking-widest not-italic mb-1">Your Note</p>
-                 <span className="text-sm text-gray-500">"{order.orderNotes}"</span>
+                <p className="text-[10px] font-bold text-dark-5 uppercase tracking-widest not-italic mb-1">Your Note</p>
+                <span className="text-sm text-gray-500">"{order.orderNotes}"</span>
               </div>
             )}
           </div>
