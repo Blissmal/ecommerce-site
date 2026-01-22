@@ -1,17 +1,20 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAppSelector } from "@/redux/store";
 import { useSelector } from "react-redux";
 import { selectTotalPrice } from "@/redux/features/cart-slice";
 import Breadcrumb from "../Common/Breadcrumb";
 import toast from "react-hot-toast";
+import { useSearchParams } from "next/navigation";
 
 const Checkout = ({ userId }: { userId: string }) => {
   const cartItems = useAppSelector((state) => state.cartReducer.items);
   const totalPrice = useSelector(selectTotalPrice);
+  const searchParams = useSearchParams();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
+  const [checkoutRequestID, setCheckoutRequestID] = useState<string | null>(null);
 
   // Form state matching your database schema
   const [formData, setFormData] = useState({
@@ -21,6 +24,64 @@ const Checkout = ({ userId }: { userId: string }) => {
     billingAddress: '',
     orderNotes: ''
   });
+
+  /**
+   * Check payment status on page load (handles refresh scenario)
+   */
+  useEffect(() => {
+    const checkInitialStatus = async () => {
+      // Check if there's a checkoutRequestID in URL or localStorage
+      const urlCheckoutId = searchParams.get('checkoutRequestID');
+      const storedCheckoutId = localStorage.getItem('pendingCheckoutRequestID');
+      const checkoutId = urlCheckoutId || storedCheckoutId;
+
+      if (!checkoutId) return;
+
+      setIsProcessing(true);
+      setPaymentStatus('Checking payment status...');
+      setCheckoutRequestID(checkoutId);
+
+      try {
+        const response = await fetch('/api/mpesa/check-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ checkoutRequestID: checkoutId })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'PAID') {
+          // Already paid, redirect immediately
+          setPaymentStatus('Payment confirmed! Redirecting...');
+          toast.success("Order confirmed!");
+          localStorage.removeItem('pendingCheckoutRequestID');
+          
+          setTimeout(() => {
+            window.location.href = `/order-success?orderId=${data.orderId}`;
+          }, 1500);
+        } else if (data.status === 'CANCELLED' || data.status === 'FAILED') {
+          // Already cancelled/failed
+          setPaymentStatus('Payment was cancelled or failed.');
+          toast.error(data.message || 'Payment failed');
+          localStorage.removeItem('pendingCheckoutRequestID');
+          setIsProcessing(false);
+        } else if (data.status === 'PENDING') {
+          // Still pending, start polling
+          setPaymentStatus('Waiting for payment confirmation...');
+          pollPaymentStatus(checkoutId);
+        } else {
+          // Unknown status
+          setIsProcessing(false);
+          localStorage.removeItem('pendingCheckoutRequestID');
+        }
+      } catch (error) {
+        console.error('Initial status check error:', error);
+        setIsProcessing(false);
+      }
+    };
+
+    checkInitialStatus();
+  }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -70,6 +131,10 @@ const Checkout = ({ userId }: { userId: string }) => {
         setPaymentStatus('Please check your phone for the M-Pesa prompt.');
         toast.success("STK Push sent!");
         
+        // Store checkoutRequestID for page refresh handling
+        setCheckoutRequestID(data.checkoutRequestID);
+        localStorage.setItem('pendingCheckoutRequestID', data.checkoutRequestID);
+        
         // 2. Start Polling for payment completion
         pollPaymentStatus(data.checkoutRequestID);
       } else {
@@ -106,15 +171,18 @@ const Checkout = ({ userId }: { userId: string }) => {
           clearInterval(interval);
           setPaymentStatus('Payment Successful! Redirecting...');
           toast.success("Order confirmed!");
+          localStorage.removeItem('pendingCheckoutRequestID');
           
-          // Clear cart or redirect
+          // Redirect to success page
           setTimeout(() => {
             window.location.href = `/order-success?orderId=${data.orderId}`;
           }, 2000);
         } 
-        else if (data.status === 'FAILED') {
+        else if (data.status === 'CANCELLED' || data.status === 'FAILED') {
           clearInterval(interval);
           setPaymentStatus('Payment cancelled or failed on your phone.');
+          toast.error(data.message || 'Payment failed');
+          localStorage.removeItem('pendingCheckoutRequestID');
           setIsProcessing(false);
         }
         
@@ -122,6 +190,7 @@ const Checkout = ({ userId }: { userId: string }) => {
         if (attempts >= maxAttempts) {
           clearInterval(interval);
           setPaymentStatus('Payment verification timed out. If you paid, please contact support.');
+          toast.error('Payment verification timed out');
           setIsProcessing(false);
         }
       } catch (error) {

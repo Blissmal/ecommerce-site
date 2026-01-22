@@ -1,6 +1,6 @@
 // app/api/mpesa/callback/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { updateOrderStatus, cancelOrder } from '../../../../../lib/order.action';
+import { cancelOrder } from '../../../../../lib/order.action';
 import { prisma } from '../../../../../lib/prisma';
 
 export async function POST(req: NextRequest) {
@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
 
       const receiptNumber = metadata.find((item: any) => item.Name === 'MpesaReceiptNumber')?.Value;
 
-      // Update order to PAID
       await prisma.order.update({
         where: { id: order.id },
         data: {
@@ -41,22 +40,31 @@ export async function POST(req: NextRequest) {
 
       console.log(`✅ Payment successful for order ${order.id}: ${receiptNumber}`);
 
+    } else if (ResultCode === 1032) {
+      // ❌ User explicitly cancelled the payment
+      console.log(`❌ Payment cancelled by user for order ${order.id}: ${ResultDesc}`);
+      await cancelOrder(order.id);
+      
+    } else if (ResultCode === 1037) {
+      // ⏱️ Timeout - user didn't enter PIN
+      console.log(`⏱️ Payment timeout for order ${order.id}: ${ResultDesc}`);
+      await cancelOrder(order.id);
+      
+    } else if (ResultCode === 1) {
+      // ❌ Insufficient balance
+      console.log(`❌ Insufficient balance for order ${order.id}: ${ResultDesc}`);
+      await cancelOrder(order.id);
+      
     } else {
-      // ❌ Payment failed or cancelled
-      console.log(`❌ Payment failed for order ${order.id}: ${ResultDesc}`);
-
-      // Cancel order and restore stock
+      // ⚠️ Other error - cancel the order
+      console.log(`⚠️ Payment error (${ResultCode}) for order ${order.id}: ${ResultDesc}`);
       await cancelOrder(order.id);
     }
 
-    // M-Pesa requires 200 with ResultCode 0
     return NextResponse.json({ ResultCode: 0, ResultDesc: 'Success' });
 
   } catch (error) {
     console.error('Callback processing error:', error);
-    
-    // Still return success to M-Pesa to prevent retries
-    // Log the error for manual investigation
     return NextResponse.json({ ResultCode: 0, ResultDesc: 'Success' });
   }
 }
