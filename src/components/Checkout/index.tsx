@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAppSelector } from "@/redux/store";
 import { useSelector } from "react-redux";
 import { selectTotalPrice } from "@/redux/features/cart-slice";
@@ -14,7 +14,7 @@ const Checkout = ({ userId }: { userId: string }) => {
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
-  const [checkoutRequestID, setCheckoutRequestID] = useState<string | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Form state matching your database schema
   const [formData, setFormData] = useState({
@@ -24,6 +24,16 @@ const Checkout = ({ userId }: { userId: string }) => {
     billingAddress: '',
     orderNotes: ''
   });
+
+  /**
+   * Cleanup function to stop polling
+   */
+  const stopPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  };
 
   /**
    * Check payment status on page load (handles refresh scenario)
@@ -39,7 +49,6 @@ const Checkout = ({ userId }: { userId: string }) => {
 
       setIsProcessing(true);
       setPaymentStatus('Checking payment status...');
-      setCheckoutRequestID(checkoutId);
 
       try {
         const response = await fetch('/api/mpesa/check-status', {
@@ -47,6 +56,10 @@ const Checkout = ({ userId }: { userId: string }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ checkoutRequestID: checkoutId })
         });
+
+        if (!response.ok) {
+          throw new Error('Failed to check payment status');
+        }
 
         const data = await response.json();
 
@@ -66,22 +79,64 @@ const Checkout = ({ userId }: { userId: string }) => {
           localStorage.removeItem('pendingCheckoutRequestID');
           setIsProcessing(false);
         } else if (data.status === 'PENDING') {
-          // Still pending, start polling
+          // Still pending, resume polling
           setPaymentStatus('Waiting for payment confirmation...');
+          toast.error("Payment still pending. Please complete on your phone.", {
+          icon: '⏰',
+          duration: 5000
+        });
           pollPaymentStatus(checkoutId);
         } else {
           // Unknown status
+          setPaymentStatus('');
           setIsProcessing(false);
           localStorage.removeItem('pendingCheckoutRequestID');
         }
       } catch (error) {
         console.error('Initial status check error:', error);
-        setIsProcessing(false);
+        
+        // Don't show error toast on page load - payment might still be processing
+        setPaymentStatus('Checking payment status...');
+        
+        // Try to resume polling if we have a checkoutRequestID
+        if (checkoutId) {
+          toast.error("Resuming payment verification...", {
+          icon: '⏰',
+          duration: 5000
+        });
+          pollPaymentStatus(checkoutId);
+        } else {
+          setIsProcessing(false);
+        }
       }
     };
 
     checkInitialStatus();
+
+    // Cleanup on unmount
+    return () => {
+      stopPolling();
+    };
   }, [searchParams]);
+
+  /**
+   * Prevent accidental page refresh/close during payment
+   */
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isProcessing) {
+        e.preventDefault();
+        e.returnValue = 'Payment is being processed. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isProcessing]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -129,10 +184,9 @@ const Checkout = ({ userId }: { userId: string }) => {
 
       if (data.success) {
         setPaymentStatus('Please check your phone for the M-Pesa prompt.');
-        toast.success("STK Push sent!");
+        toast.success("STK Push sent! Check your phone.");
         
         // Store checkoutRequestID for page refresh handling
-        setCheckoutRequestID(data.checkoutRequestID);
         localStorage.setItem('pendingCheckoutRequestID', data.checkoutRequestID);
         
         // 2. Start Polling for payment completion
@@ -142,9 +196,10 @@ const Checkout = ({ userId }: { userId: string }) => {
       }
     } catch (error: any) {
       console.error('Payment error:', error);
-      toast.error(error.message);
-      setPaymentStatus('Order failed. Please try again.');
+      toast.error(error.message || 'Failed to initiate payment');
+      setPaymentStatus('');
       setIsProcessing(false);
+      localStorage.removeItem('pendingCheckoutRequestID');
     }
   };
 
@@ -152,10 +207,13 @@ const Checkout = ({ userId }: { userId: string }) => {
    * 3. Poll the server to check if the user has entered their PIN
    */
   const pollPaymentStatus = async (checkoutRequestID: string) => {
-    const maxAttempts = 15; // Poll for ~2.5 minutes
+    // Stop any existing polling
+    stopPolling();
+    
+    const maxAttempts = 18; // Poll for ~3 minutes (18 * 10s)
     let attempts = 0;
 
-    const interval = setInterval(async () => {
+    pollingIntervalRef.current = setInterval(async () => {
       attempts++;
       
       try {
@@ -165,10 +223,24 @@ const Checkout = ({ userId }: { userId: string }) => {
           body: JSON.stringify({ checkoutRequestID })
         });
 
+        if (!response.ok) {
+          console.error('Status check failed:', response.status);
+          
+          // Continue polling even if request fails
+          if (attempts >= maxAttempts) {
+            stopPolling();
+            setPaymentStatus('Unable to verify payment. Please check your order history.');
+            toast.error('Payment verification issue. Check your orders.');
+            setIsProcessing(false);
+            localStorage.removeItem('pendingCheckoutRequestID');
+          }
+          return;
+        }
+
         const data = await response.json();
 
         if (data.status === 'PAID') {
-          clearInterval(interval);
+          stopPolling();
           setPaymentStatus('Payment Successful! Redirecting...');
           toast.success("Order confirmed!");
           localStorage.removeItem('pendingCheckoutRequestID');
@@ -176,25 +248,45 @@ const Checkout = ({ userId }: { userId: string }) => {
           // Redirect to success page
           setTimeout(() => {
             window.location.href = `/order-success?orderId=${data.orderId}`;
-          }, 2000);
+          }, 1500);
         } 
-        else if (data.status === 'CANCELLED' || data.status === 'FAILED') {
-          clearInterval(interval);
-          setPaymentStatus('Payment cancelled or failed on your phone.');
+        else if (data.status === 'CANCELLED') {
+          stopPolling();
+          setPaymentStatus('Payment was cancelled.');
+          toast.error('Payment cancelled');
+          localStorage.removeItem('pendingCheckoutRequestID');
+          setIsProcessing(false);
+        }
+        else if (data.status === 'FAILED') {
+          stopPolling();
+          setPaymentStatus('Payment failed.');
           toast.error(data.message || 'Payment failed');
           localStorage.removeItem('pendingCheckoutRequestID');
           setIsProcessing(false);
         }
+        else if (data.status === 'PENDING') {
+          // Still pending, continue polling
+          setPaymentStatus('Waiting for payment confirmation...');
+        }
         
-        // If we hit max attempts without a result
+        // If we hit max attempts without a definitive result
         if (attempts >= maxAttempts) {
-          clearInterval(interval);
-          setPaymentStatus('Payment verification timed out. If you paid, please contact support.');
-          toast.error('Payment verification timed out');
+          stopPolling();
+          setPaymentStatus('Payment verification timed out.');
+          toast.error('Payment verification timed out. Check your order history or contact support.');
           setIsProcessing(false);
+          // Don't remove checkoutRequestID - user might still complete payment
         }
       } catch (error) {
         console.error("Polling error:", error);
+        
+        // Continue polling even on errors, unless max attempts reached
+        if (attempts >= maxAttempts) {
+          stopPolling();
+          setPaymentStatus('Unable to verify payment status.');
+          toast.error('Payment verification issue. Please check your order history.');
+          setIsProcessing(false);
+        }
       }
     }, 10000); // Check every 10 seconds
   };
@@ -203,8 +295,6 @@ const Checkout = ({ userId }: { userId: string }) => {
     <>
       <Breadcrumb title={"Checkout"} pages={["shop", "checkout"]} />
       
-      
-
       <section className="py-20 bg-gray-2 font-euclid-circular-a">
         <div className="max-w-[1170px] mx-auto px-4">
           <form onSubmit={handleMpesaPayment} className="flex flex-col lg:flex-row gap-10">
@@ -220,8 +310,10 @@ const Checkout = ({ userId }: { userId: string }) => {
                     <input
                       name="billingName"
                       type="text"
+                      value={formData.billingName}
                       onChange={handleInputChange}
-                      className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20"
+                      disabled={isProcessing}
+                      className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20 disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="John Doe"
                       required
                     />
@@ -231,8 +323,10 @@ const Checkout = ({ userId }: { userId: string }) => {
                     <input
                       name="billingEmail"
                       type="email"
+                      value={formData.billingEmail}
                       onChange={handleInputChange}
-                      className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20"
+                      disabled={isProcessing}
+                      className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20 disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="john@example.com"
                       required
                     />
@@ -244,8 +338,10 @@ const Checkout = ({ userId }: { userId: string }) => {
                   <input
                     name="phoneNumber"
                     type="tel"
+                    value={formData.phoneNumber}
                     onChange={handleInputChange}
-                    className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20"
+                    disabled={isProcessing}
+                    className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="0712345678"
                     required
                   />
@@ -255,9 +351,11 @@ const Checkout = ({ userId }: { userId: string }) => {
                   <label className="text-sm font-medium text-dark">Delivery Address</label>
                   <textarea
                     name="billingAddress"
+                    value={formData.billingAddress}
                     onChange={handleInputChange}
+                    disabled={isProcessing}
                     rows={3}
-                    className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20"
+                    className="w-full p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="Street, Apartment, City"
                   />
                 </div>
@@ -267,12 +365,31 @@ const Checkout = ({ userId }: { userId: string }) => {
                 <label className="text-sm font-medium text-dark">Order Notes (Optional)</label>
                 <textarea
                   name="orderNotes"
+                  value={formData.orderNotes}
                   onChange={handleInputChange}
+                  disabled={isProcessing}
                   rows={2}
-                  className="w-full mt-2 p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20"
+                  className="w-full mt-2 p-4 bg-gray-1 border border-gray-3 rounded-xl outline-none focus:ring-2 focus:ring-blue/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Notes about your delivery..."
                 />
               </div>
+
+              {/* Payment In Progress Warning */}
+              {isProcessing && (
+                <div className="bg-yellow-light-2 border-l-4 border-yellow-dark rounded-xl p-6">
+                  <div className="flex items-start gap-4">
+                    <svg className="w-6 h-6 text-yellow-dark flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <h4 className="text-sm font-bold text-yellow-dark mb-1">Payment In Progress</h4>
+                      <p className="text-xs text-dark-5">
+                        Please don't close or refresh this page. Check your phone to complete the M-Pesa payment.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* RIGHT: Order Summary */}
@@ -308,7 +425,7 @@ const Checkout = ({ userId }: { userId: string }) => {
 
                 {paymentStatus && (
                   <div className="mb-4 p-3 bg-blue/5 border border-blue/10 rounded-lg">
-                    <p className="text-xs text-center text-blue-dark font-medium animate-pulse">
+                    <p className="text-xs text-center text-blue-dark font-medium">
                       {paymentStatus}
                     </p>
                   </div>
