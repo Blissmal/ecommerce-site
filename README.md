@@ -2,7 +2,7 @@
 
 A modern, full-stack e-commerce platform built with **Next.js 16**, **Prisma**, **PostgreSQL**, and **Redux Toolkit**. Features a complete product variant system (color, size, storage), admin panel, cart management, and M-Pesa payment integration.
 
-![Platform Banner](./public/images/banner.png)
+![Platform Banner](./public/images/readme/home.png)
 
 > **Live Demo:** [ecommerce-site.vercel.app](https://your-deployment-url.vercel.app)  
 > **Repository:** [github.com/Blissmal/ecommerce-site](https://github.com/Blissmal/ecommerce-site)
@@ -360,7 +360,7 @@ Each variant has:
 - Own stock count
 - Optional images
 
-![Variant Selector](./public/images/variant-selector.png)
+![Variant Selector](./public/images/readme/variant-selector.png)
 
 ### **Example: iPhone 14 Plus**
 
@@ -447,7 +447,7 @@ Product {
 
 ### **Dashboard**
 
-![Admin Dashboard](./public/images/admin-dashboard.png)
+![Admin Dashboard](./public/images/readme/admin-dashboard.png)
 
 **Access:** `/admin`
 
@@ -459,7 +459,7 @@ Product {
 
 ### **Products Management**
 
-![Admin Products](./public/images/admin-products.png)
+![Admin Products](./public/images/readme/admin-product-management.png)
 
 **Access:** `/admin/products`
 
@@ -472,7 +472,7 @@ Product {
 
 ### **Add Product**
 
-![Admin Add Product](./public/images/admin-add.png)
+![Admin Add Product](./public/images/readme/admin-add-product.png)
 
 **Access:** `/admin/products/add`
 
@@ -529,7 +529,7 @@ Then set price and stock for each variant
 
 ### **Edit Product**
 
-![Admin Edit Product](./public/images/admin-edit.png)
+![Admin Edit Product](./public/images/readme/admin-edit-product.png)
 
 **Access:** `/admin/products/[id]/edit`
 
@@ -578,7 +578,7 @@ Then set price and stock for each variant
 
 ### **Homepage**
 
-![Homepage](./public/images/homepage.png)
+![Homepage](./public/images/readme/home.png)
 
 **Features:**
 - Hero banner
@@ -590,7 +590,7 @@ Then set price and stock for each variant
 
 ### **Shop Page**
 
-![Shop Page](./public/images/shop.png)
+![Shop Page](./public/images/readme/shop-with-sidebar.png)
 
 **Access:** `/shop-with-sidebar`
 
@@ -623,7 +623,7 @@ Then set price and stock for each variant
 
 ### **Product Details**
 
-![Product Details](./public/images/product-details.png)
+![Product Details](./public/images/readme/product-details.png)
 
 **Access:** `/shop-details/[productId]`
 
@@ -657,7 +657,7 @@ SKU: IP14-256GB-BLU
 
 ### **Shopping Cart**
 
-![Shopping Cart](./public/images/cart.png)
+![Shopping Cart](./public/images/readme/cart.png)
 
 **Access:** `/cart`
 
@@ -690,7 +690,7 @@ SKU: IP14-256GB-BLU
 
 ### **Checkout**
 
-![Checkout](./public/images/checkout.png)
+![Checkout](./public/images/readme/checkout.png)
 
 **Access:** `/checkout`
 
