@@ -118,7 +118,7 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { openPreviewModal } = usePreviewSlider();
   const user = useUser();
-  
+
   // Get cart items from Redux store
   const cartItems = useSelector((state: RootState) => state.cartReducer.items);
 
@@ -365,76 +365,56 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
     );
 
     try {
-      await dispatch(
-        addItemToCartAsync({
-          productId: product.id,
-          variantId: selectedVariant.id,
-          quantity: quantity,
-        })
-      ).unwrap();
+      await dispatch(addItemToCartAsync({
+        productId: product.id,
+        variantId: selectedVariant.id,
+        quantity: quantity,
+      })).unwrap();
 
-      // Success toast with cart icon
-      toast.success(
-        <div className="flex items-center gap-3">
-          <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-          </svg>
-          <div>
-            <p className="font-bold">Added to cart!</p>
-            <p className="text-xs">{quantity} × {product.title}</p>
-          </div>
-        </div>,
-        {
-          duration: 3000,
-          icon: '✓',
-        }
-      );
-
-      // Show stock warning if there are items in cart after adding
       const newQuantityInCart = quantityInCart + quantity;
       const newAvailableStock = currentStock - newQuantityInCart;
-      
-      if (newAvailableStock > 0 && newAvailableStock < currentStock) {
-        setTimeout(() => {
-          toast(
-            <div>
-              <p className="font-bold text-orange-dark">⚠️ Stock Update</p>
-              <p className="text-xs text-dark-5">You now have {newQuantityInCart} item(s) in cart. {newAvailableStock} more available.</p>
-            </div>,
-            {
-              duration: 4000,
-              icon: '📦',
-              style: {
-                background: '#FFF7ED',
-                border: '1px solid #FDBA74',
-              }
-            }
-          );
-        }, 500);
-      } else if (newAvailableStock === 0) {
-        setTimeout(() => {
-          toast(
-            <div>
-              <p className="font-bold text-orange-dark">⚠️ Maximum Reached</p>
-              <p className="text-xs text-dark-5">You have all {currentStock} available items in your cart.</p>
-            </div>,
-            {
-              duration: 4000,
-              icon: '🛑',
-              style: {
-                background: '#FFF7ED',
-                border: '1px solid #FDBA74',
-              }
-            }
-          );
-        }, 500);
+
+      toast.dismiss('cart-action');
+
+      let stockWarning = null;
+
+      if (newAvailableStock === 0) {
+        stockWarning = {
+          type: 'max',
+          icon: '🚫',
+          title: 'Limit Reached',
+          message: `You have all ${currentStock} available units in your cart.`
+        };
+      } else if (newAvailableStock > 0 && newAvailableStock <= 5) {
+        stockWarning = {
+          type: 'low',
+          icon: '⚡',
+          title: 'Low Stock',
+          message: `Hurry! Only ${newAvailableStock} more items left.`
+        };
       }
-      
-      // Reset quantity to 1 after successful add
+
+      toast.custom(
+  (t) => (
+    <div
+      className={`
+        ${t.visible ? 'animate-toast-in' : 'animate-toast-out'}
+        max-w-md w-full bg-white shadow-3 rounded-xl ring-1 ring-dark/5 p-4
+      `}
+    >
+      <CartToast 
+        product={product} 
+        quantity={quantity} 
+        stockWarning={stockWarning} 
+      />
+    </div>
+  ),
+  { id: 'cart-action', duration: 5000 }
+);
+
       setQuantity(1);
     } catch (err) {
-      toast.error("Failed to add item to cart");
-      console.error("Add to cart error:", err);
+      toast.error("Could not add to cart. Please try again.", { id: 'cart-action' });
     } finally {
       setAddingToCart(false);
     }
@@ -630,8 +610,8 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                           key={color}
                           onClick={() => handleColorChange(color)}
                           className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${selectedColor === color
-                              ? "border-blue bg-blue text-white"
-                              : "border-gray-300 hover:border-blue"
+                            ? "border-blue bg-blue text-white"
+                            : "border-gray-300 hover:border-blue"
                             } ${!compatible ? "opacity-30 cursor-not-allowed bg-gray-100" : ""}`}
                         >
                           {color}
@@ -652,8 +632,8 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                           key={size}
                           onClick={() => handleSizeChange(size)}
                           className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${selectedSize === size
-                              ? "border-blue bg-blue text-white"
-                              : "border-gray-300 hover:border-blue"
+                            ? "border-blue bg-blue text-white"
+                            : "border-gray-300 hover:border-blue"
                             } ${!compatible ? "opacity-30 cursor-not-allowed bg-gray-100" : ""}`}
                         >
                           {size}
@@ -674,8 +654,8 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                           key={storage}
                           onClick={() => handleStorageChange(storage)}
                           className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${selectedStorage === storage
-                              ? "border-blue bg-blue text-white"
-                              : "border-gray-300 hover:border-blue"
+                            ? "border-blue bg-blue text-white"
+                            : "border-gray-300 hover:border-blue"
                             } ${!compatible ? "opacity-30 cursor-not-allowed bg-gray-100" : ""}`}
                         >
                           {storage}
@@ -880,8 +860,8 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`font-medium lg:text-lg ease-out duration-200 hover:text-blue relative before:h-0.5 before:bg-blue before:absolute before:left-0 before:bottom-0 before:ease-out before:duration-200 hover:before:w-full ${activeTab === tab.id
-                    ? "text-blue before:w-full"
-                    : "text-dark before:w-0"
+                  ? "text-blue before:w-full"
+                  : "text-dark before:w-0"
                   }`}
               >
                 {tab.title}
@@ -958,7 +938,7 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                     Write a Review
                   </button>
                 </div>
-                
+
                 {product.reviews && product.reviews.length > 0 ? (
                   <div className="space-y-4">
                     {product.reviews.map((review) => (
@@ -1022,8 +1002,8 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
             <form onSubmit={handleSubmitReview}>
               <div className="mb-6">
                 <label className="block text-sm font-medium mb-3">Your Rating *</label>
-                <StarRating 
-                  rating={reviewRating} 
+                <StarRating
+                  rating={reviewRating}
                   onRatingChange={setReviewRating}
                   interactive={true}
                   size={32}
@@ -1089,3 +1069,51 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
 };
 
 export default ShopDetailsClient;
+
+const CartToast = ({ product, quantity, stockWarning }) => (
+  <div className="w-full max-w-xs pointer-events-auto font-euclid-circular-a">
+    {/* Main Content */}
+    <div className="flex items-start gap-3">
+      {product.imageUrl && (
+        <img
+          src={product.imageUrl}
+          alt={product.title}
+          className="w-11 h-11 rounded-lg object-cover border border-gray-3"
+        />
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-custom-sm font-bold text-dark truncate">
+          Added to cart
+        </p>
+        <p className="text-2xs text-dark-3 truncate">
+          {quantity} × {product.title}
+        </p>
+      </div>
+      <a
+        href="/cart"
+        className="text-custom-xs font-bold text-orange hover:text-orange-dark transition-colors whitespace-nowrap pt-0.5"
+      >
+        VIEW CART
+      </a>
+    </div>
+
+    {/* Stock Alerts using your Specific Palette */}
+    {stockWarning && (
+      <div className={`mt-3 p-2.5 rounded-lg border flex items-start gap-2.5 ${stockWarning.type === 'max'
+          ? 'bg-red-light-6 border-red-light-4'
+          : 'bg-yellow-light-4 border-yellow-light-1'
+        }`}>
+        <span className="text-sm mt-0.5">{stockWarning.icon}</span>
+        <div>
+          <p className={`text-2xs font-bold uppercase tracking-wider ${stockWarning.type === 'max' ? 'text-red-dark' : 'text-yellow-dark-2'
+            }`}>
+            {stockWarning.title}
+          </p>
+          <p className="text-2xs text-dark-2 mt-0.5 leading-tight">
+            {stockWarning.message}
+          </p>
+        </div>
+      </div>
+    )}
+  </div>
+);
