@@ -8,7 +8,7 @@ import Newsletter from "../Common/Newsletter";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
-import { addItemOptimistic, addItemToCartAsync } from "@/redux/features/cart-slice";
+import { addItemOptimistic, addItemToCartAsync, fetchCartItems } from "@/redux/features/cart-slice";
 import { toast } from "react-hot-toast";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { useRouter } from "next/navigation";
@@ -415,6 +415,7 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
       setQuantity(1);
     } catch (err) {
       toast.error("Could not add to cart. Please try again.", { id: 'cart-action' });
+      dispatch(fetchCartItems());
     } finally {
       setAddingToCart(false);
     }
