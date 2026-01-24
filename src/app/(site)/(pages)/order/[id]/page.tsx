@@ -47,8 +47,8 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
 
   const config = getStatusConfig(order.status);
   const isTerminal = ["CANCELLED", "FAILED", "DELIVERED"].includes(order.status);
-  const isCancelled = ["CANCELLED", "FAILED"].includes(order.status);
-  const needsPayment = ["PENDING", "FAILED", "CANCELLED"].includes(order.status);
+  const isCancelled = ["CANCELLED"].includes(order.status);
+  const needsPayment = ["PENDING", "FAILED"].includes(order.status);
 
   return (
     <div className="min-h-screen bg-white font-euclid-circular-a pt-20 pb-24">
