@@ -177,6 +177,7 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
                 <div className="relative group">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-5 group-focus-within:text-blue transition-colors" size={18} />
                   <input
+                    id="product-search"
                     type="text"
                     placeholder="Keywords..."
                     value={searchTerm}
@@ -275,6 +276,7 @@ const ShopWithSidebarClient = ({ products, categories }: Props) => {
 
                 <div className="relative">
                   <select
+                    id="sortBy"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     className="appearance-none pl-4 pr-10 py-2.5 bg-white border border-gray-3 rounded-xl text-custom-sm font-bold text-dark outline-none cursor-pointer focus:border-blue"

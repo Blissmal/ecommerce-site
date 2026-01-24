@@ -90,7 +90,6 @@ const Footer = () => {
             
             <div className="relative group">
               <input 
-                id="email"
                 name="email"
                 type="email" 
                 autoComplete="email"

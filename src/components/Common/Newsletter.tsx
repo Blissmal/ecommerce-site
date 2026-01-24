@@ -34,6 +34,7 @@ const Newsletter = () => {
                     type="email"
                     name="email"
                     id="email"
+                    autoComplete="email"
                     placeholder="Enter your email"
                     className="w-full bg-gray-1 border border-gray-3 outline-none rounded-md placeholder:text-dark-4 py-3 px-5"
                   />

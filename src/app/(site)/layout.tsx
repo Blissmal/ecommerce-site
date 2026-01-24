@@ -1,4 +1,66 @@
-// Revised code with Loading Context integration
+// // Revised code with Loading Context integration
+
+// import { StackProvider, StackTheme } from "@stackframe/stack";
+// import { stackServerApp } from "../../stack";
+// import "../css/euclid-circular-a-font.css";
+// import "../css/style.css";
+// import Header from "../../components/Header";
+// import Footer from "../../components/Footer";
+
+// import { ModalProvider } from "../context/QuickViewModalContext";
+// import { CartModalProvider } from "../context/CartSidebarModalContext";
+// import { ReduxProvider } from "@/redux/provider";
+// import QuickViewModal from "@/components/Common/QuickViewModal";
+// import CartSidebarModal from "@/components/Common/CartSidebarModal";
+// import { PreviewSliderProvider } from "../context/PreviewSliderContext";
+// import PreviewSliderModal from "@/components/Common/PreviewSlider";
+
+// import ScrollToTop from "@/components/Common/ScrollToTop";
+// import { Toaster } from "react-hot-toast";
+// import { LoaderProvider, LoaderUIWrapper } from "../context/LoadingContext";
+
+// // Import the new Context and Wrapper
+
+// export default function RootLayout({
+//   children,
+// }: {
+//   children: React.ReactNode;
+// }) {
+//   return (
+//     <html lang="en" suppressHydrationWarning={true}>
+//       <body suppressHydrationWarning={true}>{/* Added suppressHydrationWarning */}
+//         <StackProvider app={stackServerApp}>
+//           <StackTheme>
+//             <LoaderProvider>
+//               <LoaderUIWrapper>
+//                 <ReduxProvider>
+//                   <CartModalProvider>
+//                     <ModalProvider>
+//                       <PreviewSliderProvider>
+//                         <Header />
+//                         {children}
+
+//                         <QuickViewModal />
+//                         <CartSidebarModal />
+//                         <PreviewSliderModal />
+//                       </PreviewSliderProvider>
+//                     </ModalProvider>
+//                   </CartModalProvider>
+//                 </ReduxProvider>
+//                 <ScrollToTop />
+//                 <Footer />
+//               </LoaderUIWrapper>
+//             </LoaderProvider>
+//           </StackTheme>
+//         </StackProvider>
+//         <Toaster />
+//       </body>
+//     </html>
+//   );
+// }
+
+// app/(site)/layout.tsx
+
 
 import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackServerApp } from "../../stack";
@@ -19,42 +81,39 @@ import ScrollToTop from "@/components/Common/ScrollToTop";
 import { Toaster } from "react-hot-toast";
 import { LoaderProvider, LoaderUIWrapper } from "../context/LoadingContext";
 
-// Import the new Context and Wrapper
-
-export default function RootLayout({
+export default function SiteLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning={true}>
-      <body suppressHydrationWarning={true}>{/* Added suppressHydrationWarning */}
-        <StackProvider app={stackServerApp}>
-          <StackTheme>
-            <LoaderProvider>
-              <LoaderUIWrapper>
-                <ReduxProvider>
-                  <CartModalProvider>
-                    <ModalProvider>
-                      <PreviewSliderProvider>
-                        <Header />
-                        {children}
-
-                        <QuickViewModal />
-                        <CartSidebarModal />
-                        <PreviewSliderModal />
-                      </PreviewSliderProvider>
-                    </ModalProvider>
-                  </CartModalProvider>
-                </ReduxProvider>
-                <ScrollToTop />
-                <Footer />
-              </LoaderUIWrapper>
-            </LoaderProvider>
-          </StackTheme>
-        </StackProvider>
-        <Toaster />
-      </body>
-    </html>
+    <StackProvider app={stackServerApp}>
+      <StackTheme>
+        <LoaderProvider>
+          <LoaderUIWrapper>
+            <ReduxProvider>
+              <CartModalProvider>
+                <ModalProvider>
+                  <PreviewSliderProvider>
+                    <Header />
+                    {children}
+                    <Footer />
+                    
+                    {/* Modals */}
+                    <QuickViewModal />
+                    <CartSidebarModal />
+                    <PreviewSliderModal />
+                    
+                    {/* Global Components */}
+                    <ScrollToTop />
+                    <Toaster />
+                  </PreviewSliderProvider>
+                </ModalProvider>
+              </CartModalProvider>
+            </ReduxProvider>
+          </LoaderUIWrapper>
+        </LoaderProvider>
+      </StackTheme>
+    </StackProvider>
   );
 }

@@ -306,8 +306,9 @@ const Checkout = ({ userId }: { userId: string }) => {
                 
                 <div className="grid md:grid-cols-2 gap-4 mb-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-dark">Full Name *</label>
+                    <label htmlFor="billingName" className="text-sm font-medium text-dark">Full Name *</label>
                     <input
+                      id="billingName"
                       name="billingName"
                       type="text"
                       value={formData.billingName}
@@ -319,8 +320,9 @@ const Checkout = ({ userId }: { userId: string }) => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-dark">Email Address *</label>
+                    <label htmlFor="billingEmail" className="text-sm font-medium text-dark">Email Address *</label>
                     <input
+                      id="billingEmail"
                       name="billingEmail"
                       type="email"
                       value={formData.billingEmail}
@@ -334,8 +336,9 @@ const Checkout = ({ userId }: { userId: string }) => {
                 </div>
 
                 <div className="space-y-2 mb-4">
-                  <label className="text-sm font-medium text-dark">M-Pesa Phone Number *</label>
+                  <label htmlFor="phoneNumber" className="text-sm font-medium text-dark">M-Pesa Phone Number *</label>
                   <input
+                    id="phoneNumber"
                     name="phoneNumber"
                     type="tel"
                     value={formData.phoneNumber}
@@ -348,8 +351,9 @@ const Checkout = ({ userId }: { userId: string }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-dark">Delivery Address</label>
+                  <label htmlFor="billingAddress" className="text-sm font-medium text-dark">Delivery Address</label>
                   <textarea
+                    id="billingAddress"
                     name="billingAddress"
                     value={formData.billingAddress}
                     onChange={handleInputChange}
@@ -362,8 +366,9 @@ const Checkout = ({ userId }: { userId: string }) => {
               </div>
 
               <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-3">
-                <label className="text-sm font-medium text-dark">Order Notes (Optional)</label>
+                <label htmlFor="orderNotes" className="text-sm font-medium text-dark">Order Notes (Optional)</label>
                 <textarea
+                  id="orderNotes"
                   name="orderNotes"
                   value={formData.orderNotes}
                   onChange={handleInputChange}

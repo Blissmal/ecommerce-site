@@ -602,7 +602,7 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
               <div className="space-y-4 mb-6">
                 {/* Color Selector */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Color</label>
+                  <p className="block text-sm font-medium mb-2">Color</p>
                   <div className="flex flex-wrap gap-2">
                     {allAvailableColors.map((color) => {
                       const compatible = isOptionCompatible('color', color);
@@ -624,7 +624,7 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
 
                 {/* Size Selector */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Size</label>
+                  <p className="block text-sm font-medium mb-2">Size</p>
                   <div className="flex flex-wrap gap-2">
                     {allAvailableSizes.map((size) => {
                       const compatible = isOptionCompatible('size', size);
@@ -646,7 +646,7 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
 
                 {/* Storage Selector */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Storage</label>
+                  <p className="block text-sm font-medium mb-2">Storage</p>
                   <div className="flex flex-wrap gap-2">
                     {allAvailableStorage.map((storage) => {
                       const compatible = isOptionCompatible('storage', storage);
