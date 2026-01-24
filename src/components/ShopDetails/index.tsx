@@ -512,7 +512,8 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                   alt={displayTitle}
                   width={400}
                   height={400}
-                  className="object-contain max-h-[400px]"
+                  priority
+                  className="object-contain max-h-[400px] w-auto"
                   onError={(e) => {
                     e.currentTarget.src = "/images/products/product-1-bg-1.png";
                   }}

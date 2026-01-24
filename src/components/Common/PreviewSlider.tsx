@@ -124,7 +124,7 @@ const PreviewSliderModal = () => {
                   alt={product.title || "product image"}
                   width={600}
                   height={600}
-                  className="object-contain max-h-full"
+                  className="object-contain max-h-full max-w-full"
                 />
               </div>
             </SwiperSlide>
