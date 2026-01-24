@@ -18,15 +18,11 @@ const Footer = () => {
           
           {/* Brand & Contact Column */}
           <div className="space-y-8">
-            <Link href="/" className="inline-block transition-transform hover:scale-105">
-              <Image
-                src="/hustlesasa.png"
-                alt="Hustlesasa Logo"
-                width={150}
-                height={45}
-                className="brightness-90 w-auto h-auto"
-              />
-            </Link>
+            <Link 
+                href="/"
+              >
+                <h3 className="text-dark font-bold uppercase tracking-[0.15em] text-[11px]">B-Shop</h3>
+              </Link>
             
             <p className="text-body text-sm leading-relaxed max-w-xs">
               Kenya's premium marketplace for the latest <span className="text-dark font-semibold">mobiles</span>, 
@@ -116,7 +112,7 @@ const Footer = () => {
         <div className="pt-10 border-t border-gray-1 flex flex-col lg:flex-row justify-between items-center gap-8">
           <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
             <p className="text-[13px] text-body">
-              &copy; {year} <span className="text-dark font-bold">Hustlesasa</span>. All rights reserved.
+              &copy; {year} <span className="text-dark font-bold">B-Shop</span>. All rights reserved.
             </p>
             <div className="flex gap-6">
                <Link href="#" className="text-[10px] font-bold text-body hover:text-blue transition-colors uppercase tracking-widest">Privacy</Link>
