@@ -1,8 +1,10 @@
+// app/api/mpesa/check-status/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getOrderByCheckoutId } from "../../../../../lib/db";
 import { mpesaService } from "../../../../../services/mpesaService";
-import { cancelOrder, updateOrderStatus } from "../../../../../lib/order.action";
+import { cancelOrder, restoreOrderStock } from "../../../../../lib/order.action";
 import { prisma } from "../../../../../lib/prisma";
+import { clearUserCart } from "../../../../../lib/db";
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +26,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // If order is already in final state, return that status
+    if (['PAID', 'CANCELLED', 'FAILED'].includes(order.status)) {
+      return NextResponse.json({
+        status: order.status,
+        orderId: order.id,
+        receipt: order.receipt,
+        total: order.total
+      });
+    }
+
     // If still pending, actively check with M-Pesa
     if (order.status === 'PENDING') {
       try {
@@ -31,7 +43,7 @@ export async function POST(req: NextRequest) {
         
         console.log('M-Pesa Status Query Response:', mpesaStatus);
 
-        // Check ResultCode (not ResponseCode)
+        // Check ResultCode
         if (mpesaStatus.ResultCode === '0') {
           // ✅ Payment succeeded
           const metadata = mpesaStatus.CallbackMetadata?.Item || [];
@@ -47,6 +59,10 @@ export async function POST(req: NextRequest) {
               paymentCompletedAt: new Date(),
             },
           });
+
+          // Clear cart after successful payment
+          await clearUserCart(order.userId);
+          console.log(`🗑️ Cart cleared for user ${order.userId} via polling`);
 
           return NextResponse.json({ 
             status: 'PAID', 
@@ -64,18 +80,48 @@ export async function POST(req: NextRequest) {
         }
         else if (mpesaStatus.ResultCode === '1032') {
           // ❌ User cancelled
+          await prisma.order.update({
+            where: { id: order.id },
+            data: { status: 'CANCELLED' }
+          });
+          
           await cancelOrder(order.id);
+          
           return NextResponse.json({ 
             status: 'CANCELLED', 
             orderId: order.id,
-            message: 'Payment was cancelled'
+            message: 'Payment was cancelled by user'
+          });
+        }
+        else if (['1', '1001', '2001'].includes(mpesaStatus.ResultCode)) {
+          // 💰 Insufficient balance, wrong PIN, or transaction failed
+          // Mark as FAILED so user can retry
+          await prisma.order.update({
+            where: { id: order.id },
+            data: { status: 'FAILED' }
+          });
+          
+          // Restore stock WITHOUT changing status
+          await restoreOrderStock(order.id);
+          
+          return NextResponse.json({ 
+            status: 'FAILED', 
+            orderId: order.id,
+            message: mpesaStatus.ResultDesc || 'Payment failed'
           });
         }
         else {
-          // ❌ Other failure (insufficient funds, timeout, etc.)
-          await cancelOrder(order.id);
+          // ❌ Other failure
+          await prisma.order.update({
+            where: { id: order.id },
+            data: { status: 'FAILED' }
+          });
+          
+          // Restore stock WITHOUT changing status
+          await restoreOrderStock(order.id);
+          
           return NextResponse.json({ 
-            status: 'CANCELLED', 
+            status: 'FAILED', 
             orderId: order.id,
             message: mpesaStatus.ResultDesc || 'Payment failed'
           });
@@ -91,7 +137,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Return current status from DB (if not PENDING)
+    // Return current status from DB (for other statuses)
     return NextResponse.json({
       status: order.status,
       orderId: order.id,

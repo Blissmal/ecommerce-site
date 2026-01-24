@@ -218,6 +218,91 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 /**
  * Cancel an order and restore variant stock
  */
+export async function restoreOrderStock(orderId: string) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Get order with items
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: {
+          orderItems: true,
+        },
+      });
+
+      if (!order) {
+        throw new Error("Order not found");
+      }
+
+      console.log(`Restoring stock for order ${orderId} (status: ${order.status})`);
+
+      // Restore variant stocks
+      for (const item of order.orderItems) {
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: {
+              stock: {
+                increment: item.quantity,
+              },
+            },
+          });
+
+          // Recalculate product total stock
+          const variants = await tx.productVariant.findMany({
+            where: { productId: item.productId },
+            select: { stock: true },
+          });
+
+          const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
+
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: totalStock },
+          });
+        } else {
+          // If no variant, restore product stock directly
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                increment: item.quantity,
+              },
+            },
+          });
+        }
+      }
+
+      console.log(`✅ Stock restored for order ${orderId}`);
+    });
+
+    // Revalidate pages
+    revalidatePath("/admin/orders");
+    revalidatePath("/my-account");
+    revalidatePath("/");
+    revalidatePath("/shop-with-sidebar");
+    
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { orderItems: true },
+    });
+
+    if (order) {
+      for (const item of order.orderItems) {
+        revalidatePath(`/shop-details/${item.productId}`);
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to restore order stock:", error);
+    throw new Error(error instanceof Error ? error.message : "Failed to restore order stock");
+  }
+}
+
+/**
+ * Cancel an order and restore variant stock
+ * Sets order status to CANCELLED
+ */
 export async function cancelOrder(orderId: string) {
   try {
     await prisma.$transaction(async (tx) => {
@@ -233,8 +318,15 @@ export async function cancelOrder(orderId: string) {
         throw new Error("Order not found");
       }
 
-      if (order.status !== "PENDING" && order.status !== "PROCESSING") {
-        throw new Error("Can only cancel pending or processing orders");
+      // Don't allow cancelling already completed orders
+      if (["PAID", "SHIPPED", "DELIVERED"].includes(order.status)) {
+        throw new Error(`Cannot cancel order with status: ${order.status}`);
+      }
+
+      // If already cancelled, skip (idempotent)
+      if (order.status === "CANCELLED") {
+        console.log(`Order ${orderId} is already cancelled, skipping...`);
+        return;
       }
 
       // Restore variant stocks
@@ -261,14 +353,26 @@ export async function cancelOrder(orderId: string) {
             where: { id: item.productId },
             data: { stock: totalStock },
           });
+        } else {
+          // If no variant, restore product stock directly
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                increment: item.quantity,
+              },
+            },
+          });
         }
       }
 
-      // Update order status
+      // Update order status to CANCELLED
       await tx.order.update({
         where: { id: orderId },
         data: { status: "CANCELLED" },
       });
+
+      console.log(`✅ Order ${orderId} cancelled and stock restored`);
     });
 
     revalidatePath("/admin/orders");
@@ -278,7 +382,6 @@ export async function cancelOrder(orderId: string) {
     revalidatePath("/");
     revalidatePath("/shop-with-sidebar");
     
-    // ✅ Get the order items to revalidate product pages
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: { orderItems: true },

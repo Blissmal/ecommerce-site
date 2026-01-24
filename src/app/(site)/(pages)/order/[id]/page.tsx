@@ -18,6 +18,7 @@ import Link from "next/link";
 import { prisma } from "../../../../../../lib/prisma";
 import PaymentAction from "@/components/Checkout/PaymentAction";
 import DownloadInvoiceButton from "@/components/Common/DownloadInvoiceButton";
+import { CANCELLED } from "node:dns";
 
 const getStatusConfig = (status: string) => {
   const configs: Record<string, { icon: any; color: string; label: string; step: number }> = {
@@ -47,7 +48,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const config = getStatusConfig(order.status);
   const isTerminal = ["CANCELLED", "FAILED", "DELIVERED"].includes(order.status);
   const isCancelled = ["CANCELLED", "FAILED"].includes(order.status);
-  const needsPayment = ["PENDING"].includes(order.status);
+  const needsPayment = ["PENDING", "FAILED", "CANCELLED"].includes(order.status);
 
   return (
     <div className="min-h-screen bg-white font-euclid-circular-a pt-20 pb-24">
