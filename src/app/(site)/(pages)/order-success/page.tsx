@@ -254,7 +254,7 @@ const OrderSuccess = () => {
         {/* Action Buttons */}
         <div className="text-center space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
           <Link 
-            href="/my-account"
+            href="/my-account?tab=orders"
             className="inline-flex items-center px-6 py-3 bg-blue-dark text-white rounded-md hover:bg-blue-light transition-colors font-medium"
           >
             View All Orders
