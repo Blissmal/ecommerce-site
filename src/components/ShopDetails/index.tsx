@@ -14,7 +14,7 @@ import { updateproductDetails } from "@/redux/features/product-details";
 import { useRouter } from "next/navigation";
 import { useUser } from "@stackframe/stack";
 import { submitReview } from "../../../lib/product.action";
-import { ShoppingBag } from "lucide-react";
+import { CheckCircle2, ShoppingBag, XCircle } from "lucide-react";
 
 // Type definitions
 interface ProductVariant {
@@ -575,26 +575,13 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                   <span>({product.reviews?.length || 0} reviews)</span>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <g clipPath="url(#clip0_375_9221)">
-                      <path
-                        d="M10 0.5625C4.78125 0.5625 0.5625 4.78125 0.5625 10C0.5625 15.2188 4.78125 19.4688 10 19.4688C15.2188 19.4688 19.4688 15.2188 19.4688 10C19.4688 4.78125 15.2188 0.5625 10 0.5625Z"
-                        fill="#22AD5C"
-                      />
-                      <path
-                        d="M12.6875 7.09374L8.9688 10.7187L7.2813 9.06249C7.00005 8.78124 6.56255 8.81249 6.2813 9.06249C6.00005 9.34374 6.0313 9.78124 6.2813 10.0625L8.2813 12C8.4688 12.1875 8.7188 12.2812 8.9688 12.2812C9.2188 12.2812 9.4688 12.1875 9.6563 12L13.6875 8.12499C13.9688 7.84374 13.9688 7.40624 13.6875 7.12499C13.4063 6.84374 12.9688 6.84374 12.6875 7.09374Z"
-                        fill="#22AD5C"
-                      />
-                    </g>
-                  </svg>
-                  <span className={currentStock > 0 ? "text-green" : "text-red"}>
+                <div className="flex items-center gap-1.5 pl-2 border-gray-4 ml-2">
+                  {currentStock > 0 ? (
+                    <CheckCircle2 className="w-4 h-4 text-green" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red" />
+                  )}
+                  <span className={`text-xs font-medium ${currentStock ? "text-green-dark" : "text-red"}`}>
                     {currentStock > 0 ? `In Stock (${currentStock})` : "Out of Stock"}
                   </span>
                 </div>
