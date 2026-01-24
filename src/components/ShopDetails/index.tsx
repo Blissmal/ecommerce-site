@@ -14,6 +14,7 @@ import { updateproductDetails } from "@/redux/features/product-details";
 import { useRouter } from "next/navigation";
 import { useUser } from "@stackframe/stack";
 import { submitReview } from "../../../lib/product.action";
+import { ShoppingBag } from "lucide-react";
 
 // Type definitions
 interface ProductVariant {
@@ -395,22 +396,22 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
       }
 
       toast.custom(
-  (t) => (
-    <div
-      className={`
+        (t) => (
+          <div
+            className={`
         ${t.visible ? 'animate-toast-in' : 'animate-toast-out'}
         max-w-md w-full bg-white shadow-3 rounded-xl ring-1 ring-dark/5 p-4
       `}
-    >
-      <CartToast 
-        product={product} 
-        quantity={quantity} 
-        stockWarning={stockWarning} 
-      />
-    </div>
-  ),
-  { id: 'cart-action', duration: 5000 }
-);
+          >
+            <CartToast
+              product={product}
+              quantity={quantity}
+              stockWarning={stockWarning}
+            />
+          </div>
+        ),
+        { id: 'cart-action', duration: 5000 }
+      );
 
       setQuantity(1);
     } catch (err) {
@@ -668,34 +669,13 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
                 </div>
 
                 {selectedVariant && (
-                  <div className="bg-green-light-6 border border-green-light-4 rounded-lg p-4 flex items-start gap-3">
-                    <svg className="w-5 h-5 text-green-dark mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <div>
-                      <p className="font-bold text-green-dark text-sm mb-1">✓ Product Configuration Selected</p>
-                      <div className="flex flex-wrap gap-2 text-xs text-dark-5">
-                        {selectedVariant.color && (
-                          <span className="bg-white px-2 py-1 rounded border border-green-light-4">
-                            {selectedVariant.color}
-                          </span>
-                        )}
-                        {selectedVariant.size && (
-                          <span className="bg-white px-2 py-1 rounded border border-green-light-4">
-                            {selectedVariant.size}
-                          </span>
-                        )}
-                        {selectedVariant.storage && (
-                          <span className="bg-white px-2 py-1 rounded border border-green-light-4">
-                            {selectedVariant.storage}
-                          </span>
-                        )}
-                        {selectedVariant.weight && (
-                          <span className="bg-white px-2 py-1 rounded border border-green-light-4">
-                            {selectedVariant.weight}kg
-                          </span>
-                        )}
-                      </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-6 bg-gray-1 p-2 rounded-lg border border-gray-3">
+                    <ShoppingBag className="w-4 h-4 text-gray-5 flex-shrink-0 ml-1" />
+                    <div className="h-4 w-px bg-gray-4 mx-1"></div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      {selectedVariant.color && <span><span className="text-gray-5">Color:</span> {selectedVariant.color}</span>}
+                      {selectedVariant.storage && <span><span className="text-gray-5">Storage:</span> {selectedVariant.storage}</span>}
+                      {selectedVariant.size && <span><span className="text-gray-5">Size:</span> {selectedVariant.size}</span>}
                     </div>
                   </div>
                 )}
@@ -1102,8 +1082,8 @@ const CartToast = ({ product, quantity, stockWarning }) => (
     {/* Stock Alerts using your Specific Palette */}
     {stockWarning && (
       <div className={`mt-3 p-2.5 rounded-lg border flex items-start gap-2.5 ${stockWarning.type === 'max'
-          ? 'bg-red-light-6 border-red-light-4'
-          : 'bg-yellow-light-4 border-yellow-light-1'
+        ? 'bg-red-light-6 border-red-light-4'
+        : 'bg-yellow-light-4 border-yellow-light-1'
         }`}>
         <span className="text-sm mt-0.5">{stockWarning.icon}</span>
         <div>
