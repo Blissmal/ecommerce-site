@@ -28,7 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
-      <body>
+      <body suppressHydrationWarning={true}>{/* Added suppressHydrationWarning */}
         <StackProvider app={stackServerApp}>
           <StackTheme>
             <LoaderProvider>

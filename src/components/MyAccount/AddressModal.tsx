@@ -60,8 +60,10 @@ const AddressModal = ({ isOpen, closeModal }) => {
                   </label>
 
                   <input
+                    id="name"
                     type="text"
                     name="name"
+                    autoComplete="name"
                     defaultValue="James Septimus"
                     className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
                   />
@@ -73,8 +75,10 @@ const AddressModal = ({ isOpen, closeModal }) => {
                   </label>
 
                   <input
+                    id="email"
                     type="email"
                     name="email"
+                    autoComplete="email"
                     defaultValue="jamse@example.com"
                     className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
                   />
@@ -88,8 +92,10 @@ const AddressModal = ({ isOpen, closeModal }) => {
                   </label>
 
                   <input
-                    type="text"
+                    id="phone"
+                    type="tel"
                     name="phone"
+                    autoComplete="tel"
                     defaultValue="1234 567890"
                     className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
                   />
@@ -101,8 +107,10 @@ const AddressModal = ({ isOpen, closeModal }) => {
                   </label>
 
                   <input
+                    id="address"
                     type="text"
                     name="address"
+                    autoComplete="street-address"
                     defaultValue="7398 Smoke Ranch RoadLas Vegas, Nevada 89128"
                     className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
                   />

@@ -132,15 +132,40 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     />
                   </div>
 
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-dark mb-0.5">
                       {userProfile.name}
                     </p>
-                    <p className="text-custom-xs">Member Since {new Date(userProfile.createdAt).toISOString().split("T")[0]}</p>
+                    <p className="text-custom-xs text-dark-5">
+                      Member Since {new Date(userProfile.createdAt).toISOString().split("T")[0]}
+                    </p>
+
+                    {/* Admin Badge & Link */}
+                    {userProfile.role === "ADMIN" && (
+                      <div className="mt-2">
+                        <Link
+                          href="/admin"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue/10 text-blue rounded-lg text-xs font-bold hover:bg-blue hover:text-white transition-all group"
+                        >
+                          <svg
+                            className="w-3.5 h-3.5 fill-current"
+                            viewBox="0 0 20 20"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path d="M10 2C8.9 2 8 2.9 8 4V6H4C2.9 6 2 6.9 2 8V16C2 17.1 2.9 18 4 18H16C17.1 18 18 17.1 18 16V8C18 6.9 17.1 6 16 6H12V4C12 2.9 11.1 2 10 2ZM10 4H10V6H10V4ZM11 11V13H13V15H11V17H9V15H7V13H9V11H11Z" />
+                          </svg>
+                          Admin Panel
+                          <svg
+                            className="w-3 h-3 fill-current opacity-0 group-hover:opacity-100 transition-opacity"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M10.707 3.293a1 1 0 010 1.414L6.414 9H17a1 1 0 110 2H6.414l4.293 4.293a1 1 0 11-1.414 1.414l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 0z" />
+                          </svg>
+                        </Link>
+                      </div>
+                    )}
                   </div>
-                  {userProfile.role === "ADMIN" && <div>
-                    <Link href={"/admin"}>Visit admin page</Link>
-                  </div>}
                 </div>
 
                 <div className="p-4 sm:p-7.5 xl:p-9">
@@ -148,8 +173,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("dashboard")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "dashboard"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -190,8 +215,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("orders")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "orders"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -227,8 +252,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("downloads")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "downloads"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -254,8 +279,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("addresses")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "addresses"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -283,8 +308,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("account-details")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "account-details"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -644,84 +669,104 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
             {/* <!-- addresses tab content end -->
 
           <!-- details tab content start --> */}
-            <div className={`xl:max-w-[770px] w-full ${activeTab === "account-details" ? "block" : "hidden"}`}>
+<div className={`xl:max-w-[770px] w-full ${activeTab === "account-details" ? "block" : "hidden"}`}>
 
-              {/* Feedback Message */}
-              {message && (
-                <div className={`mb-4 p-4 rounded ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {message.text}
-                </div>
-              )}
+  {/* Feedback Message */}
+  {message && (
+    <div className={`mb-4 p-4 rounded ${message.type === 'success' ? 'bg-green-light-3 text-green-dark' : 'bg-red-light-3 text-red-dark'}`}>
+      {message.text}
+    </div>
+  )}
 
-              {/* Account Details Form */}
-              <form onSubmit={handleUpdateProfile}>
-                <div className="bg-white shadow-1 rounded-xl p-4 sm:p-8.5">
-                  <div className="flex flex-col lg:flex-row gap-5 sm:gap-8 mb-5">
-                    <div className="w-full">
-                      <label htmlFor="firstName" className="block mb-2.5">First Name <span className="text-red">*</span></label>
-                      <input
-                        type="text"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        placeholder="John"
-                        className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                      />
-                    </div>
-                    <div className="w-full">
-                      <label htmlFor="lastName" className="block mb-2.5">Last Name <span className="text-red">*</span></label>
-                      <input
-                        type="text"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        placeholder="Doe"
-                        className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                      />
-                    </div>
-                  </div>
-                  <button type="submit" className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark">
-                    Save Changes
-                  </button>
-                </div>
-              </form>
+  {/* Account Details Form */}
+  <form onSubmit={handleUpdateProfile}>
+    <div className="bg-white shadow-1 rounded-xl p-4 sm:p-8.5">
+      <div className="flex flex-col lg:flex-row gap-5 sm:gap-8 mb-5">
+        <div className="w-full">
+          <label htmlFor="firstName" className="block mb-2.5">
+            First Name <span className="text-red">*</span>
+          </label>
+          <input
+            id="firstName"
+            name="firstName"
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="John"
+            className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+          />
+        </div>
+        <div className="w-full">
+          <label htmlFor="lastName" className="block mb-2.5">
+            Last Name <span className="text-red">*</span>
+          </label>
+          <input
+            id="lastName"
+            name="lastName"
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            placeholder="Doe"
+            className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+          />
+        </div>
+      </div>
+      <button type="submit" className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark">
+        Save Changes
+      </button>
+    </div>
+  </form>
 
-              <p className="font-medium text-xl sm:text-2xl text-dark mb-7 mt-9">Password Change</p>
+  <p className="font-medium text-xl sm:text-2xl text-dark mb-7 mt-9">Password Change</p>
 
-              {/* Password Change Form */}
-              <form onSubmit={handleChangePassword}>
-                <div className="bg-white shadow-1 rounded-xl p-4 sm:p-8.5">
-                  <div className="mb-5">
-                    <label htmlFor="oldPassword text-dark-4" className="block mb-2.5">Old Password</label>
-                    <input
-                      type="password"
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:ring-2 focus:ring-blue/20"
-                    />
-                  </div>
-                  <div className="mb-5">
-                    <label htmlFor="newPassword" className="block mb-2.5">New Password</label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:ring-2 focus:ring-blue/20"
-                    />
-                  </div>
-                  <div className="mb-5">
-                    <label htmlFor="confirmNewPassword" className="block mb-2.5">Confirm New Password</label>
-                    <input
-                      type="password"
-                      value={confirmNewPassword}
-                      onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:ring-2 focus:ring-blue/20"
-                    />
-                  </div>
-                  <button type="submit" className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark">
-                    Change Password
-                  </button>
-                </div>
-              </form>
-            </div>
+  {/* Password Change Form */}
+  <form onSubmit={handleChangePassword}>
+    <div className="bg-white shadow-1 rounded-xl p-4 sm:p-8.5">
+      <div className="mb-5">
+        <label htmlFor="oldPassword" className="block mb-2.5 text-dark-4">
+          Old Password
+        </label>
+        <input
+          id="oldPassword"
+          name="oldPassword"
+          type="password"
+          value={oldPassword}
+          onChange={(e) => setOldPassword(e.target.value)}
+          className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:ring-2 focus:ring-blue/20"
+        />
+      </div>
+      <div className="mb-5">
+        <label htmlFor="newPassword" className="block mb-2.5">
+          New Password
+        </label>
+        <input
+          id="newPassword"
+          name="newPassword"
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:ring-2 focus:ring-blue/20"
+        />
+      </div>
+      <div className="mb-5">
+        <label htmlFor="confirmNewPassword" className="block mb-2.5">
+          Confirm New Password
+        </label>
+        <input
+          id="confirmNewPassword"
+          name="confirmNewPassword"
+          type="password"
+          value={confirmNewPassword}
+          onChange={(e) => setConfirmNewPassword(e.target.value)}
+          className="rounded-md border border-gray-3 bg-gray-1 w-full py-2.5 px-5 outline-none focus:ring-2 focus:ring-blue/20"
+        />
+      </div>
+      <button type="submit" className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark">
+        Change Password
+      </button>
+    </div>
+  </form>
+</div>
             {/* <!-- details tab content end -->
           <!--== user dashboard content end ==--> */}
           </div>
