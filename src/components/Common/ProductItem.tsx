@@ -54,11 +54,11 @@ const ProductItem: React.FC<ProductItemProps> = ({ item }) => {
 
   // 2. Resolve Price & Discount (Premium Logic)
   const basePrice = defaultVariant?.price ?? item.price;
-  
+
   // Ensure discount is treated as a number and exists
   const discountValue = item.discount ? Number(item.discount) : 0;
   const hasDiscount = discountValue > 0;
-  
+
   const discountedPrice = hasDiscount
     ? basePrice * (1 - discountValue / 100)
     : basePrice;
@@ -73,8 +73,8 @@ const ProductItem: React.FC<ProductItemProps> = ({ item }) => {
   };
 
   // 4. Display Titles & Stock
-  const displayTitle = item.brand && item.model 
-    ? `${item.brand} ${item.model}` 
+  const displayTitle = item.brand && item.model
+    ? `${item.brand} ${item.model}`
     : item.title;
 
   const isOutOfStock = item.stock === 0;
@@ -183,7 +183,7 @@ const ProductItem: React.FC<ProductItemProps> = ({ item }) => {
             alt={displayTitle}
             width={250}
             height={250}
-            className="object-contain transition-transform duration-300 group-hover:scale-105"
+            className="object-contain transition-transform duration-300 group-hover:scale-105 w-[250px] h-[250px]"
             onError={(e) => {
               e.currentTarget.src = "/images/products/product-1-bg-1.png";
             }}
@@ -218,7 +218,7 @@ const ProductItem: React.FC<ProductItemProps> = ({ item }) => {
 
         {/* Hover Action Buttons */}
         <div className="absolute left-0 bottom-4 w-full flex items-center justify-center gap-3 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-30 px-4">
-          
+
           {/* Quick View */}
           <button
             onClick={handleQuickView}

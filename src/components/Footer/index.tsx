@@ -24,7 +24,7 @@ const Footer = () => {
                 alt="Hustlesasa Logo"
                 width={150}
                 height={45}
-                className="brightness-90"
+                className="brightness-90 w-auto h-auto"
               />
             </Link>
             

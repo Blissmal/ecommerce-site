@@ -77,6 +77,7 @@ const Hero = () => {
                 src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=2000&auto=format&fit=crop" 
                 alt="General Store Showcase"
                 fill
+                sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover rounded-[2rem] shadow-4 border-4 border-white transition-transform duration-700 group-hover:scale-[1.02]"
                 priority
               />

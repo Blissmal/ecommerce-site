@@ -14,7 +14,7 @@ const EmptyCart = () => {
           alt="Empty Cart"
           width={200}
           height={200}
-          className="mx-auto"
+          className="mx-auto w-[200px] h-[200px]"
         />
       </div>
 
