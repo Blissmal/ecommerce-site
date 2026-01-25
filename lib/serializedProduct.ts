@@ -1,4 +1,3 @@
-// Utility functions for Redux serialization
 // src/lib/serializeProduct.ts
 
 /**
