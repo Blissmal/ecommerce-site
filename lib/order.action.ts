@@ -4,6 +4,7 @@
 import { prisma } from "./prisma";
 import { revalidatePath } from "next/cache";
 import { updateVariantStock } from "./variant.action";
+import { canTransitionStatus } from "./utils/order-utils";
 
 // Type definitions
 export type OrderStatus = 
@@ -190,10 +191,27 @@ export async function createOrder(data: CreateOrderData) {
 }
 
 /**
- * Update order status
+ * Update order status with validation
  */
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   try {
+    // Get current order status
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { status: true }
+    });
+
+    if (!currentOrder) {
+      throw new Error("Order not found");
+    }
+
+    // Validate status transition
+    const transition = canTransitionStatus(currentOrder.status as OrderStatus, status);
+    
+    if (!transition.canTransition) {
+      throw new Error(transition.reason || "Invalid status transition");
+    }
+
     const updateData: any = { status };
 
     // Set payment completion time if status is PAID
@@ -211,12 +229,12 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
     return { success: true };
   } catch (error) {
     console.error("Failed to update order status:", error);
-    throw new Error("Failed to update order status");
+    throw new Error(error instanceof Error ? error.message : "Failed to update order status");
   }
 }
 
 /**
- * Cancel an order and restore variant stock
+ * Restore order stock (used when cancelling orders)
  */
 export async function restoreOrderStock(orderId: string) {
   try {
@@ -301,97 +319,37 @@ export async function restoreOrderStock(orderId: string) {
 
 /**
  * Cancel an order and restore variant stock
- * Sets order status to CANCELLED
+ * Sets order status to CANCELLED with validation
  */
 export async function cancelOrder(orderId: string) {
   try {
-    await prisma.$transaction(async (tx) => {
-      // Get order with items
-      const order = await tx.order.findUnique({
-        where: { id: orderId },
-        include: {
-          orderItems: true,
-        },
-      });
+    // Get current order
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { status: true }
+    });
 
-      if (!order) {
-        throw new Error("Order not found");
-      }
+    if (!order) {
+      throw new Error("Order not found");
+    }
 
-      // Don't allow cancelling already completed orders
-      if (["PAID", "SHIPPED", "DELIVERED"].includes(order.status)) {
-        throw new Error(`Cannot cancel order with status: ${order.status}`);
-      }
+    // Validate that we can cancel this order
+    const transition = canTransitionStatus(order.status as OrderStatus, "CANCELLED");
+    
+    if (!transition.canTransition) {
+      throw new Error(transition.reason || "Cannot cancel this order");
+    }
 
-      // If already cancelled, skip (idempotent)
-      if (order.status === "CANCELLED") {
-        console.log(`Order ${orderId} is already cancelled, skipping...`);
-        return;
-      }
-
-      // Restore variant stocks
-      for (const item of order.orderItems) {
-        if (item.variantId) {
-          await tx.productVariant.update({
-            where: { id: item.variantId },
-            data: {
-              stock: {
-                increment: item.quantity,
-              },
-            },
-          });
-
-          // Recalculate product total stock
-          const variants = await tx.productVariant.findMany({
-            where: { productId: item.productId },
-            select: { stock: true },
-          });
-
-          const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
-
-          await tx.product.update({
-            where: { id: item.productId },
-            data: { stock: totalStock },
-          });
-        } else {
-          // If no variant, restore product stock directly
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                increment: item.quantity,
-              },
-            },
-          });
-        }
-      }
-
-      // Update order status to CANCELLED
-      await tx.order.update({
-        where: { id: orderId },
-        data: { status: "CANCELLED" },
-      });
-
-      console.log(`✅ Order ${orderId} cancelled and stock restored`);
+    // Restore stock and update status
+    await restoreOrderStock(orderId);
+    
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: "CANCELLED" },
     });
 
     revalidatePath("/admin/orders");
     revalidatePath("/my-account");
-    revalidatePath("/cart");
-    revalidatePath("/checkout");
-    revalidatePath("/");
-    revalidatePath("/shop-with-sidebar");
-    
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { orderItems: true },
-    });
-
-    if (order) {
-      for (const item of order.orderItems) {
-        revalidatePath(`/shop-details/${item.productId}`);
-      }
-    }
     return { success: true };
   } catch (error) {
     console.error("Failed to cancel order:", error);
@@ -400,105 +358,149 @@ export async function cancelOrder(orderId: string) {
 }
 
 /**
- * Get all orders (Admin)
+ * Batch update order status with validation
  */
-export async function getAllOrders() {
+export async function batchUpdateOrderStatus(orderIds: string[], targetStatus: OrderStatus) {
   try {
+    // First, get all orders and validate transitions
     const orders = await prisma.order.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                title: true,
-                imageUrl: true,
-                brand: true,
-                model: true,
-              },
-            },
-            variant: {
-              select: {
-                id: true,
-                sku: true,
-                color: true,
-                size: true,
-                storage: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            orderItems: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
+      where: { id: { in: orderIds } },
+      select: { id: true, status: true }
     });
 
-    return orders;
+    // Separate valid and invalid orders
+    const validOrders: string[] = [];
+    const invalidOrders: Array<{ id: string; currentStatus: OrderStatus; reason: string }> = [];
+
+    for (const order of orders) {
+      const transition = canTransitionStatus(order.status as OrderStatus, targetStatus);
+      
+      if (transition.canTransition) {
+        validOrders.push(order.id);
+      } else {
+        invalidOrders.push({
+          id: order.id,
+          currentStatus: order.status as OrderStatus,
+          reason: transition.reason || "Invalid transition"
+        });
+      }
+    }
+
+    // Update only valid orders
+    let updatedCount = 0;
+    if (validOrders.length > 0) {
+      const updateData: any = { status: targetStatus };
+
+      // Set payment completion time if status is PAID
+      if (targetStatus === "PAID") {
+        updateData.paymentCompletedAt = new Date();
+      }
+
+      await prisma.$transaction(
+        validOrders.map(orderId =>
+          prisma.order.update({
+            where: { id: orderId },
+            data: updateData
+          })
+        )
+      );
+      
+      updatedCount = validOrders.length;
+    }
+
+    revalidatePath('/admin/orders');
+    
+    return { 
+      success: true, 
+      updatedCount,
+      skippedCount: invalidOrders.length,
+      invalidOrders: invalidOrders.length > 0 ? invalidOrders : undefined
+    };
   } catch (error) {
-    console.error("Failed to fetch orders:", error);
-    throw new Error("Failed to fetch orders");
+    console.error('Error in batch update:', error);
+    throw new Error(`Failed to update orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 /**
- * Get orders by user
+ * Validate orders for batch update (pre-check before actual update)
  */
-export async function getOrdersByUser(userId: string) {
+export async function validateOrdersForBatchUpdate(orderIds: string[], targetStatus: OrderStatus) {
   try {
     const orders = await prisma.order.findMany({
-      where: { userId },
-      include: {
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                title: true,
-                imageUrl: true,
-                brand: true,
-                model: true,
-              },
-            },
-            variant: {
-              select: {
-                id: true,
-                sku: true,
-                color: true,
-                size: true,
-                storage: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            orderItems: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
+      where: { id: { in: orderIds } },
+      select: { id: true, status: true }
     });
 
-    return orders;
+    const validOrders: string[] = [];
+    const invalidTransitions: Array<{ 
+      orderId: string; 
+      currentStatus: OrderStatus; 
+      reason: string 
+    }> = [];
+
+    for (const order of orders) {
+      const transition = canTransitionStatus(order.status as OrderStatus, targetStatus);
+      
+      if (transition.canTransition) {
+        validOrders.push(order.id);
+      } else {
+        invalidTransitions.push({
+          orderId: order.id,
+          currentStatus: order.status as OrderStatus,
+          reason: transition.reason || "Invalid transition"
+        });
+      }
+    }
+
+    return {
+      valid: invalidTransitions.length === 0,
+      validCount: validOrders.length,
+      invalidCount: invalidTransitions.length,
+      invalidTransitions,
+      summary: {
+        total: orders.length,
+        canUpdate: validOrders.length,
+        cannotUpdate: invalidTransitions.length
+      }
+    };
   } catch (error) {
-    console.error("Failed to fetch user orders:", error);
-    throw new Error("Failed to fetch user orders");
+    console.error('Error validating batch update:', error);
+    throw error;
+  }
+}
+
+// Batch delete orders (optional - for admin cleanup)
+export async function batchDeleteOrders(orderIds: string[]) {
+  try {
+    // First delete all order items
+    await prisma.orderItem.deleteMany({
+      where: {
+        orderId: {
+          in: orderIds
+        }
+      }
+    });
+    
+    // Then delete the orders
+    await prisma.order.deleteMany({
+      where: {
+        id: {
+          in: orderIds
+        }
+      }
+    });
+    
+    revalidatePath('/admin/orders');
+    return { success: true, count: orderIds.length };
+  } catch (error) {
+    console.error('Error in batch delete:', error);
+    throw new Error(`Failed to delete orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 /**
- * Get single order by ID
+ * Get order by ID with full details
  */
 export async function getOrderById(orderId: string) {
   try {
@@ -523,11 +525,6 @@ export async function getOrderById(orderId: string) {
                 imageUrl: true,
                 brand: true,
                 model: true,
-                category: {
-                  select: {
-                    name: true,
-                  },
-                },
               },
             },
             variant: {
@@ -537,7 +534,6 @@ export async function getOrderById(orderId: string) {
                 color: true,
                 size: true,
                 storage: true,
-                price: true,
               },
             },
           },
@@ -547,13 +543,45 @@ export async function getOrderById(orderId: string) {
 
     return order;
   } catch (error) {
-    console.error("Failed to fetch order:", error);
-    throw new Error("Failed to fetch order");
+    console.error("Failed to get order:", error);
+    throw new Error("Failed to get order");
   }
 }
 
 /**
- * Get order statistics (Admin dashboard)
+ * Get user's orders
+ */
+export async function getUserOrders(userId: string) {
+  try {
+    const orders = await prisma.order.findMany({
+      where: { userId },
+      include: {
+        orderItems: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                title: true,
+                imageUrl: true,
+                price: true,
+              },
+            },
+            variant: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return orders;
+  } catch (error) {
+    console.error("Failed to get user orders:", error);
+    throw new Error("Failed to get user orders");
+  }
+}
+
+/**
+ * Get order statistics
  */
 export async function getOrderStatistics() {
   try {
@@ -561,7 +589,6 @@ export async function getOrderStatistics() {
       totalOrders,
       pendingOrders,
       processingOrders,
-      paidOrders,
       shippedOrders,
       deliveredOrders,
       cancelledOrders,
@@ -570,19 +597,12 @@ export async function getOrderStatistics() {
       prisma.order.count(),
       prisma.order.count({ where: { status: "PENDING" } }),
       prisma.order.count({ where: { status: "PROCESSING" } }),
-      prisma.order.count({ where: { status: "PAID" } }),
       prisma.order.count({ where: { status: "SHIPPED" } }),
       prisma.order.count({ where: { status: "DELIVERED" } }),
       prisma.order.count({ where: { status: "CANCELLED" } }),
       prisma.order.aggregate({
-        where: {
-          status: {
-            in: ["PAID", "SHIPPED", "DELIVERED"],
-          },
-        },
-        _sum: {
-          total: true,
-        },
+        _sum: { total: true },
+        where: { status: "DELIVERED" },
       }),
     ]);
 
@@ -590,14 +610,13 @@ export async function getOrderStatistics() {
       totalOrders,
       pendingOrders,
       processingOrders,
-      paidOrders,
       shippedOrders,
       deliveredOrders,
       cancelledOrders,
       totalRevenue: totalRevenue._sum.total || 0,
     };
   } catch (error) {
-    console.error("Failed to fetch order statistics:", error);
+    console.error("Failed to get order statistics:", error);
     throw new Error("Failed to fetch order statistics");
   }
 }
@@ -691,58 +710,9 @@ export async function updateMpesaPayment(data: {
   }
 }
 
-export async function batchUpdateOrderStatus(orderIds: string[], status: OrderStatus) {
-  try {
-    // Update all orders in a single transaction
-    await prisma.$transaction(
-      orderIds.map(orderId =>
-        prisma.order.update({
-          where: { id: orderId },
-          data: { 
-            status, //////////
-          }
-        })
-      )
-    );
-    
-    revalidatePath('/admin/orders');
-    return { success: true, count: orderIds.length };
-  } catch (error) {
-    console.error('Error in batch update:', error);
-    throw new Error(`Failed to update orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-// Batch delete orders (optional - for admin cleanup)
-export async function batchDeleteOrders(orderIds: string[]) {
-  try {
-    // First delete all order items
-    await prisma.orderItem.deleteMany({
-      where: {
-        orderId: {
-          in: orderIds
-        }
-      }
-    });
-    
-    // Then delete the orders
-    await prisma.order.deleteMany({
-      where: {
-        id: {
-          in: orderIds
-        }
-      }
-    });
-    
-    revalidatePath('/admin/orders');
-    return { success: true, count: orderIds.length };
-  } catch (error) {
-    console.error('Error in batch delete:', error);
-    throw new Error(`Failed to delete orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-// Get order statistics for dashboard
+/**
+ * Get order analytics for dashboard
+ */
 export async function getOrderAnalytics(startDate?: Date, endDate?: Date) {
   try {
     const whereClause = startDate && endDate ? {
@@ -831,58 +801,9 @@ export async function getOrderAnalytics(startDate?: Date, endDate?: Date) {
   }
 }
 
-// Validate orders before batch operations
-export async function validateOrdersForBatchUpdate(orderIds: string[], targetStatus: OrderStatus) {
-  try {
-    const orders = await prisma.order.findMany({
-      where: {
-        id: {
-          in: orderIds
-        }
-      },
-      select: {
-        id: true,
-        status: true
-      }
-    });
-
-    const invalidTransitions: { orderId: string; currentStatus: string; reason: string }[] = [];
-
-    orders.forEach(order => {
-      // Define valid transitions
-      const validTransitions: Record<string, OrderStatus[]> = {
-        'PENDING': ['PROCESSING', 'CANCELLED', 'FAILED'],
-        'PAID': ['PROCESSING', 'CANCELLED'],
-        'PROCESSING': ['SHIPPED', 'CANCELLED'],
-        'SHIPPED': ['DELIVERED', 'CANCELLED'],
-        'DELIVERED': [], // Final state
-        'CANCELLED': [], // Final state
-        'FAILED': ['PENDING'], // Can retry
-      };
-
-      const allowedStatuses = validTransitions[order.status] || [];
-      
-      if (!allowedStatuses.includes(targetStatus)) {
-        invalidTransitions.push({
-          orderId: order.id,
-          currentStatus: order.status,
-          reason: `Cannot transition from ${order.status} to ${targetStatus}`
-        });
-      }
-    });
-
-    return {
-      valid: invalidTransitions.length === 0,
-      invalidTransitions,
-      validCount: orders.length - invalidTransitions.length
-    };
-  } catch (error) {
-    console.error('Error validating batch update:', error);
-    throw error;
-  }
-}
-
-// Archive old orders (move to archive table or soft delete)
+/**
+ * Archive old orders (move to archive table or soft delete)
+ */
 export async function archiveOldOrders(daysOld: number = 90) {
   try {
     const cutoffDate = new Date();

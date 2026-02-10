@@ -4,7 +4,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { batchUpdateOrderStatus } from "../../../../../../lib/order.action";
+import { batchUpdateOrderStatus, validateOrdersForBatchUpdate } from "../../../../../../lib/order.action";
 
 type OrderStatus = 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 
@@ -14,12 +14,29 @@ interface BatchOperationsProps {
   totalOrders: number;
 }
 
+interface ValidationResult {
+  valid: boolean;
+  validCount: number;
+  invalidCount: number;
+  invalidTransitions: Array<{
+    orderId: string;
+    currentStatus: OrderStatus;
+    reason: string;
+  }>;
+  summary: {
+    total: number;
+    canUpdate: number;
+    cannotUpdate: number;
+  };
+}
+
 const STATUS_OPTIONS: { 
   value: OrderStatus; 
   label: string; 
   icon: React.ReactNode; 
   color: string; 
-  description: string 
+  description: string;
+  detailedDescription: string;
 }[] = [
   {
     value: 'PROCESSING',
@@ -30,7 +47,8 @@ const STATUS_OPTIONS: {
       </svg>
     ),
     color: 'from-blue to-blue-dark',
-    description: 'Mark orders as being processed'
+    description: 'Mark orders as being processed',
+    detailedDescription: 'Orders must be PENDING or PAID to move to PROCESSING'
   },
   {
     value: 'SHIPPED',
@@ -43,7 +61,8 @@ const STATUS_OPTIONS: {
       </svg>
     ),
     color: 'from-purple to-purple-dark',
-    description: 'Mark orders as shipped to customers'
+    description: 'Mark orders as shipped to customers',
+    detailedDescription: 'Orders must be PROCESSING to move to SHIPPED'
   },
   {
     value: 'DELIVERED',
@@ -54,7 +73,8 @@ const STATUS_OPTIONS: {
       </svg>
     ),
     color: 'from-green to-green-dark',
-    description: 'Confirm orders have been delivered'
+    description: 'Confirm orders have been delivered',
+    detailedDescription: 'Orders must be SHIPPED to move to DELIVERED'
   },
   {
     value: 'CANCELLED',
@@ -65,13 +85,16 @@ const STATUS_OPTIONS: {
       </svg>
     ),
     color: 'from-red to-red-dark',
-    description: 'Cancel selected orders'
+    description: 'Cancel selected orders',
+    detailedDescription: 'Cannot cancel orders that are SHIPPED or DELIVERED'
   },
 ];
 
 export default function BatchOperations({ selectedOrders, onClearSelection, totalOrders }: BatchOperationsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [confirmationModal, setConfirmationModal] = useState<{
     isOpen: boolean;
     status: OrderStatus | null;
@@ -93,12 +116,26 @@ export default function BatchOperations({ selectedOrders, onClearSelection, tota
 
   const router = useRouter();
 
-  const handleBatchUpdate = (status: OrderStatus) => {
-    setConfirmationModal({
-      isOpen: true,
-      status,
-      action: 'update',
-    });
+  const handleBatchUpdate = async (status: OrderStatus) => {
+    setValidating(true);
+    setValidationResult(null);
+    
+    try {
+      // Validate which orders can be updated
+      const validation = await validateOrdersForBatchUpdate(Array.from(selectedOrders), status);
+      setValidationResult(validation);
+      
+      setConfirmationModal({
+        isOpen: true,
+        status,
+        action: 'update',
+      });
+    } catch (error) {
+      toast.error("Failed to validate orders");
+      console.error("Validation error:", error);
+    } finally {
+      setValidating(false);
+    }
   };
 
   const confirmBatchUpdate = async () => {
@@ -113,27 +150,28 @@ export default function BatchOperations({ selectedOrders, onClearSelection, tota
     });
 
     try {
-      // Process in batches of 10
-      const batchSize = 10;
-      const batches = [];
+      const result = await batchUpdateOrderStatus(orderIds, confirmationModal.status);
       
-      for (let i = 0; i < orderIds.length; i += batchSize) {
-        batches.push(orderIds.slice(i, i + batchSize));
+      if (result.updatedCount > 0) {
+        toast.success(
+          `Successfully updated ${result.updatedCount} order${result.updatedCount > 1 ? 's' : ''} to ${confirmationModal.status}` +
+          (result.skippedCount > 0 ? `. ${result.skippedCount} order${result.skippedCount > 1 ? 's were' : ' was'} skipped.` : '')
+        );
+      }
+      
+      if (result.skippedCount > 0 && result.invalidOrders) {
+        console.log("Skipped orders:", result.invalidOrders);
+        toast.error(
+          `${result.skippedCount} order${result.skippedCount > 1 ? 's' : ''} could not be updated due to invalid status transitions`,
+          { duration: 5000 }
+        );
       }
 
-      let processed = 0;
-      for (const batch of batches) {
-        await batchUpdateOrderStatus(batch, confirmationModal.status);
-        processed += batch.length;
-        setProgress(prev => ({ ...prev, current: processed }));
-      }
-
-      toast.success(`Successfully updated ${orderIds.length} order${orderIds.length > 1 ? 's' : ''} to ${confirmationModal.status}`);
       router.refresh();
       onClearSelection();
       setIsOpen(false);
     } catch (error) {
-      toast.error("Failed to update orders. Some orders may have been updated.");
+      toast.error("Failed to update orders");
       console.error("Batch update error:", error);
     } finally {
       setLoading(false);
@@ -147,6 +185,7 @@ export default function BatchOperations({ selectedOrders, onClearSelection, tota
         status: null,
         action: null,
       });
+      setValidationResult(null);
     }
   };
 
@@ -218,7 +257,7 @@ export default function BatchOperations({ selectedOrders, onClearSelection, tota
                   <button
                     key={option.value}
                     onClick={() => handleBatchUpdate(option.value)}
-                    disabled={loading}
+                    disabled={loading || validating}
                     className={`
                       group relative overflow-hidden
                       bg-white hover:shadow-xl
@@ -244,10 +283,10 @@ export default function BatchOperations({ selectedOrders, onClearSelection, tota
         </div>
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal with Validation */}
       {confirmationModal.isOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-scale-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full animate-scale-in max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-2">
               <div className="flex items-center gap-3 mb-2">
@@ -258,34 +297,93 @@ export default function BatchOperations({ selectedOrders, onClearSelection, tota
                 </div>
                 <div>
                   <h3 className="text-heading-6 font-bold text-dark">Confirm Batch Update</h3>
-                  <p className="text-custom-xs text-body">This action will affect multiple orders</p>
+                  <p className="text-custom-xs text-body">Review which orders can be updated</p>
                 </div>
               </div>
             </div>
 
             {/* Modal Body */}
             <div className="p-6">
-              <div className="bg-yellow-light-2 border border-yellow-light-3 rounded-xl p-4 mb-4">
-                <div className="flex gap-3">
-                  <svg className="w-5 h-5 text-yellow-dark flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <div>
-                    <p className="text-custom-sm font-bold text-yellow-dark mb-1">
-                      You are about to update {selectedOrders.size} order{selectedOrders.size > 1 ? 's' : ''}
-                    </p>
-                    <p className="text-custom-xs text-yellow-dark/80">
-                      {STATUS_OPTIONS.find(o => o.value === confirmationModal.status)?.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              {/* Validation Summary */}
+              {validationResult && (
+                <>
+                  {validationResult.validCount > 0 && (
+                    <div className="bg-green-light-2 border border-green-light-3 rounded-xl p-4 mb-4">
+                      <div className="flex gap-3">
+                        <svg className="w-5 h-5 text-green-dark flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                          <p className="text-custom-sm font-bold text-green-dark mb-1">
+                            {validationResult.validCount} order{validationResult.validCount > 1 ? 's' : ''} can be updated
+                          </p>
+                          <p className="text-custom-xs text-green-dark/80">
+                            {STATUS_OPTIONS.find(o => o.value === confirmationModal.status)?.detailedDescription}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
+                  {validationResult.invalidCount > 0 && (
+                    <div className="bg-yellow-light-2 border border-yellow-light-3 rounded-xl p-4 mb-4">
+                      <div className="flex gap-3">
+                        <svg className="w-5 h-5 text-yellow-dark flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div className="flex-1">
+                          <p className="text-custom-sm font-bold text-yellow-dark mb-1">
+                            {validationResult.invalidCount} order{validationResult.invalidCount > 1 ? 's' : ''} will be skipped
+                          </p>
+                          <p className="text-custom-xs text-yellow-dark/80 mb-3">
+                            These orders cannot transition to {confirmationModal.status} from their current status
+                          </p>
+                          
+                          {/* Show first few invalid transitions */}
+                          {validationResult.invalidTransitions.length > 0 && (
+                            <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                              {validationResult.invalidTransitions.slice(0, 5).map((invalid) => (
+                                <div key={invalid.orderId} className="text-custom-xs text-yellow-dark/70 bg-yellow-light-3/30 p-2 rounded">
+                                  <span className="font-mono">{invalid.orderId.slice(0, 8)}...</span>: {invalid.currentStatus} → {confirmationModal.status} (Invalid)
+                                </div>
+                              ))}
+                              {validationResult.invalidTransitions.length > 5 && (
+                                <p className="text-custom-xs text-yellow-dark/60 italic">
+                                  And {validationResult.invalidTransitions.length - 5} more...
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Statistics */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-gray-1 rounded-lg">
-                  <span className="text-custom-sm text-body">Selected Orders:</span>
+                  <span className="text-custom-sm text-body">Total Selected:</span>
                   <span className="text-custom-sm font-bold text-dark">{selectedOrders.size}</span>
                 </div>
+                
+                {validationResult && (
+                  <>
+                    <div className="flex items-center justify-between p-3 bg-green-light-2 rounded-lg">
+                      <span className="text-custom-sm text-green-dark">Will be Updated:</span>
+                      <span className="text-custom-sm font-bold text-green-dark">{validationResult.validCount}</span>
+                    </div>
+                    
+                    {validationResult.invalidCount > 0 && (
+                      <div className="flex items-center justify-between p-3 bg-yellow-light-2 rounded-lg">
+                        <span className="text-custom-sm text-yellow-dark">Will be Skipped:</span>
+                        <span className="text-custom-sm font-bold text-yellow-dark">{validationResult.invalidCount}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                
                 <div className="flex items-center justify-between p-3 bg-gray-1 rounded-lg">
                   <span className="text-custom-sm text-body">New Status:</span>
                   <span className={`text-custom-sm font-bold px-3 py-1 rounded-full bg-gradient-to-r ${
@@ -316,7 +414,10 @@ export default function BatchOperations({ selectedOrders, onClearSelection, tota
             {/* Modal Footer */}
             <div className="p-6 border-t border-gray-2 bg-gray-1 flex gap-3">
               <button
-                onClick={() => setConfirmationModal({ isOpen: false, status: null, action: null })}
+                onClick={() => {
+                  setConfirmationModal({ isOpen: false, status: null, action: null });
+                  setValidationResult(null);
+                }}
                 disabled={loading}
                 className="flex-1 bg-white text-dark font-bold py-3 rounded-xl hover:bg-gray-2 transition-all border border-gray-3 disabled:opacity-50"
               >
@@ -324,7 +425,7 @@ export default function BatchOperations({ selectedOrders, onClearSelection, tota
               </button>
               <button
                 onClick={confirmBatchUpdate}
-                disabled={loading}
+                disabled={loading || !validationResult || validationResult.validCount === 0}
                 className={`flex-1 bg-gradient-to-r ${
                   STATUS_OPTIONS.find(o => o.value === confirmationModal.status)?.color
                 } text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2`}
@@ -337,9 +438,11 @@ export default function BatchOperations({ selectedOrders, onClearSelection, tota
                     </svg>
                     Processing...
                   </>
+                ) : validationResult && validationResult.validCount === 0 ? (
+                  'No Valid Orders'
                 ) : (
                   <>
-                    Confirm Update
+                    {validationResult && `Update ${validationResult.validCount} Order${validationResult.validCount > 1 ? 's' : ''}`}
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
