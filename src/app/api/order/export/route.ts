@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface OrderItem {
   id: string;
@@ -416,7 +416,7 @@ async function generatePDF(
 }
 
 function addOrderTable(
-  doc: any,
+  doc: jsPDF,
   orders: Order[],
   fields: Record<string, boolean>,
   includeItemDetails: boolean,
@@ -448,7 +448,7 @@ function addOrderTable(
     return row;
   });
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     head: [headers],
     body: body,
     startY: startY,
