@@ -249,9 +249,9 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
           <div className="text-2xs font-bold text-red-dark uppercase tracking-wider mb-1">Failed</div>
           <div className="text-heading-5 font-bold text-red-dark">{stats.failed}</div>
         </div>
-        <div className="bg-gradient-to-br from-blue to-purple rounded-2xl border border-blue-dark p-4 hover:shadow-lg transition-all">
-          <div className="text-2xs font-bold text-white uppercase tracking-wider mb-1">Revenue</div>
-          <div className="text-custom-sm font-bold text-white">KES {stats.totalRevenue.toFixed(0)}</div>
+        <div className="bg-green-light-6 text-green-dark rounded-2xl border border-green-dark p-4 hover:shadow-lg transition-all">
+          <div className="text-2xs font-bold uppercase tracking-wider mb-1">Revenue</div>
+          <div className="text-custom-sm font-bold">KES {stats.totalRevenue.toFixed(0)}</div>
         </div>
       </div>
 

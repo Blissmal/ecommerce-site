@@ -14,32 +14,56 @@ interface BatchOperationsProps {
   totalOrders: number;
 }
 
-const STATUS_OPTIONS: { value: OrderStatus; label: string; icon: string; color: string; description: string }[] = [
+const STATUS_OPTIONS: { 
+  value: OrderStatus; 
+  label: string; 
+  icon: React.ReactNode; 
+  color: string; 
+  description: string 
+}[] = [
   {
     value: 'PROCESSING',
     label: 'Processing',
-    icon: '⚡',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+      </svg>
+    ),
     color: 'from-blue to-blue-dark',
     description: 'Mark orders as being processed'
   },
   {
     value: 'SHIPPED',
     label: 'Shipped',
-    icon: '📦',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+        <path d="m3.3 7 8.7 5 8.7-5" />
+        <path d="M12 22V12" />
+      </svg>
+    ),
     color: 'from-purple to-purple-dark',
     description: 'Mark orders as shipped to customers'
   },
   {
     value: 'DELIVERED',
     label: 'Delivered',
-    icon: '✅',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 6L9 17l-5-5" />
+      </svg>
+    ),
     color: 'from-green to-green-dark',
     description: 'Confirm orders have been delivered'
   },
   {
     value: 'CANCELLED',
     label: 'Cancelled',
-    icon: '❌',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 6L6 18M6 6l12 12" />
+      </svg>
+    ),
     color: 'from-red to-red-dark',
     description: 'Cancel selected orders'
   },
@@ -132,7 +156,7 @@ export default function BatchOperations({ selectedOrders, onClearSelection, tota
     <>
       {/* Floating Action Bar */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 animate-slide-up">
-        <div className="bg-gradient-to-r from-blue-dark to-purple-dark text-white rounded-2xl shadow-2xl border-2 border-white/20 backdrop-blur-sm">
+        <div className="bg-blue-dark text-white rounded-2xl shadow-2xl border-2 border-white/20 backdrop-blur-sm">
           <div className="px-6 py-4 flex items-center gap-6">
             {/* Selection Info */}
             <div className="flex items-center gap-3">

@@ -45,6 +45,56 @@ type ExportFormat = 'csv' | 'excel' | 'pdf';
 type ExportScope = 'all' | 'filtered' | 'selected';
 type DateRange = 'all' | 'today' | 'week' | 'month' | 'custom';
 
+const exportOptions: { 
+  value: string; 
+  label: string; 
+  icon: React.ReactNode; 
+  description: string 
+}[] = [
+  { 
+    value: 'excel', 
+    label: 'Excel', 
+    icon: (
+      <svg className="w-5 h-5 text-green-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+        <polyline points="14 2 14 8 20 8" />
+        <path d="M8 13h2" />
+        <path d="M8 17h2" />
+        <path d="M14 13h2" />
+        <path d="M14 17h2" />
+      </svg>
+    ), 
+    description: 'XLSX with formatting' 
+  },
+  { 
+    value: 'csv', 
+    label: 'CSV', 
+    icon: (
+      <svg className="w-5 h-5 text-blue-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="8" y1="13" x2="16" y2="13" />
+        <line x1="8" y1="17" x2="16" y2="17" />
+      </svg>
+    ), 
+    description: 'Comma-separated values' 
+  },
+  { 
+    value: 'pdf', 
+    label: 'PDF', 
+    icon: (
+      <svg className="w-5 h-5 text-red-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <circle cx="9" cy="15" r="1" />
+        <path d="M12 15h2" />
+        <path d="M12 18h2" />
+      </svg>
+    ), 
+    description: 'Printable document' 
+  },
+];
+
 const EXPORT_FIELDS = [
   { key: 'orderId', label: 'Order ID', checked: true },
   { key: 'customerName', label: 'Customer Name', checked: true },
@@ -193,7 +243,7 @@ export default function ExportModal({ isOpen, onClose, orders, selectedOrders }:
         <div className="p-6 border-b border-gray-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue to-purple flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-blue-dark flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -220,11 +270,7 @@ export default function ExportModal({ isOpen, onClose, orders, selectedOrders }:
           <div>
             <label className="block text-custom-sm font-bold text-dark mb-3">Export Format</label>
             <div className="grid grid-cols-3 gap-3">
-              {[
-                { value: 'excel', label: 'Excel', icon: '📊', description: 'XLSX with formatting' },
-                { value: 'csv', label: 'CSV', icon: '📄', description: 'Comma-separated values' },
-                { value: 'pdf', label: 'PDF', icon: '📕', description: 'Printable document' },
-              ].map((format) => (
+              {exportOptions.map((format) => (
                 <button
                   key={format.value}
                   onClick={() => setExportFormat(format.value as ExportFormat)}
@@ -424,7 +470,7 @@ export default function ExportModal({ isOpen, onClose, orders, selectedOrders }:
           <button
             onClick={handleExport}
             disabled={loading || ordersCount === 0}
-            className="flex-1 bg-gradient-to-r from-blue to-purple text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 bg-blue-dark text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
