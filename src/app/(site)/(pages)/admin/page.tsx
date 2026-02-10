@@ -56,10 +56,46 @@ export default async function AdminDashboard() {
   const stats = await getDashboardStats();
 
   const statCards = [
-    { title: "Total Users", value: stats.userCount, icon: "👥", color: "bg-blue-light-6 text-blue-dark border-blue-light-4" },
-    { title: "Total Products", value: stats.productCount, icon: "📦", color: "bg-green-light-6 text-green-dark border-green-light-4" },
-    { title: "Total Orders", value: stats.orderCount, icon: "📋", color: "bg-yellow-light-6 text-yellow-dark border-yellow-light-4" },
-    { title: "Categories", value: stats.categoryCount, icon: "🏷️", color: "bg-purple-light-6 text-purple-dark border-purple-light-4" },
+    { 
+      title: "Total Users", 
+      value: stats.userCount, 
+      icon: (
+        <svg className="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17 20H22V18C22 16.3431 20.6569 15 19 15C18.0444 15 17.1931 15.4468 16.6438 16.1429M17 20H7M17 20V18C17 17.3438 16.8736 16.717 16.6438 16.1429M7 20H2V18C2 16.3431 3.34315 15 5 15C5.95561 15 6.80686 15.4468 7.35625 16.1429M7 20V18C7 17.3438 7.12642 16.717 7.35625 16.1429M7.35625 16.1429C8.0935 14.301 9.89482 13 12 13C14.1052 13 15.9065 14.301 16.6438 16.1429M15 7C15 8.65685 13.6569 10 12 10C10.3431 10 9 8.65685 9 7C9 5.34315 10.3431 4 12 4C13.6569 4 15 5.34315 15 7ZM21 10C21 11.1046 20.1046 12 19 12C17.8954 12 17 11.1046 17 10C17 8.89543 17.8954 8 19 8C20.1046 8 21 8.89543 21 10ZM7 10C7 11.1046 6.10457 12 5 12C3.89543 12 3 11.1046 3 10C3 8.89543 3.89543 8 5 8C6.10457 8 7 8.89543 7 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      color: "bg-blue-light-6 text-blue-dark border-blue-light-4" 
+    },
+    { 
+      title: "Total Products", 
+      value: stats.productCount, 
+      icon: (
+        <svg className="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 7L12 3L4 7M20 7L12 11M20 7V17L12 21M12 11L4 7M12 11V21M4 7V17L12 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      color: "bg-green-light-6 text-green-dark border-green-light-4" 
+    },
+    { 
+      title: "Total Orders", 
+      value: stats.orderCount, 
+      icon: (
+        <svg className="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M12 12H15M12 16H15M9 12H9.01M9 16H9.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      color: "bg-yellow-light-6 text-yellow-dark border-yellow-light-4" 
+    },
+    { 
+      title: "Categories", 
+      value: stats.categoryCount, 
+      icon: (
+        <svg className="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 7H7.01M7 3H12C12.5304 3 13.0391 3.21071 13.4142 3.58579L21.4142 11.5858C22.1953 12.3668 22.1953 13.6332 21.4142 14.4142L14.4142 21.4142C13.6332 22.1953 12.3668 22.1953 11.5858 21.4142L3.58579 13.4142C3.21071 13.0391 3 12.5304 3 12V7C3 4.79086 4.79086 3 7 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      color: "bg-purple-light-6 text-purple-dark border-purple-light-4" 
+    },
   ];
 
   return (
@@ -119,13 +155,19 @@ export default async function AdminDashboard() {
                 </p>
                 <div className="space-y-1 sm:space-y-2">
                   {stats.processingOrdersCount > 0 && (
-                    <p className="text-2xs sm:text-custom-xs text-body">
-                      📦 {stats.processingOrdersCount} order{stats.processingOrdersCount !== 1 ? 's' : ''} currently processing
+                    <p className="text-2xs sm:text-custom-xs text-body flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-blue-dark flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 7L12 3L4 7M20 7L12 11M20 7V17L12 21M12 11L4 7M12 11V21M4 7V17L12 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      {stats.processingOrdersCount} order{stats.processingOrdersCount !== 1 ? 's' : ''} currently processing
                     </p>
                   )}
                   {stats.shippedOrdersCount > 0 && (
-                    <p className="text-2xs sm:text-custom-xs text-body">
-                      🚚 {stats.shippedOrdersCount} order{stats.shippedOrdersCount !== 1 ? 's' : ''} shipped
+                    <p className="text-2xs sm:text-custom-xs text-body flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-purple-dark flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 16V6C13 4.89543 13.8954 4 15 4H19C20.1046 4 21 4.89543 21 6V16M13 16H3L6 12M13 16H21M21 16L18 12M6 12V6C6 4.89543 5.10457 4 4 4C2.89543 4 2 4.89543 2 6V12M6 12H18M7 20H17M7 20C7 18.8954 6.10457 18 5 18C3.89543 18 3 18.8954 3 20M7 20C7 21.1046 6.10457 22 5 22C3.89543 22 3 21.1046 3 20M17 20C17 18.8954 17.8954 18 19 18C20.1046 18 21 18.8954 21 20M17 20C17 21.1046 17.8954 22 19 22C20.1046 22 21 21.1046 21 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      {stats.shippedOrdersCount} order{stats.shippedOrdersCount !== 1 ? 's' : ''} shipped
                     </p>
                   )}
                 </div>
@@ -152,7 +194,7 @@ export default async function AdminDashboard() {
                 <p className="text-[9px] sm:text-2xs font-bold text-dark-5 uppercase tracking-widest mb-1 truncate">{stat.title}</p>
                 <p className="text-xl sm:text-2xl lg:text-heading-5 font-bold text-dark">{stat.value.toLocaleString()}</p>
               </div>
-              <div className={`w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-lg sm:rounded-xl border flex items-center justify-center text-lg sm:text-xl lg:text-2xl transition-transform group-hover:scale-110 flex-shrink-0 ${stat.color}`}>
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-lg sm:rounded-xl border flex items-center justify-center text-lg sm:text-xl lg:text-2xl transition-transform group-hover:scale-110 flex-shrink-0 p-2 ${stat.color}`}>
                 {stat.icon}
               </div>
             </div>
@@ -166,7 +208,7 @@ export default async function AdminDashboard() {
         <div className="lg:col-span-1 bg-white rounded-xl sm:rounded-2xl shadow-2 border border-gray-3 p-6 sm:p-8 flex flex-col justify-center relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <svg className="w-16 sm:w-20 lg:w-24 h-16 sm:h-20 lg:h-24 text-green-dark" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z" />
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z" />
             </svg>
           </div>
           <h3 className="text-2xs font-bold text-dark-5 uppercase tracking-widest mb-3 sm:mb-4">Total Revenue</h3>
