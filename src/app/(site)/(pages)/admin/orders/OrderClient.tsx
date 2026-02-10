@@ -1,7 +1,10 @@
+// app/admin/orders/OrderClient.tsx (UPDATED VERSION)
 "use client";
 
 import { useState, useMemo } from "react";
 import OrderActions from "./OrderActions";
+import BatchOperations from "./BatchOperations";
+import ExportModal from "./ExportModal";
 
 type OrderStatus = 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 
@@ -27,7 +30,9 @@ interface Order {
     variantSnapshot?: any;
     product: {
       title: string;
+      price: number;
     };
+    variant?: any;
   }>;
 }
 
@@ -50,6 +55,7 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Filter and sort orders
   const filteredOrders = useMemo(() => {
@@ -140,8 +146,12 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
     }
   };
 
+  const clearSelection = () => {
+    setSelectedOrders(new Set());
+  };
+
   return (
-    <div className="min-h-screen bg-meta p-4 sm:p-6 lg:p-7.5 font-euclid-circular-a">
+    <div className="min-h-screen bg-meta p-4 sm:p-6 lg:p-7.5 font-euclid-circular-a pb-24">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-6">
         <div className="flex-1">
@@ -164,26 +174,42 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
         
         <div className="flex items-center gap-3">
           {/* Export Button */}
-          <button className="flex items-center gap-2 bg-white text-dark font-bold px-4 py-2.5 rounded-xl border border-gray-3 hover:border-blue hover:text-blue transition-all">
+          <button 
+            onClick={() => setShowExportModal(true)}
+            className="flex items-center gap-2 bg-white text-dark font-bold px-4 py-2.5 rounded-xl border border-gray-3 hover:border-blue hover:text-blue transition-all hover:shadow-lg"
+          >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Export
+            {selectedOrders.size > 0 && (
+              <span className="bg-blue text-white text-2xs px-2 py-0.5 rounded-full">
+                {selectedOrders.size}
+              </span>
+            )}
           </button>
 
-          {/* View Toggle */}
-          <div className="bg-white rounded-xl border border-gray-3 p-1 flex gap-1">
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-white rounded-xl border border-gray-3 p-1">
             <button
               onClick={() => setViewMode("table")}
-              className={`p-2 rounded-lg transition-colors ${viewMode === "table" ? "bg-blue text-white" : "text-body hover:text-dark"}`}
+              className={`p-2 rounded-lg transition-all ${
+                viewMode === "table"
+                  ? "bg-blue text-white"
+                  : "text-body hover:text-dark"
+              }`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-lg transition-colors ${viewMode === "grid" ? "bg-blue text-white" : "text-body hover:text-dark"}`}
+              className={`p-2 rounded-lg transition-all ${
+                viewMode === "grid"
+                  ? "bg-blue text-white"
+                  : "text-body hover:text-dark"
+              }`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -193,117 +219,73 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
         </div>
       </div>
 
-      {/* Stats Dashboard */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
-        <div className="bg-gradient-to-br from-blue-light-6 to-blue-light-5 rounded-xl p-4 border border-blue-light-4">
-          <div className="text-2xs font-bold text-blue-dark uppercase tracking-wider mb-1">Total Orders</div>
-          <div className="text-2xl font-bold text-blue-dark">{stats.total}</div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-2 border border-gray-3 p-4 hover:shadow-lg transition-all">
+          <div className="text-2xs font-bold text-body uppercase tracking-wider mb-1">Total</div>
+          <div className="text-heading-5 font-bold text-dark">{stats.total}</div>
         </div>
-        <div className="bg-gradient-to-br from-yellow-light-6 to-yellow-light-5 rounded-xl p-4 border border-yellow-light-4">
+        <div className="bg-gradient-to-br from-yellow-light-2 to-yellow-light-1 rounded-2xl border border-yellow-light-3 p-4 hover:shadow-lg transition-all">
           <div className="text-2xs font-bold text-yellow-dark uppercase tracking-wider mb-1">Pending</div>
-          <div className="text-2xl font-bold text-yellow-dark">{stats.pending}</div>
+          <div className="text-heading-5 font-bold text-yellow-dark">{stats.pending}</div>
         </div>
-        <div className="bg-gradient-to-br from-blue-light-6 to-blue-light-5 rounded-xl p-4 border border-blue-light-4">
+        <div className="bg-gradient-to-br from-blue-light-6 to-blue-light-5 rounded-2xl border border-blue-light-4 p-4 hover:shadow-lg transition-all">
           <div className="text-2xs font-bold text-blue-dark uppercase tracking-wider mb-1">Processing</div>
-          <div className="text-2xl font-bold text-blue-dark">{stats.processing}</div>
+          <div className="text-heading-5 font-bold text-blue-dark">{stats.processing}</div>
         </div>
-        <div className="bg-gradient-to-br from-purple-light-6 to-purple-light-5 rounded-xl p-4 border border-purple-light-4">
+        <div className="bg-gradient-to-br from-purple-light-6 to-purple-light-5 rounded-2xl border border-purple-light-4 p-4 hover:shadow-lg transition-all">
           <div className="text-2xs font-bold text-purple-dark uppercase tracking-wider mb-1">Shipped</div>
-          <div className="text-2xl font-bold text-purple-dark">{stats.shipped}</div>
+          <div className="text-heading-5 font-bold text-purple-dark">{stats.shipped}</div>
         </div>
-        <div className="bg-gradient-to-br from-green-light-6 to-green-light-5 rounded-xl p-4 border border-green-light-4">
+        <div className="bg-gradient-to-br from-green-light-6 to-green-light-5 rounded-2xl border border-green-light-4 p-4 hover:shadow-lg transition-all">
           <div className="text-2xs font-bold text-green-dark uppercase tracking-wider mb-1">Delivered</div>
-          <div className="text-2xl font-bold text-green-dark">{stats.delivered}</div>
+          <div className="text-heading-5 font-bold text-green-dark">{stats.delivered}</div>
         </div>
-        <div className="bg-gradient-to-br from-red-light-6 to-red-light-5 rounded-xl p-4 border border-red-light-4">
+        <div className="bg-gradient-to-br from-red-light-6 to-red-light-5 rounded-2xl border border-red-light-4 p-4 hover:shadow-lg transition-all">
           <div className="text-2xs font-bold text-red-dark uppercase tracking-wider mb-1">Cancelled</div>
-          <div className="text-2xl font-bold text-red-dark">{stats.cancelled}</div>
+          <div className="text-heading-5 font-bold text-red-dark">{stats.cancelled}</div>
         </div>
-        <div className="bg-gradient-to-br from-gray-2 to-gray-1 rounded-xl p-4 border border-gray-3">
-          <div className="text-2xs font-bold text-dark-5 uppercase tracking-wider mb-1">Failed</div>
-          <div className="text-2xl font-bold text-dark">{stats.failed}</div>
+        <div className="bg-gradient-to-br from-red-light-6 to-red-light-5 rounded-2xl border border-red-light-4 p-4 hover:shadow-lg transition-all">
+          <div className="text-2xs font-bold text-red-dark uppercase tracking-wider mb-1">Failed</div>
+          <div className="text-heading-5 font-bold text-red-dark">{stats.failed}</div>
         </div>
-        <div className="bg-gradient-to-br from-green-light-6 to-green-light-5 rounded-xl p-4 border border-green-light-4">
-          <div className="text-2xs font-bold text-green-dark uppercase tracking-wider mb-1">Revenue</div>
-          <div className="text-lg font-bold text-green-dark">KES {(stats.totalRevenue / 1000).toFixed(1)}K</div>
+        <div className="bg-gradient-to-br from-blue to-purple rounded-2xl border border-blue-dark p-4 hover:shadow-lg transition-all">
+          <div className="text-2xs font-bold text-white uppercase tracking-wider mb-1">Revenue</div>
+          <div className="text-custom-sm font-bold text-white">KES {stats.totalRevenue.toFixed(0)}</div>
         </div>
       </div>
 
-      {/* Urgent Actions Alert */}
-      {paidOrders.length > 0 && (
-        <div className="mb-6 bg-gradient-to-r from-red-light-6 via-orange-light-6 to-yellow-light-6 border-2 border-red-light-4 rounded-2xl p-6 shadow-lg">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0">
-              <div className="bg-white rounded-full p-3 shadow-md">
-                <svg className="w-6 h-6 text-red-dark" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-heading-6 font-bold text-red-dark mb-2 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                Urgent: {paidOrders.length} Paid {paidOrders.length === 1 ? 'Order' : 'Orders'} Awaiting Approval
-              </h3>
-              <p className="text-custom-sm text-dark-5 mb-4">
-                These orders have been paid and are waiting for your approval to begin processing. Review each order and click "Approve & Process" to start fulfillment.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {paidOrders.slice(0, 5).map(order => (
-                  <div key={order.id} className="bg-white rounded-lg px-3 py-2 border border-gray-3 shadow-sm flex items-center gap-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red"></span>
-                    </span>
-                    <span className="text-2xs font-bold text-blue">#{order.id.slice(-8).toUpperCase()}</span>
-                    <span className="text-2xs text-body">•</span>
-                    <span className="text-2xs text-dark font-medium">KES {order.total.toFixed(2)}</span>
-                  </div>
-                ))}
-                {paidOrders.length > 5 && (
-                  <div className="bg-white rounded-lg px-3 py-2 border border-gray-3 shadow-sm">
-                    <span className="text-2xs font-bold text-body">+{paidOrders.length - 5} more</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filters & Search */}
-      <div className="bg-white rounded-2xl shadow-2 border border-gray-3 p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      {/* Filters */}
+      <div className="bg-white rounded-2xl shadow-2 border border-gray-3 p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
-          <div className="lg:col-span-2">
-            <label className="text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2 block">Search Orders</label>
+          <div>
+            <label className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Search</label>
             <div className="relative">
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-body" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 type="text"
-                placeholder="Search by ID, customer, email..."
+                placeholder="Search orders..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-3 focus:border-blue focus:ring-2 focus:ring-blue/20 outline-none transition-all text-custom-sm"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-3 rounded-xl focus:ring-2 focus:ring-blue focus:border-blue transition-all"
               />
             </div>
           </div>
 
           {/* Status Filter */}
           <div>
-            <label className="text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2 block">Status</label>
+            <label className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-3 focus:border-blue focus:ring-2 focus:ring-blue/20 outline-none transition-all text-custom-sm font-medium"
+              className="w-full px-4 py-2.5 border border-gray-3 rounded-xl focus:ring-2 focus:ring-blue focus:border-blue transition-all font-medium"
             >
               <option value="ALL">All Statuses</option>
-              <option value="PAID">Paid</option>
               <option value="PENDING">Pending</option>
+              <option value="PAID">Paid</option>
               <option value="PROCESSING">Processing</option>
               <option value="SHIPPED">Shipped</option>
               <option value="DELIVERED">Delivered</option>
@@ -314,11 +296,11 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
 
           {/* Date Filter */}
           <div>
-            <label className="text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2 block">Date Range</label>
+            <label className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Date Range</label>
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value as any)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-3 focus:border-blue focus:ring-2 focus:ring-blue/20 outline-none transition-all text-custom-sm font-medium"
+              className="w-full px-4 py-2.5 border border-gray-3 rounded-xl focus:ring-2 focus:ring-blue focus:border-blue transition-all font-medium"
             >
               <option value="ALL">All Time</option>
               <option value="TODAY">Today</option>
@@ -327,53 +309,61 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
             </select>
           </div>
 
-          {/* Sort By */}
+          {/* Sort */}
           <div>
-            <label className="text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2 block">Sort By</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-3 focus:border-blue focus:ring-2 focus:ring-blue/20 outline-none transition-all text-custom-sm font-medium"
-            >
-              <option value="date">Date</option>
-              <option value="amount">Amount</option>
-            </select>
-          </div>
-
-          {/* Sort Order */}
-          <div>
-            <label className="text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2 block">Order</label>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as any)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-3 focus:border-blue focus:ring-2 focus:ring-blue/20 outline-none transition-all text-custom-sm font-medium"
-            >
-              <option value="desc">Newest First</option>
-              <option value="asc">Oldest First</option>
-            </select>
+            <label className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Sort By</label>
+            <div className="flex gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="flex-1 px-4 py-2.5 border border-gray-3 rounded-xl focus:ring-2 focus:ring-blue focus:border-blue transition-all font-medium"
+              >
+                <option value="date">Date</option>
+                <option value="amount">Amount</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                className="px-3 py-2.5 border border-gray-3 rounded-xl hover:bg-gray-1 transition-all"
+              >
+                <svg 
+                  className={`w-4 h-4 transition-transform ${sortOrder === "asc" ? "rotate-180" : ""}`}
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Active Filters Display */}
-        {(searchQuery || statusFilter !== "ALL" || dateFilter !== "ALL") && (
-          <div className="mt-4 pt-4 border-t border-gray-2 flex items-center gap-2 flex-wrap">
-            <span className="text-2xs font-bold text-dark-5">Active Filters:</span>
+        {/* Active Filters Summary */}
+        {(searchQuery || statusFilter !== "ALL" || dateFilter !== "ALL" || selectedOrders.size > 0) && (
+          <div className="mt-4 pt-4 border-t border-gray-2 flex flex-wrap items-center gap-2">
+            <span className="text-custom-xs font-bold text-body">Active filters:</span>
             {searchQuery && (
-              <span className="bg-blue-light-6 text-blue-dark px-3 py-1 rounded-full text-2xs font-bold flex items-center gap-1.5">
-                Search: "{searchQuery}"
+              <span className="inline-flex items-center gap-1 bg-blue-light-6 text-blue-dark px-3 py-1 rounded-full text-2xs font-bold">
+                Search: {searchQuery}
                 <button onClick={() => setSearchQuery("")} className="hover:text-blue">×</button>
               </span>
             )}
             {statusFilter !== "ALL" && (
-              <span className="bg-blue-light-6 text-blue-dark px-3 py-1 rounded-full text-2xs font-bold flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 bg-purple-light-6 text-purple-dark px-3 py-1 rounded-full text-2xs font-bold">
                 Status: {statusFilter}
-                <button onClick={() => setStatusFilter("ALL")} className="hover:text-blue">×</button>
+                <button onClick={() => setStatusFilter("ALL")} className="hover:text-purple">×</button>
               </span>
             )}
             {dateFilter !== "ALL" && (
-              <span className="bg-blue-light-6 text-blue-dark px-3 py-1 rounded-full text-2xs font-bold flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 bg-green-light-6 text-green-dark px-3 py-1 rounded-full text-2xs font-bold">
                 Date: {dateFilter}
-                <button onClick={() => setDateFilter("ALL")} className="hover:text-blue">×</button>
+                <button onClick={() => setDateFilter("ALL")} className="hover:text-green">×</button>
+              </span>
+            )}
+            {selectedOrders.size > 0 && (
+              <span className="inline-flex items-center gap-1 bg-yellow-light-2 text-yellow-dark px-3 py-1 rounded-full text-2xs font-bold">
+                {selectedOrders.size} selected
+                <button onClick={clearSelection} className="hover:text-yellow">×</button>
               </span>
             )}
             <button
@@ -381,53 +371,29 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
                 setSearchQuery("");
                 setStatusFilter("ALL");
                 setDateFilter("ALL");
+                clearSelection();
               }}
-              className="text-2xs font-bold text-red hover:text-red-dark"
+              className="text-2xs font-bold text-red hover:underline"
             >
-              Clear All
+              Clear all
             </button>
           </div>
         )}
       </div>
 
-      {/* Bulk Actions Bar */}
-      {selectedOrders.size > 0 && (
-        <div className="bg-blue text-white rounded-2xl shadow-lg p-4 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="font-bold">{selectedOrders.size} order{selectedOrders.size !== 1 ? 's' : ''} selected</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="bg-white text-blue font-bold px-4 py-2 rounded-lg hover:bg-blue-light-6 transition-all">
-              Export Selected
-            </button>
-            <button className="bg-white/20 text-white font-bold px-4 py-2 rounded-lg hover:bg-white/30 transition-all">
-              Print Labels
-            </button>
-            <button
-              onClick={() => setSelectedOrders(new Set())}
-              className="bg-white/20 text-white font-bold px-4 py-2 rounded-lg hover:bg-white/30 transition-all"
-            >
-              Clear Selection
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Results Count */}
       <div className="mb-4 flex items-center justify-between">
         <p className="text-custom-sm text-body">
-          Showing <span className="font-bold text-dark">{filteredOrders.length}</span> of <span className="font-bold text-dark">{orders.length}</span> orders
+          Showing <span className="font-bold text-dark">{filteredOrders.length}</span> of{" "}
+          <span className="font-bold text-dark">{orders.length}</span> orders
         </p>
       </div>
 
       {/* Orders Display - Table View */}
       {viewMode === "table" && (
-        <div className="bg-white shadow-2 rounded-2xl border border-gray-3 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-2 border border-gray-3 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-3">
+            <table className="w-full">
               <thead className="bg-gray-1">
                 <tr>
                   <th className="px-6 py-4">
@@ -501,7 +467,7 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
                       </td>
                       <td className="px-6 py-5 whitespace-nowrap">
                         <div className="text-custom-sm text-dark font-medium">
-                          {new Date(order.createdAt).toLocaleDateString()}
+                          {new Date(order.createdAt).toLocaleDateString('en-KE')}
                         </div>
                         <div className="text-custom-xs text-body">{timeAgo}</div>
                       </td>
@@ -597,6 +563,21 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
           <p className="text-custom-sm text-body">Try adjusting your filters or search query</p>
         </div>
       )}
+
+      {/* Batch Operations Component */}
+      <BatchOperations
+        selectedOrders={selectedOrders}
+        onClearSelection={clearSelection}
+        totalOrders={filteredOrders.length}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        orders={filteredOrders}
+        selectedOrders={selectedOrders}
+      />
     </div>
   );
 }

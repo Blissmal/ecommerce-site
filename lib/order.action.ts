@@ -690,3 +690,223 @@ export async function updateMpesaPayment(data: {
     throw new Error("Failed to update M-Pesa payment");
   }
 }
+
+export async function batchUpdateOrderStatus(orderIds: string[], status: OrderStatus) {
+  try {
+    // Update all orders in a single transaction
+    await prisma.$transaction(
+      orderIds.map(orderId =>
+        prisma.order.update({
+          where: { id: orderId },
+          data: { 
+            status, //////////
+          }
+        })
+      )
+    );
+    
+    revalidatePath('/admin/orders');
+    return { success: true, count: orderIds.length };
+  } catch (error) {
+    console.error('Error in batch update:', error);
+    throw new Error(`Failed to update orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+// Batch delete orders (optional - for admin cleanup)
+export async function batchDeleteOrders(orderIds: string[]) {
+  try {
+    // First delete all order items
+    await prisma.orderItem.deleteMany({
+      where: {
+        orderId: {
+          in: orderIds
+        }
+      }
+    });
+    
+    // Then delete the orders
+    await prisma.order.deleteMany({
+      where: {
+        id: {
+          in: orderIds
+        }
+      }
+    });
+    
+    revalidatePath('/admin/orders');
+    return { success: true, count: orderIds.length };
+  } catch (error) {
+    console.error('Error in batch delete:', error);
+    throw new Error(`Failed to delete orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+// Get order statistics for dashboard
+export async function getOrderAnalytics(startDate?: Date, endDate?: Date) {
+  try {
+    const whereClause = startDate && endDate ? {
+      createdAt: {
+        gte: startDate,
+        lte: endDate
+      }
+    } : {};
+
+    const [
+      totalOrders,
+      totalRevenue,
+      statusBreakdown,
+      recentOrders,
+      topCustomers
+    ] = await Promise.all([
+      // Total orders count
+      prisma.order.count({ where: whereClause }),
+      
+      // Total revenue (only delivered orders)
+      prisma.order.aggregate({
+        where: {
+          ...whereClause,
+          status: 'DELIVERED'
+        },
+        _sum: {
+          total: true
+        }
+      }),
+      
+      // Orders by status
+      prisma.order.groupBy({
+        by: ['status'],
+        where: whereClause,
+        _count: {
+          status: true
+        }
+      }),
+      
+      // Recent orders
+      prisma.order.findMany({
+        where: whereClause,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc'
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        }
+      }),
+      
+      // Top customers by order count
+      prisma.order.groupBy({
+        by: ['userId'],
+        where: whereClause,
+        _count: {
+          userId: true
+        },
+        _sum: {
+          total: true
+        },
+        orderBy: {
+          _count: {
+            userId: 'desc'
+          }
+        },
+        take: 10
+      })
+    ]);
+
+    return {
+      totalOrders,
+      totalRevenue: totalRevenue._sum.total || 0,
+      statusBreakdown,
+      recentOrders,
+      topCustomers
+    };
+  } catch (error) {
+    console.error('Error fetching analytics:', error);
+    throw error;
+  }
+}
+
+// Validate orders before batch operations
+export async function validateOrdersForBatchUpdate(orderIds: string[], targetStatus: OrderStatus) {
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        id: {
+          in: orderIds
+        }
+      },
+      select: {
+        id: true,
+        status: true
+      }
+    });
+
+    const invalidTransitions: { orderId: string; currentStatus: string; reason: string }[] = [];
+
+    orders.forEach(order => {
+      // Define valid transitions
+      const validTransitions: Record<string, OrderStatus[]> = {
+        'PENDING': ['PROCESSING', 'CANCELLED', 'FAILED'],
+        'PAID': ['PROCESSING', 'CANCELLED'],
+        'PROCESSING': ['SHIPPED', 'CANCELLED'],
+        'SHIPPED': ['DELIVERED', 'CANCELLED'],
+        'DELIVERED': [], // Final state
+        'CANCELLED': [], // Final state
+        'FAILED': ['PENDING'], // Can retry
+      };
+
+      const allowedStatuses = validTransitions[order.status] || [];
+      
+      if (!allowedStatuses.includes(targetStatus)) {
+        invalidTransitions.push({
+          orderId: order.id,
+          currentStatus: order.status,
+          reason: `Cannot transition from ${order.status} to ${targetStatus}`
+        });
+      }
+    });
+
+    return {
+      valid: invalidTransitions.length === 0,
+      invalidTransitions,
+      validCount: orders.length - invalidTransitions.length
+    };
+  } catch (error) {
+    console.error('Error validating batch update:', error);
+    throw error;
+  }
+}
+
+// Archive old orders (move to archive table or soft delete)
+export async function archiveOldOrders(daysOld: number = 90) {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+    const result = await prisma.order.updateMany({
+      where: {
+        createdAt: {
+          lt: cutoffDate
+        },
+        status: {
+          in: ['DELIVERED', 'CANCELLED']
+        }
+      },
+      data: {
+        // Add an 'archived' field to your schema, or handle differently
+        // archived: true
+      }
+    });
+
+    revalidatePath('/admin/orders');
+    return { success: true, count: result.count };
+  } catch (error) {
+    console.error('Error archiving orders:', error);
+    throw error;
+  }
+}
