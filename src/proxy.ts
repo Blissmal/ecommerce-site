@@ -9,7 +9,7 @@ export async function proxy(request: NextRequest) {
   // Public routes that don't require authentication
   const publicRoutes = [
     '/api/login-check',           // Check login status
-    '/api/mpesa/callback',        // M-Pesa webhook callback
+    '/api/mpesa/:path',        // M-Pesa webhook callback
   ];
   
   // Check if current path is public
