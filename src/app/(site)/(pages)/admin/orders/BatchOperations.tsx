@@ -60,7 +60,7 @@ const STATUS_OPTIONS: {
         <path d="M12 22V12" />
       </svg>
     ),
-    color: 'from-purple to-purple-dark',
+    color: 'from-blue to-blue-dark',
     description: 'Mark orders as shipped to customers',
     detailedDescription: 'Orders must be PROCESSING to move to SHIPPED'
   },
