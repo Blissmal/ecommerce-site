@@ -339,6 +339,11 @@ const ShopDetailsClient: React.FC<ShopDetailsClientProps> = ({ product }) => {
       return;
     }
 
+    if (!user) {
+      window.location.href = '/handler/login';
+      return;
+    }
+
     setAddingToCart(true);
 
     // Optimistic update
