@@ -28,7 +28,7 @@ interface ProductItemProps {
     discountExpiry?: string | null;
     stock: number;
     imageUrl: string;
-    images?: string;
+    images?: string[];
     brand?: string | null;
     description?: string;
     model?: string | null;
