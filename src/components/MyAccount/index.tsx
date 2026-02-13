@@ -6,7 +6,11 @@ import AddressModal from "./AddressModal";
 import Orders from "../Orders";
 import Link from "next/link";
 import { useUser } from "@stackframe/stack";
-import { useSearchParams, useRouter } from "next/navigation"; // 2. Add these
+import { useSearchParams, useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/redux/store";
+import { fetchWishlistItems, removeFromWishlistAsync } from "@/redux/features/wishlist-slice";
+import { toast } from "react-hot-toast";
 
 export interface UserProfile {
   id: string;
@@ -24,24 +28,21 @@ interface MyAccountProps {
 }
 
 const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
-  // const [activeTab, setActiveTab] = useState("dashboard");
   const [addressModal, setAddressModal] = useState(false);
-
-  // Inside your MyAccount component
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false); // New state
-
-  const handleLogout = () => {
-    setLoggingOut(true);
-    // Redirect to your stack signout handler
-    window.location.href = "/handler/signout";
-  };
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
 
   const tabFromUrl = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(tabFromUrl || "dashboard");
+
+  // Wishlist state
+  const { items: wishlistItems, loading: wishlistLoading } = useSelector(
+    (state: RootState) => state.wishlistReducer
+  );
 
   useEffect(() => {
     if (tabFromUrl) {
@@ -49,12 +50,22 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
     }
   }, [tabFromUrl]);
 
+  // Fetch wishlist when component mounts or when wishlist tab is active
+  useEffect(() => {
+    if (activeTab === "wishlist") {
+      dispatch(fetchWishlistItems());
+    }
+  }, [activeTab, dispatch]);
+
   const handleTabChange = (tabName: string) => {
     setActiveTab(tabName);
     router.push(`/my-account?tab=${tabName}`, { scroll: false });
   };
 
-
+  const handleLogout = () => {
+    setLoggingOut(true);
+    window.location.href = "/handler/signout";
+  };
 
   const openAddressModal = () => {
     setAddressModal(true);
@@ -81,7 +92,6 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Stack uses 'displayName' for the full name
       await user?.update({
         displayName: `${firstName} ${lastName}`.trim(),
       });
@@ -109,6 +119,15 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
       setConfirmNewPassword('');
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
+    }
+  };
+
+  const handleRemoveFromWishlist = async (productId: string) => {
+    try {
+      await dispatch(removeFromWishlistAsync(productId)).unwrap();
+      toast.success("Removed from wishlist");
+    } catch (error) {
+      toast.error("Failed to remove from wishlist");
     }
   };
 
@@ -173,8 +192,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("dashboard")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "dashboard"
-                        ? "text-white bg-blue"
-                        : "text-dark-2 bg-gray-1"
+                          ? "text-white bg-blue"
+                          : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -212,11 +231,12 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                       </svg>
                       Dashboard
                     </button>
+
                     <button
                       onClick={() => handleTabChange("orders")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "orders"
-                        ? "text-white bg-blue"
-                        : "text-dark-2 bg-gray-1"
+                          ? "text-white bg-blue"
+                          : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -249,11 +269,42 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                       Orders
                     </button>
 
+                    {/* Wishlist Button */}
+                    <button
+                      onClick={() => handleTabChange("wishlist")}
+                      className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "wishlist"
+                          ? "text-white bg-blue"
+                          : "text-dark-2 bg-gray-1"
+                        }`}
+                    >
+                      <svg
+                        className="fill-current"
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M5.62436 4.42423C3.96537 5.18256 2.75 6.98626 2.75 9.13713C2.75 11.3345 3.64922 13.0283 4.93829 14.4798C6.00072 15.6761 7.28684 16.6677 8.54113 17.6346C8.83904 17.8643 9.13515 18.0926 9.42605 18.3219C9.95208 18.7366 10.4213 19.1006 10.8736 19.3649C11.3261 19.6293 11.6904 19.75 12 19.75C12.3096 19.75 12.6739 19.6293 13.1264 19.3649C13.5787 19.1006 14.0479 18.7366 14.574 18.3219C14.8649 18.0926 15.161 17.8643 15.4589 17.6346C16.7132 16.6677 17.9993 15.6761 19.0617 14.4798C20.3508 13.0283 21.25 11.3345 21.25 9.13713C21.25 6.98626 20.0346 5.18256 18.3756 4.42423C16.7639 3.68751 14.5983 3.88261 12.5404 6.02077C12.399 6.16766 12.2039 6.25067 12 6.25067C11.7961 6.25067 11.601 6.16766 11.4596 6.02077C9.40166 3.88261 7.23607 3.68751 5.62436 4.42423Z"
+                          fill=""
+                        />
+                      </svg>
+                      Wishlist
+                      {wishlistItems.length > 0 && (
+                        <span className="ml-auto bg-red text-white text-xs rounded-full px-2 py-0.5">
+                          {wishlistItems.length}
+                        </span>
+                      )}
+                    </button>
+
                     <button
                       onClick={() => handleTabChange("downloads")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "downloads"
-                        ? "text-white bg-blue"
-                        : "text-dark-2 bg-gray-1"
+                          ? "text-white bg-blue"
+                          : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -279,8 +330,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("addresses")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "addresses"
-                        ? "text-white bg-blue"
-                        : "text-dark-2 bg-gray-1"
+                          ? "text-white bg-blue"
+                          : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -308,8 +359,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("account-details")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "account-details"
-                        ? "text-white bg-blue"
-                        : "text-dark-2 bg-gray-1"
+                          ? "text-white bg-blue"
+                          : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -364,35 +415,146 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                 </div>
               </div>
             </div>
-            {/* <!--== user dashboard menu end ==-->
+            {/* <!--== user dashboard menu end ==--> */}
 
-            
-          <!--== user dashboard content start ==--> */}
-            {/* <!-- dashboard tab content start --> */}
+            {/* <!--== user dashboard content start ==--> */}
 
+            {/* Dashboard Tab */}
             <div
               className={`xl:max-w-[770px] w-full bg-white rounded-xl shadow-1 py-9.5 px-4 sm:px-7.5 xl:px-10 ${activeTab === "dashboard" ? "block" : "hidden"
                 }`}
             >
-
               <p className="text-custom-sm mt-4">
                 From your account dashboard you can view your recent orders,
                 manage your shipping and billing addresses, and edit your
                 password and account details.
               </p>
             </div>
-            {/* <!-- dashboard tab content end -->
 
-          <!-- orders tab content start --> */}
+            {/* Orders Tab */}
             <div
               className={`xl:max-w-[770px] w-full bg-white rounded-xl shadow-1 ${activeTab === "orders" ? "block" : "hidden"
                 }`}
             >
               <Orders />
             </div>
-            {/* <!-- orders tab content end -->
 
-          <!-- downloads tab content start --> */}
+            {/* Wishlist Tab */}
+            <div
+              className={`xl:max-w-[770px] w-full bg-white rounded-xl shadow-1 ${activeTab === "wishlist" ? "block" : "hidden"
+                }`}
+            >
+              <div className="py-9.5 px-4 sm:px-7.5 xl:px-10">
+                <h2 className="font-semibold text-2xl text-dark mb-6">
+                  My Wishlist ({wishlistItems.length})
+                </h2>
+
+                {wishlistLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-3 border-t-blue"></div>
+                    <p className="mt-4 text-custom-sm text-dark-4 font-medium">Loading wishlist ...</p>
+                  </div>
+                ) : wishlistItems.length === 0 ? (
+                  <div className="text-center py-20">
+                    <div className="w-20 h-20 bg-gray-1 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
+                      💝
+                    </div>
+                    <p className="text-xl text-gray-600 mb-6">
+                      Your wishlist is empty
+                    </p>
+                    <Link
+                      href="/shop"
+                      className="inline-block px-8 py-3 bg-blue text-white rounded-lg font-medium hover:bg-blue-dark transition-colors"
+                    >
+                      Start Shopping
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {wishlistItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="group bg-gray-1 rounded-lg overflow-hidden hover:shadow-2 transition-shadow"
+                      >
+                        <div className="relative aspect-square bg-white p-4">
+                          <Link href={`/shop-details/${item.product.id}`}>
+                            <Image
+                              src={item.product.imageUrl}
+                              alt={item.product.title}
+                              width={300}
+                              height={300}
+                              className="object-contain w-full h-full group-hover:scale-105 transition-transform"
+                            />
+                          </Link>
+                          <button
+                            onClick={() => handleRemoveFromWishlist(item.product.id)}
+                            className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-2 text-red hover:bg-red hover:text-white transition-colors"
+                            aria-label="Remove from wishlist"
+                          >
+                            <svg
+                              className="fill-current"
+                              width="20"
+                              height="20"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                          </button>
+                        </div>
+
+                        <div className="p-4">
+                          <Link
+                            href={`/shop-details/${item.product.id}`}
+                            className="font-medium text-dark hover:text-blue line-clamp-2 mb-2 block"
+                          >
+                            {item.product.brand && item.product.model
+                              ? `${item.product.brand} ${item.product.model}`
+                              : item.product.title}
+                          </Link>
+
+                          <div className="flex items-baseline gap-2 mb-4">
+                            {item.product.discount && item.product.discount > 0 ? (
+                              <>
+                                <span className="font-bold text-lg text-blue">
+                                  KES{" "}
+                                  {(
+                                    item.product.price *
+                                    (1 - item.product.discount / 100)
+                                  ).toFixed(2)}
+                                </span>
+                                <span className="text-sm text-gray-5 line-through">
+                                  KES {item.product.price.toFixed(2)}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="font-bold text-lg text-dark">
+                                KES {item.product.price.toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/shop-details/${item.product.id}`}
+                              className="flex-1 text-center px-4 py-2 bg-blue text-white rounded-lg font-medium hover:bg-blue-dark transition-colors"
+                            >
+                              View Details
+                            </Link>
+                            {item.product.stock > 0 && (
+                              <span className="text-xs text-green-600 font-medium">
+                                In Stock
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/*<!-- downloads tab content start --> */}
             <div
               className={`xl:max-w-[770px] w-full bg-white rounded-xl shadow-1 py-9.5 px-4 sm:px-7.5 xl:px-10 ${activeTab === "downloads" ? "block" : "hidden"
                 }`}
