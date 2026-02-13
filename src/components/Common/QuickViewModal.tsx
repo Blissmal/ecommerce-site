@@ -19,6 +19,7 @@ const QuickViewModal = () => {
 
   // get the product data
   const product = useAppSelector((state) => state.quickViewReducer.value);
+  console.log(product)
 
   const [activePreview, setActivePreview] = useState(0);
 
@@ -27,27 +28,34 @@ const QuickViewModal = () => {
     // If product is null/undefined, return empty array
     if (!product) return [];
 
+    if (!product) return [];
+
     const imgs = [];
-    
+
     // Try database fields first
     if (product.imageUrl) {
       imgs.push(product.imageUrl);
     }
-    
+
     if (product.images && Array.isArray(product.images)) {
-      imgs.push(...product.images);
+      // Only add images that aren't already in imgs (avoid duplicates)
+      product.images.forEach(img => {
+        if (!imgs.includes(img)) {
+          imgs.push(img);
+        }
+      });
     }
-    
+
     // Fallback to old demo data structure
     if (imgs.length === 0 && product.imgs?.previews) {
       return product.imgs.previews;
     }
-    
+
     // Final fallback - placeholder
     if (imgs.length === 0) {
       imgs.push("/images/products/product-1-bg-1.png");
     }
-    
+
     return imgs;
   }, [product]);
 
@@ -109,9 +117,8 @@ const QuickViewModal = () => {
 
   return (
     <div
-      className={`${
-        isModalOpen ? "z-99999" : "hidden"
-      } fixed top-0 left-0 overflow-y-auto no-scrollbar w-full h-screen sm:py-20 xl:py-25 2xl:py-[230px] bg-dark/70 sm:px-8 px-4 py-5`}
+      className={`${isModalOpen ? "z-99999" : "hidden"
+        } fixed top-0 left-0 overflow-y-auto no-scrollbar w-full h-screen sm:py-20 xl:py-25 2xl:py-[230px] bg-dark/70 sm:px-8 px-4 py-5`}
     >
       <div className="flex items-center justify-center ">
         <div className="w-full max-w-[1100px] rounded-xl shadow-3 bg-white p-7.5 relative modal-content">
@@ -147,9 +154,8 @@ const QuickViewModal = () => {
                       <button
                         onClick={() => setActivePreview(key)}
                         key={key}
-                        className={`flex items-center justify-center w-20 h-20 overflow-hidden rounded-lg bg-gray-1 ease-out duration-200 hover:border-2 hover:border-blue ${
-                          activePreview === key && "border-2 border-blue"
-                        }`}
+                        className={`flex items-center justify-center w-20 h-20 overflow-hidden rounded-lg bg-gray-1 ease-out duration-200 hover:border-2 hover:border-blue ${activePreview === key && "border-2 border-blue"
+                          }`}
                       >
                         <Image
                           src={img || "/images/products/product-1-bg-1.png"}
