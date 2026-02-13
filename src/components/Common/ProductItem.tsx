@@ -216,13 +216,13 @@ const ProductItem: React.FC<ProductItemProps> = ({ item }) => {
           </button>
 
           {/* Add to Cart */}
-          <button
+          {/* <button
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             className="flex-1 inline-flex justify-center items-center h-10 px-4 rounded-md bg-blue text-white font-medium shadow-2 hover:bg-blue-dark disabled:bg-gray-4 disabled:cursor-not-allowed transition-colors duration-200"
           >
             {isOutOfStock ? "Sold Out" : "Add to Cart"}
-          </button>
+          </button> */}
 
           {/* Wishlist */}
           <WishlistButton productId={item.id} />
