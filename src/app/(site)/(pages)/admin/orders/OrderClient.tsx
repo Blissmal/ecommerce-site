@@ -260,12 +260,13 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Search</label>
+            <label htmlFor="search-query" className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Search</label>
             <div className="relative">
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-body" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
+                id="search-query"
                 type="text"
                 placeholder="Search orders..."
                 value={searchQuery}
@@ -277,8 +278,9 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
 
           {/* Status Filter */}
           <div>
-            <label className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Status</label>
+            <label htmlFor="status-filter" className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Status</label>
             <select
+              id="status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="w-full px-4 py-2.5 border border-gray-3 rounded-xl focus:ring-2 focus:ring-blue focus:border-blue transition-all font-medium"
@@ -296,8 +298,9 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
 
           {/* Date Filter */}
           <div>
-            <label className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Date Range</label>
+            <label htmlFor="date-filter" className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Date Range</label>
             <select
+              id="date-filter"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value as any)}
               className="w-full px-4 py-2.5 border border-gray-3 rounded-xl focus:ring-2 focus:ring-blue focus:border-blue transition-all font-medium"
@@ -311,9 +314,10 @@ export default function OrdersClient({ orders, stats }: { orders: Order[], stats
 
           {/* Sort */}
           <div>
-            <label className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Sort By</label>
+            <label htmlFor="sort-by" className="block text-2xs font-bold text-dark-5 uppercase tracking-wider mb-2">Sort By</label>
             <div className="flex gap-2">
               <select
+                id="sort-by"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="flex-1 px-4 py-2.5 border border-gray-3 rounded-xl focus:ring-2 focus:ring-blue focus:border-blue transition-all font-medium"
