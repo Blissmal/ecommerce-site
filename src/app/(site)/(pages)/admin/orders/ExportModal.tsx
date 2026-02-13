@@ -237,7 +237,7 @@ export default function ExportModal({ isOpen, onClose, orders, selectedOrders }:
   const ordersCount = getOrdersToExport().length;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-8 animate-scale-in">
         {/* Header */}
         <div className="p-6 border-b border-gray-2">
