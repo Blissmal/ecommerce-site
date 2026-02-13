@@ -7,7 +7,7 @@ import { clearUserCart } from '../../../../../lib/db';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log('M-Pesa Callback Received:', JSON.stringify(body, null, 2));
+    // console.log('M-Pesa Callback Received:', JSON.stringify(body, null, 2));
 
     const { Body } = body;
     const { stkCallback } = Body;
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ResultCode: 0, ResultDesc: 'Success' });
     }
 
-    console.log(`Processing callback for order ${order.id}, ResultCode: ${ResultCode}`);
+    // console.log(`Processing callback for order ${order.id}, ResultCode: ${ResultCode}`);
 
     // Handle different result codes
     if (ResultCode === 0) {
@@ -49,18 +49,18 @@ export async function POST(req: NextRequest) {
       // Clear cart only after successful payment
       await clearUserCart(order.userId);
 
-      console.log(`✅ Payment successful for order ${order.id}: ${receiptNumber}`);
-      console.log(`🗑️ Cart cleared for user ${order.userId}`);
+      // console.log(`Payment successful for order ${order.id}: ${receiptNumber}`);
+      // console.log(`Cart cleared for user ${order.userId}`);
 
     } else if (ResultCode === 1032) {
       // ❌ User explicitly cancelled the payment
       // Use cancelOrder() which sets status to CANCELLED and restores stock
-      console.log(`❌ Payment cancelled by user for order ${order.id}: ${ResultDesc}`);
+      // console.log(`Payment cancelled by user for order ${order.id}: ${ResultDesc}`);
       await cancelOrder(order.id);
 
     } else if (ResultCode === 1037) {
       // ⏱️ Timeout - user didn't enter PIN in time
-      console.log(`⏱️ Payment timeout for order ${order.id}: ${ResultDesc}`);
+      // console.log(`Payment timeout for order ${order.id}: ${ResultDesc}`);
       
       // Set status to FAILED
       await prisma.order.update({
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     } else if (ResultCode === 1) {
       // 💰 Insufficient balance
-      console.log(`💰 Insufficient balance for order ${order.id}: ${ResultDesc}`);
+      // console.log(`Insufficient balance for order ${order.id}: ${ResultDesc}`);
       
       await prisma.order.update({
         where: { id: order.id },
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     } else if (ResultCode === 2001) {
       // 🔐 Wrong PIN entered
-      console.log(`🔐 Wrong PIN for order ${order.id}: ${ResultDesc}`);
+      // console.log(`Wrong PIN for order ${order.id}: ${ResultDesc}`);
       
       await prisma.order.update({
         where: { id: order.id },
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 
     } else if (ResultCode === 1001) {
       // ❌ Unable to complete transaction
-      console.log(`❌ Transaction failed for order ${order.id}: ${ResultDesc}`);
+      // console.log(`Transaction failed for order ${order.id}: ${ResultDesc}`);
       
       await prisma.order.update({
         where: { id: order.id },
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     } else {
       // ⚠️ Other unknown error - mark as FAILED
-      console.log(`⚠️ Payment error (${ResultCode}) for order ${order.id}: ${ResultDesc}`);
+      // console.log(`Payment error (${ResultCode}) for order ${order.id}: ${ResultDesc}`);
       
       await prisma.order.update({
         where: { id: order.id },

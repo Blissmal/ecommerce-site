@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
       try {
         const mpesaStatus = await mpesaService.checkTransactionStatus(checkoutRequestID);
         
-        console.log('M-Pesa Status Query Response:', mpesaStatus);
+        // console.log('M-Pesa Status Query Response:', mpesaStatus);
 
         // ✅ SUCCESS - Payment completed
         if (mpesaStatus.ResultCode === '0') {
@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
           });
 
           await clearUserCart(order.userId);
-          console.log(`🗑️ Cart cleared for user ${order.userId} via polling`);
+          // console.log(`Cart cleared for user ${order.userId} via polling`);
 
           return NextResponse.json({ 
             status: 'PAID', 

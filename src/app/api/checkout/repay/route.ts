@@ -133,7 +133,7 @@ export async function POST(req: Request) {
       `Retry Payment for Order ${order.id.slice(-8)}`
     );
 
-    console.log('M-Pesa Repay Result:', mpesaResult);
+    // console.log('M-Pesa Repay Result:', mpesaResult);
 
     if (mpesaResult.ResponseCode !== '0') {
       return NextResponse.json({ 
@@ -203,7 +203,7 @@ export async function POST(req: Request) {
       revalidatePath(`/shop-details/${item.productId}`);
     }
 
-    console.log(`✅ Stock reduced for order ${order.id} repayment`);
+    // console.log(`Stock reduced for order ${order.id} repayment`);
 
     return NextResponse.json({
       success: true,

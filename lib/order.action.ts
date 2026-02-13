@@ -251,7 +251,7 @@ export async function restoreOrderStock(orderId: string) {
         throw new Error("Order not found");
       }
 
-      console.log(`Restoring stock for order ${orderId} (status: ${order.status})`);
+      // console.log(`Restoring stock for order ${orderId} (status: ${order.status})`);
 
       // Restore variant stocks
       for (const item of order.orderItems) {
@@ -290,7 +290,7 @@ export async function restoreOrderStock(orderId: string) {
         }
       }
 
-      console.log(`✅ Stock restored for order ${orderId}`);
+      // console.log(`Stock restored for order ${orderId}`);
     });
 
     // Revalidate pages
