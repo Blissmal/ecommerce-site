@@ -28,7 +28,9 @@ interface ProductItemProps {
     discountExpiry?: string | null;
     stock: number;
     imageUrl: string;
+    images?: string;
     brand?: string | null;
+    description?: string;
     model?: string | null;
     category?: {
       name: string;
@@ -158,8 +160,8 @@ const ProductItem: React.FC<ProductItemProps> = ({ item }) => {
       discount: item.discount,
       reviews: 0,
       imageUrl: item.imageUrl,
-      images: [item.imageUrl],
-      description: "",
+      images: item.images,
+      description: item.description,
       stock: item.stock,
       category: item.category || { id: "", name: "", slug: "" },
       variants: item.variants || [],
