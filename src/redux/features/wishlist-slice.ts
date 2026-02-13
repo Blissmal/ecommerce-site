@@ -10,6 +10,7 @@ interface WishlistItem {
     title: string;
     price: number;
     discount: number | null;
+    discountExpiry: string | null;
     imageUrl: string;
     stock: number;
     brand?: string | null;

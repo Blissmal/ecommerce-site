@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
             title: true,
             price: true,
             discount: true,
+            discountExpiry: true,
             imageUrl: true,
             stock: true,
             brand: true,

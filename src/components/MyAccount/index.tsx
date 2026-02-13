@@ -10,6 +10,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { fetchWishlistItems, removeFromWishlistAsync } from "@/redux/features/wishlist-slice";
+import { isDiscountActive, getDiscountedPrice, getTimeRemaining } from "../../../lib/utils/discount-utils";
 import { toast } from "react-hot-toast";
 
 export interface UserProfile {
@@ -56,6 +57,35 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
       dispatch(fetchWishlistItems());
     }
   }, [activeTab, dispatch]);
+  // In your MyAccount component, add this effect:
+  useEffect(() => {
+    if (activeTab !== "wishlist" || wishlistItems.length === 0) return;
+
+    // Check for any expiring discounts
+    const expiringItems = wishlistItems.filter(item => {
+      if (!item.product.discountExpiry || !item.product.discount) return false;
+      const expiry = new Date(item.product.discountExpiry);
+      const now = new Date();
+      const timeUntilExpiry = expiry.getTime() - now.getTime();
+      return timeUntilExpiry > 0 && timeUntilExpiry < 60000; // Less than 1 minute
+    });
+
+    if (expiringItems.length === 0) return;
+
+    // Refresh wishlist when discount expires
+    const timers = expiringItems.map(item => {
+      const expiry = new Date(item.product.discountExpiry!);
+      const now = new Date();
+      const timeout = expiry.getTime() - now.getTime() + 1000; // Add 1 second buffer
+
+      return setTimeout(() => {
+        dispatch(fetchWishlistItems());
+        toast.success("Wishlist updated - some discounts have expired");
+      }, timeout);
+    });
+
+    return () => timers.forEach(timer => clearTimeout(timer));
+  }, [activeTab, wishlistItems, dispatch]);
 
   const handleTabChange = (tabName: string) => {
     setActiveTab(tabName);
@@ -192,8 +222,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("dashboard")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "dashboard"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -235,8 +265,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("orders")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "orders"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -273,8 +303,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("wishlist")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "wishlist"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -303,8 +333,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("downloads")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "downloads"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -330,8 +360,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("addresses")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "addresses"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -359,8 +389,8 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                     <button
                       onClick={() => handleTabChange("account-details")}
                       className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${activeTab === "account-details"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
+                        ? "text-white bg-blue"
+                        : "text-dark-2 bg-gray-1"
                         }`}
                     >
                       <svg
@@ -456,12 +486,23 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                   </div>
                 ) : wishlistItems.length === 0 ? (
                   <div className="text-center py-20">
-                    <div className="w-20 h-20 bg-gray-1 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
-                      💝
+                    <div className="w-20 h-20 bg-gray-1 rounded-full flex items-center justify-center mx-auto mb-6 text-pink-500">
+                      <svg
+                        className="w-10 h-10"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
+                      </svg>
                     </div>
-                    <p className="text-xl text-gray-600 mb-6">
-                      Your wishlist is empty
-                    </p>
+                    <p className="text-xl text-gray-600 mb-6">Your wishlist is empty</p>
                     <Link
                       href="/shop"
                       className="inline-block px-8 py-3 bg-blue text-white rounded-lg font-medium hover:bg-blue-dark transition-colors"
@@ -471,84 +512,168 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {wishlistItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="group bg-gray-1 rounded-lg overflow-hidden hover:shadow-2 transition-shadow"
-                      >
-                        <div className="relative aspect-square bg-white p-4">
-                          <Link href={`/shop-details/${item.product.id}`}>
-                            <Image
-                              src={item.product.imageUrl}
-                              alt={item.product.title}
-                              width={300}
-                              height={300}
-                              className="object-contain w-full h-full group-hover:scale-105 transition-transform"
-                            />
-                          </Link>
-                          <button
-                            onClick={() => handleRemoveFromWishlist(item.product.id)}
-                            className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-2 text-red hover:bg-red hover:text-white transition-colors"
-                            aria-label="Remove from wishlist"
-                          >
-                            <svg
-                              className="fill-current"
-                              width="20"
-                              height="20"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
-                          </button>
-                        </div>
+                    {wishlistItems.map((item) => {
+                      const hasActiveDiscount = isDiscountActive(
+                        item.product.discount,
+                        item.product.discountExpiry
+                      );
+                      const finalPrice = getDiscountedPrice(
+                        item.product.price,
+                        item.product.discount,
+                        item.product.discountExpiry
+                      );
+                      const timeRemaining = getTimeRemaining(item.product.discountExpiry);
 
-                        <div className="p-4">
-                          <Link
-                            href={`/shop-details/${item.product.id}`}
-                            className="font-medium text-dark hover:text-blue line-clamp-2 mb-2 block"
-                          >
-                            {item.product.brand && item.product.model
-                              ? `${item.product.brand} ${item.product.model}`
-                              : item.product.title}
-                          </Link>
+                      // Calculate if the discount expired within the last 2 days
+                      let showExpiredNotice = false;
+                      if (
+                        item.product.discount &&
+                        item.product.discount > 0 &&
+                        !hasActiveDiscount &&
+                        item.product.discountExpiry
+                      ) {
+                        const expiryDate = new Date(item.product.discountExpiry);
+                        const now = new Date();
+                        const timeDiff = now.getTime() - expiryDate.getTime();
+                        const daysDiff = timeDiff / (1000 * 3600 * 24);
 
-                          <div className="flex items-baseline gap-2 mb-4">
-                            {item.product.discount && item.product.discount > 0 ? (
-                              <>
-                                <span className="font-bold text-lg text-blue">
-                                  KES{" "}
-                                  {(
-                                    item.product.price *
-                                    (1 - item.product.discount / 100)
-                                  ).toFixed(2)}
+                        // True if it expired in the past, but no more than 2 days ago
+                        showExpiredNotice = daysDiff > 0 && daysDiff <= 2;
+                      }
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="group bg-gray-1 rounded-lg overflow-hidden hover:shadow-2 transition-shadow"
+                        >
+                          <div className="relative aspect-square bg-white p-4">
+                            <Link href={`/shop-details/${item.product.id}`}>
+                              <Image
+                                src={item.product.imageUrl}
+                                alt={item.product.title}
+                                width={300}
+                                height={300}
+                                className="object-contain w-full h-full group-hover:scale-105 transition-transform"
+                              />
+                            </Link>
+
+                            {/* Discount Badge */}
+                            {hasActiveDiscount && (
+                              <div className="absolute top-3 left-3 flex flex-col gap-2">
+                                <span className="bg-red text-white px-2.5 py-1 rounded-md text-xs font-bold shadow-sm">
+                                  -{Math.round(item.product.discount)}% OFF
                                 </span>
-                                <span className="text-sm text-gray-5 line-through">
-                                  KES {item.product.price.toFixed(2)}
-                                </span>
-                              </>
-                            ) : (
-                              <span className="font-bold text-lg text-dark">
-                                KES {item.product.price.toFixed(2)}
-                              </span>
+                                {timeRemaining && timeRemaining !== "Expired" && (
+                                  <span className="bg-orange text-white px-2.5 py-1 rounded-md text-xs font-medium shadow-sm flex items-center gap-1">
+                                    <svg
+                                      className="w-3.5 h-3.5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                      />
+                                    </svg>
+                                    {timeRemaining}
+                                  </span>
+                                )}
+                              </div>
                             )}
+
+                            <button
+                              onClick={() => handleRemoveFromWishlist(item.product.id)}
+                              className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-2 text-red hover:bg-red hover:text-white transition-colors"
+                              aria-label="Remove from wishlist"
+                            >
+                              <svg
+                                className="fill-current"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  d="M15 5L5 15M5 5l10 10"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="p-4">
                             <Link
                               href={`/shop-details/${item.product.id}`}
-                              className="flex-1 text-center px-4 py-2 bg-blue text-white rounded-lg font-medium hover:bg-blue-dark transition-colors"
+                              className="font-medium text-dark hover:text-blue line-clamp-2 mb-2 block"
                             >
-                              View Details
+                              {item.product.brand && item.product.model
+                                ? `${item.product.brand} ${item.product.model}`
+                                : item.product.title}
                             </Link>
-                            {item.product.stock > 0 && (
-                              <span className="text-xs text-green-600 font-medium">
-                                In Stock
-                              </span>
+
+                            <div className="flex items-baseline gap-2 mb-4">
+                              {hasActiveDiscount ? (
+                                <>
+                                  <span className="font-bold text-lg text-blue">
+                                    KES {finalPrice.toFixed(2)}
+                                  </span>
+                                  <span className="text-sm text-gray-5 line-through">
+                                    KES {item.product.price.toFixed(2)}
+                                  </span>
+                                  <span className="text-xs text-green-600 font-medium">
+                                    Save KES {(item.product.price - finalPrice).toFixed(2)}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="font-bold text-lg text-dark">
+                                  KES {item.product.price.toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Expired Discount Notice (Only shows within 2 days of expiry) */}
+                            {showExpiredNotice && (
+                              <div className="mb-3 p-2 bg-yellow-light-4 border border-yellow-light-1 rounded text-xs text-yellow-dark-2 flex items-start gap-1.5">
+                                <svg
+                                  className="w-4 h-4 flex-shrink-0 text-yellow-dark-2 mt-0.5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                  />
+                                </svg>
+                                <span>Discount expired. Original price applies.</span>
+                              </div>
                             )}
+
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/shop-details/${item.product.id}`}
+                                className="flex-1 text-center px-4 py-2 bg-blue text-white rounded-lg font-medium hover:bg-blue-dark transition-colors"
+                              >
+                                View Details
+                              </Link>
+                              {item.product.stock > 0 && (
+                                <span className="text-xs text-green-600 font-medium">
+                                  In Stock
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
