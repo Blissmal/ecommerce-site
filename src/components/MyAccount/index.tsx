@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import Image from "next/image";
 import AddressModal from "./AddressModal";
@@ -32,6 +32,97 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
   const [addressModal, setAddressModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const user = useUser();
+
+  const [profileImage, setProfileImage] = useState(user?.profileImageUrl || "/images/users/user-04.jpg");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user?.profileImageUrl) {
+      setProfileImage(user.profileImageUrl);
+    }
+  }, [user?.profileImageUrl]);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    setIsUploadingImage(true);
+
+    try {
+      // Step 1: Upload to Cloudinary
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('userId', user?.id || '');
+
+
+      const uploadResponse = await fetch('/api/upload-image/profile', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const uploadData = await uploadResponse.json();
+
+      // Step 2: Update database
+      const updateResponse = await fetch('/api/upload-image/profile/db', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user?.id,
+          imageUrl: uploadData.imageUrl
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
+      const updateData = await updateResponse.json();
+
+      // Update local state
+      setProfileImage(uploadData.imageUrl);
+      toast.success('Profile image updated successfully!');
+    } catch (error) {
+      toast.error('Failed to upload image');
+      // Revert to previous image on error
+      setProfileImage(user?.profileImageUrl || "/images/users/user-04.jpg");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -105,8 +196,6 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
     setAddressModal(false);
   };
 
-  const user = useUser();
-
   // State for Account Details
   const [firstName, setFirstName] = useState(user?.displayName?.split(' ')[0] || '');
   const [lastName, setLastName] = useState(user?.displayName?.split(' ')[1] || '');
@@ -172,12 +261,58 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
             <div className="xl:max-w-[370px] w-full bg-white rounded-xl shadow-1">
               <div className="flex xl:flex-col">
                 <div className="hidden lg:flex flex-wrap items-center gap-5 py-6 px-4 sm:px-7.5 xl:px-9 border-r xl:border-r-0 xl:border-b border-gray-3">
-                  <div className="max-w-[64px] w-full h-16 rounded-full overflow-hidden">
+                  <div className="relative max-w-[64px] w-full h-16 rounded-full overflow-hidden group">
                     <Image
-                      src="/images/users/user-04.jpg"
+                      src={profileImage}
                       alt="user"
                       width={64}
                       height={64}
+                      className="object-cover w-full h-full"
+                    />
+
+                    {/* Overlay on hover */}
+                    <button
+                      onClick={handleImageClick}
+                      disabled={isUploadingImage}
+                      className="absolute inset-0 bg-dark/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+                      aria-label="Upload profile image"
+                    >
+                      {isUploadingImage ? (
+                        <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="w-5 h-5 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                      )}
+                    </button>
+
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      disabled={isUploadingImage}
                     />
                   </div>
 

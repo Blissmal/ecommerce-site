@@ -15,6 +15,7 @@ model User {
   name      String?
   phone     String?
   address   String?
+  imageUrl  String?
   country   String?
   town      String?
   verified  Boolean    @default(false)
