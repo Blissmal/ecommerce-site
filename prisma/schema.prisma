@@ -22,6 +22,9 @@ model User {
   role      String     @default("USER")
   createdAt DateTime   @default(now())
 
+  conversations Conversation[]
+  sentMessages  Message[] @relation("SentMessages")
+
   cartItems CartItem[]
   orders    Order[]
   reviews   Review[]
@@ -175,6 +178,7 @@ model Order {
 
   user         User      @relation(fields: [userId], references: [id])
   orderItems   OrderItem[]
+  conversations Conversation[]
   
   @@index([userId])
   @@index([status])
@@ -201,6 +205,77 @@ model OrderItem {
   @@index([orderId])
 }
 
+// Messaging System Models
+
+model Conversation {
+  id          String   @id @default(cuid())
+  userId      String
+  orderId     String?
+  subject     String?
+  status      ConversationStatus @default(ACTIVE)
+  priority    Priority @default(NORMAL)
+  lastMessageAt DateTime  @default(now())
+  closedAt      DateTime?
+  assignedTo    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order       Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  messages    Message[]
+  
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String
+  senderId       String
+  senderType     SenderType
+  content        String      @db.Text
+  messageType    MessageType @default(TEXT)
+  isRead         Boolean     @default(false)
+  readAt         DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  attachments    Attachment[]
+  
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([isRead])
+}
+
+model Attachment {
+  id          String   @id @default(cuid())
+  messageId   String
+  fileName    String
+  fileUrl     String
+  fileType    String
+  fileSize    Int
+  createdAt   DateTime @default(now())
+
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  @@index([messageId])
+}
+
+model MessageTemplate {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  category    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 enum PaymentMethod {
   MPESA
   BANK
@@ -220,4 +295,30 @@ enum ProductStatus {
   ACTIVE
   INACTIVE
   DELETED
+}
+
+enum SenderType {
+  USER
+  ADMIN
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+enum ConversationStatus {
+  ACTIVE
+  RESOLVED
+  CLOSED
+  ARCHIVED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
 }
