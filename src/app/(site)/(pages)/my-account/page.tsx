@@ -35,6 +35,7 @@ async function AccountData({ userId }: { userId: string }) {
       name: true,
       email: true,
       phone: true,
+      imageUrl: true,
       address: true,
       createdAt: true,
       role: true,

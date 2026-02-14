@@ -19,6 +19,7 @@ export interface UserProfile {
   email: string;
   phone?: string;
   address?: string;
+  imageUrl?: string;
   createdAt: Date;
   role: string;
 }
@@ -34,7 +35,7 @@ const MyAccount: React.FC<MyAccountProps> = ({ userProfile, app }) => {
   const [loggingOut, setLoggingOut] = useState(false);
   const user = useUser();
 
-  const [profileImage, setProfileImage] = useState(user?.profileImageUrl || "/images/users/user-04.jpg");
+  const [profileImage, setProfileImage] = useState(userProfile.imageUrl || "/images/users/profile.png");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
