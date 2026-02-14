@@ -19,6 +19,7 @@ import { prisma } from "../../../../../../lib/prisma";
 import PaymentAction from "@/components/Checkout/PaymentAction";
 import DownloadInvoiceButton from "@/components/Common/DownloadInvoiceButton";
 import { CANCELLED } from "node:dns";
+import { MessageOrderButton } from "@/components/Orders/MessageOrderButton.tsx";
 
 const getStatusConfig = (status: string) => {
   const configs: Record<string, { icon: any; color: string; label: string; step: number }> = {
@@ -225,6 +226,9 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 <button className="w-full py-4 bg-blue text-white rounded-2xl font-bold text-sm hover:shadow-lg hover:shadow-blue/20 transition-all">
                   Contact Support
                 </button>
+                <div className="mt-6">
+  <MessageOrderButton orderId={order.id} />
+</div>
               </div>
             </div>
 
