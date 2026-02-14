@@ -337,7 +337,7 @@ export default async function AdminDashboard() {
                 </svg>
               </div>
             </div>
-            <h4 className="text-base sm:text-lg lg:text-heading-6 font-bold text-dark mb-1 sm:mb-2 group-hover:text-purple transition-colors">
+            <h4 className="text-base sm:text-lg lg:text-heading-6 font-bold text-dark mb-1 sm:mb-2 group-hover:text-orange transition-colors">
               Manage Categories
             </h4>
             <p className="text-xs sm:text-custom-xs text-body">
