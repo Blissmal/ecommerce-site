@@ -329,7 +329,7 @@ export default async function AdminDashboard() {
         </Link>
 
         <Link href="/admin/categories">
-          <div className="bg-white rounded-xl shadow-2 border border-gray-3 p-5 sm:p-6 hover:border-purple transition-all cursor-pointer group sm:col-span-2 lg:col-span-1">
+          <div className="bg-white rounded-xl shadow-2 border border-gray-3 p-5 sm:p-6 hover:border-orange transition-all cursor-pointer group sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="bg-purple-light-6 rounded-lg p-2.5 sm:p-3">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
