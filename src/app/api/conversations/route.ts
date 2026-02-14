@@ -9,12 +9,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const dbUser = await prisma.user.findUnique({
+        where: {
+            authId: user.id
+        },
+        select: {id: true}
+    })
+
     const { orderId, subject } = await request.json();
 
     // Check if conversation exists
     if (orderId) {
       const existing = await prisma.conversation.findFirst({
-        where: { userId: user.id, orderId },
+        where: { userId: dbUser.id, orderId },
       });
       if (existing) return NextResponse.json({ conversation: existing });
     }
@@ -22,7 +29,7 @@ export async function POST(request: Request) {
     // Create new
     const conversation = await prisma.conversation.create({
       data: {
-        userId: user.id,
+        userId: dbUser.id,
         orderId: orderId || null,
         subject: subject || (orderId ? `Order #${orderId.slice(-8).toUpperCase()}` : 'General Inquiry'),
         priority: orderId ? 'HIGH' : 'NORMAL',
@@ -47,10 +54,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const isAdmin = user.clientMetadata?.role === 'ADMIN';
+    const dbUser = await prisma.user.findUnique({
+        where: {
+            authId: user.id
+        },
+        select: {id: true, role: true}
+    })
+
+    const isAdmin = dbUser.role === 'ADMIN';
 
     const conversations = await prisma.conversation.findMany({
-      where: isAdmin ? {} : { userId: user.id },
+      where: isAdmin ? {} : { userId: dbUser.id },
       include: {
         user: { select: { id: true, name: true, email: true, imageUrl: true } },
         order: { select: { id: true, total: true, status: true } },

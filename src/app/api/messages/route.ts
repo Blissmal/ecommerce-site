@@ -4,17 +4,30 @@ import { prisma } from '../../../../lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const user = await stackServerApp.getUser();
-    if (!user) {
+    const stackUser = await stackServerApp.getUser();
+    if (!stackUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get database user
+    const dbUser = await prisma.user.findUnique({
+      where: { authId: stackUser.id },
+    });
+
+    if (!dbUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const { conversationId, content, messageType = 'TEXT' } = await request.json();
 
     if (!conversationId || !content?.trim()) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
     }
 
+    // Verify conversation access
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
     });
@@ -23,15 +36,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    const isAdmin = user.clientMetadata?.role === 'ADMIN';
-    if (!isAdmin && conversation.userId !== user.id) {
+    const isAdmin = dbUser.role === 'ADMIN';
+    if (!isAdmin && conversation.userId !== dbUser.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Create message
     const message = await prisma.message.create({
       data: {
         conversationId,
-        senderId: user.id,
+        senderId: dbUser.id,  // Use database user ID
         senderType: isAdmin ? 'ADMIN' : 'USER',
         content: content.trim(),
         messageType,
@@ -43,6 +57,7 @@ export async function POST(request: Request) {
       },
     });
 
+    // Update conversation timestamp
     await prisma.conversation.update({
       where: { id: conversationId },
       data: { lastMessageAt: new Date() },
@@ -51,6 +66,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ message });
   } catch (error) {
     console.error('Send message error:', error);
-    return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to send message' },
+      { status: 500 }
+    );
   }
 }
