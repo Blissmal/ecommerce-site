@@ -1,6 +1,6 @@
 // app/api/wishlist/[productId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { stackServerApp } from "@/stack";
 
 export async function DELETE(

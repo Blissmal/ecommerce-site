@@ -15,10 +15,9 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { prisma } from "../../../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import PaymentAction from "@/components/Checkout/PaymentAction";
 import DownloadInvoiceButton from "@/components/Common/DownloadInvoiceButton";
-import { CANCELLED } from "node:dns";
 import { MessageOrderButton } from "@/components/Orders/MessageOrderButton.tsx";
 
 const getStatusConfig = (status: string) => {

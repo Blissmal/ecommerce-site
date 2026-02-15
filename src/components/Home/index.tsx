@@ -2,7 +2,7 @@ import React from "react";
 import Hero from "./Hero";
 import Categories from "./Categories";
 import NewArrival from "./NewArrivals";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 const Home = async () => {
   const categories = await prisma.category.findMany({

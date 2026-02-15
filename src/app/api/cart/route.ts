@@ -1,7 +1,7 @@
 // app/api/cart/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/stack";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 // 🔹 GET — Fetch cart items
 export async function GET(req: NextRequest) {

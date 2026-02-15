@@ -1,6 +1,6 @@
 import React from 'react'
 import NewArrivalClient from './NewArrivalClient'
-import { prisma } from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import CounDown from '../Countdown';
 import PriceSyncNotifier from '@/components/Common/PriceSyncNotifier';
 

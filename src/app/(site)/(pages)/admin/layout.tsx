@@ -1,7 +1,7 @@
 // app/admin/layout.tsx
 import { stackServerApp } from "@/stack";
 import { redirect } from "next/navigation";
-import { prisma } from "../../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import AdminShell from "./AdminShell";
 import Link from "next/link";
 

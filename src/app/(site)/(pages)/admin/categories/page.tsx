@@ -1,6 +1,6 @@
 // app/admin/categories/page.tsx
 
-import { prisma } from "../../../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import AddCategoryForm from "./AddCategoryForm";
 import CategoryActions from "./CategoryActions";
 

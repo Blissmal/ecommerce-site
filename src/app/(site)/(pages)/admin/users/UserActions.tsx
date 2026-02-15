@@ -4,7 +4,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { deleteUser, updateUserRole } from "../../../../../../lib/user.actions";
+import { deleteUser, updateUserRole } from "@/lib/user.actions";
 
 interface User {
   id: string;

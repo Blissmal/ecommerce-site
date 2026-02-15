@@ -1,7 +1,7 @@
 // src/app/api/sync-user/route.ts
 import { NextResponse } from "next/server";
 import { stackServerApp } from "@/stack";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {

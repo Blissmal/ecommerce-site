@@ -4,11 +4,11 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import ImageUpload from "@/components/Common/ImageUpload";
-import { updateProduct, getProductById } from "../../../../../../../../lib/product.action";
-import { addVariant, updateVariant, deleteVariant as deleteVariantAction } from "../../../../../../../../lib/variant.action";
-import { generateVariantSKU } from "../../../../../../../..//lib/utils/variant-utils";
+import { updateProduct, getProductById } from "@/lib/product.action";
+import { addVariant, updateVariant, deleteVariant as deleteVariantAction } from "@/lib/variant.action";
+import { generateVariantSKU } from "@/lib/utils/variant-utils";
 import { toast } from "react-hot-toast";
-import { getAllCategories } from "../../../../../../../../lib/category.actions";
+import { getAllCategories } from "@/lib/category.actions";
 import Link from "next/link";
 
 interface Variant {

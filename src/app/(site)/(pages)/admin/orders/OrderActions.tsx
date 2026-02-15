@@ -4,7 +4,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { updateOrderStatus } from "../../../../../../lib/order.action";
+import { updateOrderStatus } from "@/lib/order.action";
 
 const ORDER_STATUSES = [
   'PENDING',

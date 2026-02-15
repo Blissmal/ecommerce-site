@@ -10,7 +10,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { fetchWishlistItems, removeFromWishlistAsync } from "@/redux/features/wishlist-slice";
-import { isDiscountActive, getDiscountedPrice, getTimeRemaining } from "../../../lib/utils/discount-utils";
+import { isDiscountActive, getDiscountedPrice, getTimeRemaining } from "@/lib/utils/discount-utils";
 import { toast } from "react-hot-toast";
 
 export interface UserProfile {

@@ -1,8 +1,8 @@
 // app/api/checkout/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createOrder } from '../../../../../lib/order.action';
-import { getUserCartItems, clearUserCart } from './../../../../../lib/db';
-import { mpesaService } from '../../../../../services/mpesaService';
+import { createOrder } from '@/lib/order.action';
+import { getUserCartItems, clearUserCart } from '@/lib/db';
+import { mpesaService } from '@/services/mpesaService';
 
 export async function POST(req: NextRequest) {
   try {

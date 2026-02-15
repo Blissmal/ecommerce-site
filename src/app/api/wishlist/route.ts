@@ -1,7 +1,7 @@
 // app/api/wishlist/route.ts
 import { stackServerApp } from "@/stack";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 // GET - Fetch user's wishlist
 export async function GET(req: NextRequest) {

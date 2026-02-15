@@ -3,7 +3,7 @@ import Checkout from "@/components/Checkout";
 
 import { Metadata } from "next";
 import { stackServerApp } from "@/stack";
-import { prisma } from "../../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 export const metadata: Metadata = {
   title: "Checkout Page | NextCommerce Nextjs E-commerce template",
   description: "This is Checkout Page for NextCommerce Template",

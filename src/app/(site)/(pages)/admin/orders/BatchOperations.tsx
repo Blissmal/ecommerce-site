@@ -4,7 +4,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { batchUpdateOrderStatus, validateOrdersForBatchUpdate } from "../../../../../../lib/order.action";
+import { batchUpdateOrderStatus, validateOrdersForBatchUpdate } from "@/lib/order.action";
 
 type OrderStatus = 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getAllProducts, deleteProduct } from "../../../../../../lib/product.action";
+import { getAllProducts, deleteProduct } from "@/lib/product.action";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 

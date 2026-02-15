@@ -2,7 +2,7 @@
 
 import React from "react";
 import { FileText } from "lucide-react";
-import { generateInvoicePDF } from "../../../lib/utils/invoice-generator";
+import { generateInvoicePDF } from "@/lib/utils/invoice-generator";
 
 interface DownloadInvoiceButtonProps {
   order: any;

@@ -1,10 +1,10 @@
 // app/api/mpesa/check-status/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getOrderByCheckoutId } from "../../../../../lib/db";
-import { mpesaService } from "../../../../../services/mpesaService";
-import { cancelOrder, restoreOrderStock, updateOrderStatus } from "../../../../../lib/order.action";
-import { prisma } from "../../../../../lib/prisma";
-import { clearUserCart } from "../../../../../lib/db";
+import { getOrderByCheckoutId } from "@/lib/db";
+import { mpesaService } from "@/services/mpesaService";
+import { cancelOrder, restoreOrderStock, updateOrderStatus } from "@/lib/order.action";
+import { prisma } from "@/lib/prisma";
+import { clearUserCart } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {

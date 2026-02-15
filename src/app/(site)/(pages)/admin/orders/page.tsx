@@ -1,5 +1,5 @@
 // app/admin/orders/page.tsx
-import { prisma } from "../../../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import OrdersClient from "./OrderClient";
 
 async function getOrders() {

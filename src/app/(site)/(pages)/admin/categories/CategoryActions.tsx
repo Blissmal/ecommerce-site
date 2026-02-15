@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { Edit2, Trash2, MoreVertical, X } from "lucide-react";
-import { deleteCategory, updateCategory } from "../../../../../../lib/category.actions";
+import { deleteCategory, updateCategory } from "@/lib/category.actions";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 

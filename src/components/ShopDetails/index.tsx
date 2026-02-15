@@ -13,7 +13,7 @@ import { toast } from "react-hot-toast";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { useRouter } from "next/navigation";
 import { useUser } from "@stackframe/stack";
-import { submitReview } from "../../../lib/product.action";
+import { submitReview } from "@/lib/product.action";
 import { CheckCircle2, ShoppingBag, XCircle } from "lucide-react";
 import WishlistButton from "../Common/WishlistButton";
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { prisma } from "../../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 import ShopWithSidebarClient from "@/components/ShopWithSidebar/ShopWithSidebarClient";
 import PriceSyncNotifier from "@/components/Common/PriceSyncNotifier";

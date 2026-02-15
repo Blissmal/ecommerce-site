@@ -1,8 +1,8 @@
 // app/api/mpesa/callback/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { cancelOrder, restoreOrderStock, updateOrderStatus } from '../../../../../lib/order.action';
-import { prisma } from '../../../../../lib/prisma';
-import { clearUserCart } from '../../../../../lib/db';
+import { cancelOrder, restoreOrderStock, updateOrderStatus } from '@/lib/order.action';
+import { prisma } from '@/lib/prisma';
+import { clearUserCart } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {

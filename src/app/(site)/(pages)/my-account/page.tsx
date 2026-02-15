@@ -2,7 +2,7 @@ import MyAccount from "@/components/MyAccount";
 
 import { Metadata } from "next";
 import { stackServerApp } from "@/stack";
-import { prisma } from "../../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import AccountPageSkeleton from "@/components/skeleton/MyAccountSkeleton";

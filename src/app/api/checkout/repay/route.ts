@@ -1,7 +1,7 @@
 // app/api/checkout/repay/route.ts
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../../lib/prisma';
-import { mpesaService } from '../../../../../services/mpesaService';
+import { prisma } from '@/lib/prisma';
+import { mpesaService } from '@/services/mpesaService';
 import { revalidatePath } from 'next/cache';
 
 export async function POST(req: Request) {

@@ -1,6 +1,6 @@
 // For Next.js App Router: app/api/update-billing/route.js
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { stackServerApp } from '@/stack';
 
 export async function POST(request) {

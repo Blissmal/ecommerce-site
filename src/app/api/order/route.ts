@@ -1,7 +1,7 @@
 // app/api/order/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/stack";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 // 🔹 GET — Fetch all orders for the current user (with variants)
 export async function GET() {
@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
     // console.log("Total Amount:", totalAmount);
 
     // Create order using server action
-    const { createOrder } = await import("../../../../lib/order.action");
+    const { createOrder } = await import("../../../lib/order.action");
     const result = await createOrder({
       userId: userRecord.id,
       items: orderItems,
@@ -285,7 +285,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Update order status
-    const { updateOrderStatus } = await import("../../../../lib/order.action");
+    const { updateOrderStatus } = await import("../../../lib/order.action");
     await updateOrderStatus(orderId, status);
 
     return NextResponse.json({ success: true });
@@ -355,7 +355,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Cancel order and restore stock
-    const { cancelOrder } = await import("../../../../lib/order.action");
+    const { cancelOrder } = await import("../../../lib/order.action");
     await cancelOrder(orderId);
 
     return NextResponse.json({ success: true });

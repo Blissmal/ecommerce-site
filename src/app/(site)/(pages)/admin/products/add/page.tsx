@@ -4,9 +4,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ImageUpload from "@/components/Common/ImageUpload";
-import { addProduct } from "../../../../../../../lib/product.action";
-import { generateVariantSKU } from "../../../../../../../lib/utils/variant-utils";
-import { getAllCategories } from "../../../../../../../lib/category.actions";
+import { addProduct } from "@/lib/product.action";
+import { generateVariantSKU } from "@/lib/utils/variant-utils";
+import { getAllCategories } from "@/lib/category.actions";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 

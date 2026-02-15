@@ -4,7 +4,7 @@
 import React from "react";
 import Hero from "./Hero";
 import Newsletter from "../Common/Newsletter";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import EnhancedProductGrid from "./EnhancedProductGrid";
 
 const EnhancedHome = async () => {

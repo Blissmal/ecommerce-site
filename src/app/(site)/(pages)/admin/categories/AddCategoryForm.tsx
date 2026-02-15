@@ -4,7 +4,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { addCategory } from "../../../../../../lib/category.actions";
+import { addCategory } from "@/lib/category.actions";
 
 export default function AddCategoryForm() {
   const [form, setForm] = useState({

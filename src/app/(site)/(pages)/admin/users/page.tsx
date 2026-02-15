@@ -1,6 +1,6 @@
 // app/admin/users/page.tsx
 
-import { prisma } from "../../../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import UserActions from "./UserActions";
 
 async function getUsers() {
