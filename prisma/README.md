@@ -1,6 +1,10 @@
+
+Database readme proprietary · MD
+Copy
+
 # Database Design
 
-This document provides an overview of the database schema for the e-commerce application with product variant support.
+This document provides an overview of the database schema for the e-commerce application with product variant support and integrated customer messaging system.
 
 ## Entity Relationship Diagram
 
@@ -10,6 +14,8 @@ erDiagram
     User ||--o{ Order : places
     User ||--o{ Review : writes
     User ||--o{ Like : gives
+    User ||--o{ Conversation : initiates
+    User ||--o{ Message : sends
     
     Category ||--o{ Product : contains
     
@@ -23,6 +29,10 @@ erDiagram
     ProductVariant ||--o{ OrderItem : "in"
     
     Order ||--o{ OrderItem : contains
+    Order ||--o{ Conversation : "about"
+    
+    Conversation ||--o{ Message : contains
+    Message ||--o{ Attachment : has
     
     User {
         string id PK
@@ -31,6 +41,7 @@ erDiagram
         string name
         string phone
         string address
+        string imageUrl
         string country
         string town
         boolean verified
@@ -53,6 +64,7 @@ erDiagram
         string imageUrl
         string[] images
         float discount
+        datetime discountExpiry
         string status
         datetime createdAt
         string categoryId FK
@@ -126,6 +138,7 @@ erDiagram
         datetime paymentInitiatedAt
         datetime paymentCompletedAt
         datetime createdAt
+        datetime updatedAt
     }
     
     OrderItem {
@@ -137,6 +150,53 @@ erDiagram
         float price
         json variantSnapshot
     }
+    
+    Conversation {
+        string id PK
+        string userId FK
+        string orderId FK
+        string subject
+        string status
+        string priority
+        datetime lastMessageAt
+        datetime closedAt
+        string assignedTo
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    Message {
+        string id PK
+        string conversationId FK
+        string senderId FK
+        string senderType
+        string content
+        string messageType
+        boolean isRead
+        datetime readAt
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    Attachment {
+        string id PK
+        string messageId FK
+        string fileName
+        string fileUrl
+        string fileType
+        int fileSize
+        datetime createdAt
+    }
+    
+    MessageTemplate {
+        string id PK
+        string title
+        string content
+        string category
+        boolean isActive
+        datetime createdAt
+        datetime updatedAt
+    }
 ```
 
 ## Database Schema Overview
@@ -147,11 +207,12 @@ erDiagram
 Stores user account information and authentication details.
 - **Primary Key**: `id` (CUID)
 - **Unique Constraints**: `authId`, `email`
-- **Relationships**: Has many cart items, orders, reviews, and likes
+- **Relationships**: Has many cart items, orders, reviews, likes, conversations, and messages
 - **Features**:
   - Email verification support via `verified` flag
-  - Role-based access control via `role` field
+  - Role-based access control via `role` field (USER, ADMIN)
   - Billing and shipping information storage
+  - Profile image support via `imageUrl`
 
 #### Category
 Product categorization for organizing the catalog.
@@ -170,7 +231,7 @@ Main product catalog with pricing, inventory, and media.
   - Multiple images support via `images` array
   - **Aggregated stock** - Total stock across all variants
   - **Base price** - Lowest variant price for display
-  - Optional discount pricing (applies to all variants)
+  - Optional discount pricing with expiry date
   - Status tracking (ACTIVE, INACTIVE, DELETED)
   - Rich product details (brand, model, SKU, weight, dimensions)
   - **Available options** - Arrays defining what variants can be created:
@@ -252,6 +313,7 @@ Customer product reviews and ratings.
 Customer orders with payment and fulfillment tracking.
 - **Primary Key**: `id` (CUID)
 - **Foreign Keys**: `userId` → User
+- **Relationships**: Has many order items and conversations
 - **Payment Methods**: M-PESA, Bank Transfer
 - **Status Flow**: 
   - PENDING → PROCESSING → PAID → SHIPPED → DELIVERED
@@ -285,6 +347,105 @@ Line items within an order.
     ```
   - This ensures historical accuracy even if variant is later modified or deleted
 
+### 🆕 Customer Support & Messaging System
+
+#### Conversation
+Manages customer support conversations and order inquiries.
+- **Primary Key**: `id` (CUID)
+- **Foreign Keys**: 
+  - `userId` → User
+  - `orderId` → Order (optional, nullable)
+- **Features**:
+  - **Order-specific chats** - Link conversations to specific orders
+  - **General inquiries** - Support conversations without order context
+  - **Status tracking** - ACTIVE, RESOLVED, CLOSED, ARCHIVED
+  - **Priority levels** - LOW, NORMAL, HIGH, URGENT
+  - **Assignment** - `assignedTo` field for admin delegation
+  - **Activity tracking** - `lastMessageAt` for sorting by recency
+  - **Subject line** - Customizable conversation titles
+  - **Closure tracking** - `closedAt` timestamp when resolved
+
+**Use Cases**:
+```typescript
+// Order-specific inquiry
+{
+  userId: "user123",
+  orderId: "order456",
+  subject: "Order #ABC123",
+  priority: "HIGH",
+  status: "ACTIVE"
+}
+
+// General support
+{
+  userId: "user123",
+  orderId: null,
+  subject: "Product Question",
+  priority: "NORMAL",
+  status: "ACTIVE"
+}
+```
+
+#### Message
+Individual messages within conversations.
+- **Primary Key**: `id` (CUID)
+- **Foreign Keys**: 
+  - `conversationId` → Conversation
+  - `senderId` → User
+- **Features**:
+  - **Sender type tracking** - USER or ADMIN
+  - **Message types** - TEXT, IMAGE, FILE, SYSTEM (automated)
+  - **Read receipts** - `isRead` flag with `readAt` timestamp
+  - **Rich content** - Support for text, images, files
+  - **System messages** - Automated notifications (order status changes)
+  - **Attachment support** - Multiple files per message
+
+**Message Types**:
+- **TEXT** - Standard text messages
+- **IMAGE** - Shared images (receipts, screenshots)
+- **FILE** - Document attachments (PDFs, etc.)
+- **SYSTEM** - Automated messages (e.g., "Order shipped")
+
+#### Attachment
+File attachments for messages.
+- **Primary Key**: `id` (CUID)
+- **Foreign Keys**: `messageId` → Message
+- **Features**:
+  - **File metadata** - Name, type, size tracking
+  - **Cloud storage** - `fileUrl` for Cloudinary/S3 links
+  - **Type validation** - MIME type storage
+  - **Size tracking** - File size in bytes
+
+**Supported File Types**:
+- Images: JPEG, PNG, GIF, WebP
+- Documents: PDF, DOCX, TXT
+- Archives: ZIP (for multiple files)
+
+#### MessageTemplate
+Pre-written response templates for admins.
+- **Primary Key**: `id` (CUID)
+- **Features**:
+  - **Quick replies** - Common responses for efficiency
+  - **Categorization** - GROUP by category (ORDER, SUPPORT, PRODUCT, GENERAL)
+  - **Active/Inactive** - Toggle template availability
+  - **Customization** - Edit content as needed
+
+**Template Categories**:
+- **ORDER** - Order status updates, shipping info
+- **SUPPORT** - General support responses
+- **PRODUCT** - Product inquiries, availability
+- **GENERAL** - Greetings, closings, escalations
+
+**Example Templates**:
+```typescript
+{
+  title: "Order Shipped",
+  content: "Your order has been shipped! Track it using the number provided.",
+  category: "ORDER",
+  isActive: true
+}
+```
+
 ## Enumerations
 
 ### PaymentMethod
@@ -304,6 +465,28 @@ Line items within an order.
 - `ACTIVE` - Product visible and available for purchase
 - `INACTIVE` - Product hidden but not deleted (can be reactivated)
 - `DELETED` - Soft-deleted product (hidden from all listings)
+
+### SenderType (🆕 NEW)
+- `USER` - Message sent by customer
+- `ADMIN` - Message sent by support team
+
+### MessageType (🆕 NEW)
+- `TEXT` - Standard text message
+- `IMAGE` - Image attachment
+- `FILE` - File attachment
+- `SYSTEM` - Automated system message
+
+### ConversationStatus (🆕 NEW)
+- `ACTIVE` - Ongoing conversation
+- `RESOLVED` - Issue resolved, awaiting closure
+- `CLOSED` - Conversation ended
+- `ARCHIVED` - Historical record
+
+### Priority (🆕 NEW)
+- `LOW` - Non-urgent inquiry
+- `NORMAL` - Standard priority
+- `HIGH` - Important issue
+- `URGENT` - Critical problem requiring immediate attention
 
 ## Key Features
 
@@ -348,6 +531,47 @@ The variant system allows products to have multiple configurations (colors, size
 }
 ```
 
+### 🆕 Customer Messaging System
+
+Integrated bidirectional messaging for customer support:
+
+**Features**:
+- ✅ **Order-specific chats** - Automatically linked to orders
+- ✅ **General inquiries** - Support without order context
+- ✅ **Bidirectional** - Customers and admins both initiate/reply
+- ✅ **Read receipts** - Track message read status
+- ✅ **File attachments** - Images, PDFs, documents
+- ✅ **Message templates** - Quick replies for admins
+- ✅ **Priority management** - Urgent issues highlighted
+- ✅ **Status tracking** - Active, resolved, closed conversations
+- ✅ **Auto-messages** - System notifications on order status changes
+- ✅ **Admin assignment** - Delegate conversations to specific admins
+
+**Messaging Workflow**:
+```typescript
+// Customer initiates from order page
+1. Customer clicks "Message About Order"
+2. System creates Conversation linked to Order
+3. Customer sends first Message
+4. Admin receives notification
+5. Admin replies using Message Template
+6. Customer receives notification
+7. Conversation marked RESOLVED when complete
+```
+
+**Auto-Message Example**:
+```typescript
+// Order status change triggers system message
+Order.status: PAID → SHIPPED
+↓
+System creates Message:
+{
+  senderType: "ADMIN",
+  messageType: "SYSTEM",
+  content: "Your order has been shipped! 📦 Track using..."
+}
+```
+
 ### Multi-Image Support
 Products support multiple images through:
 - `imageUrl` - Primary product image (backward compatible)
@@ -358,11 +582,13 @@ Products support multiple images through:
 - **Product.price** - Displays the minimum variant price ("From $X.XX")
 - **ProductVariant.price** - Actual price for that specific variant
 - **Discount** - Applied at product level, affects all variants proportionally
+- **Discount Expiry** - Time-limited promotions with automatic expiration
 
 ### Stock Management
 - **Product.stock** - Aggregated total across all variants
 - **ProductVariant.stock** - Individual stock per variant
 - Stock validation happens at variant level during checkout
+- Real-time inventory updates
 
 ### M-PESA Integration
 The Order model includes fields specifically for M-PESA STK Push payment flow:
@@ -370,6 +596,7 @@ The Order model includes fields specifically for M-PESA STK Push payment flow:
 - Payment status timestamps
 - Customer phone number for STK push
 - Receipt storage
+- Merchant request ID tracking
 
 ### Historical Data Preservation
 
@@ -378,6 +605,12 @@ The Order model includes fields specifically for M-PESA STK Push payment flow:
 - Includes SKU, color, size, storage at time of purchase
 - Essential for returns, refunds, and analytics
 
+**Message History**:
+- Complete conversation history preserved
+- Read/unread status tracking
+- Timestamp for all messages
+- File attachments permanently stored
+
 ### Cascade Deletion Strategy
 
 **Soft Deletes**:
@@ -385,23 +618,32 @@ The Order model includes fields specifically for M-PESA STK Push payment flow:
 - Preserves order history and analytics
 
 **Cascade Deletes**:
-- Delete User → Deletes CartItems, Orders, Reviews, Likes
+- Delete User → Deletes CartItems, Orders, Reviews, Likes, Conversations, Messages
 - Delete Product → Deletes ProductVariants, CartItems
 - Delete ProductVariant → Removes from CartItems, Sets OrderItem.variantId to NULL
+- Delete Conversation → Deletes all Messages and Attachments
+- Delete Message → Deletes all Attachments
 
 **Protected References**:
 - OrderItem.variant uses `onDelete: SetNull` to preserve orders when variants deleted
 - OrderItem.variantSnapshot preserves details even when variant is gone
+- Order.conversations uses `onDelete: SetNull` to preserve messages when orders deleted
 
 ## Indexes
 
 Performance optimization through strategic indexing:
 
+**E-commerce Indexes**:
 - **CartItem**: `userId`, `productId` - Fast cart retrieval
 - **ProductVariant**: `productId` - Efficient variant queries
 - **Review**: `productId` - Quick review lookups
-- **Order**: `userId`, `status` - Fast order history and status filtering
+- **Order**: `userId`, `status`, `createdAt`, `updatedAt` - Fast order history and filtering
 - **OrderItem**: `orderId` - Efficient order detail retrieval
+
+**Messaging Indexes** (🆕 NEW):
+- **Conversation**: `userId`, `orderId`, `status`, `lastMessageAt` - Fast conversation lookup and sorting
+- **Message**: `conversationId`, `senderId`, `createdAt`, `isRead` - Efficient message queries
+- **Attachment**: `messageId` - Quick attachment retrieval
 
 ## Data Integrity Constraints
 
@@ -413,12 +655,14 @@ Performance optimization through strategic indexing:
 - **CartItem**: `(userId, productId, variantId)` - One variant per cart
 - **Like**: `(userId, productId)` - One like per product
 - **Order**: `checkoutRequestId` - Unique payment requests
+- **Attachment**: `messageId` - File tracking (🆕 NEW)
 
 ### Referential Integrity
 All foreign key relationships enforced with appropriate cascade behaviors:
-- Deleting a user removes their cart, orders, reviews, and likes
+- Deleting a user removes their cart, orders, reviews, likes, and conversations
 - Deleting a product removes its variants and cascades appropriately
 - Order items preserve historical data via snapshots and nullable variant references
+- Conversations preserve message history with proper cascade deletes
 
 ## Technology Stack
 
@@ -426,6 +670,9 @@ All foreign key relationships enforced with appropriate cascade behaviors:
 - **Database**: PostgreSQL
 - **ID Generation**: CUID (Collision-resistant Unique Identifiers)
 - **Payment Gateway**: M-PESA STK Push API
+- **File Storage**: Cloudinary / AWS S3 (for message attachments)
+- **Email Service**: Resend (for message notifications)
+- **Push Notifications**: Web Push API (for real-time alerts)
 
 ## Setup
 
@@ -502,24 +749,24 @@ FROM "Product";
 
 ## License
 
-MIT License
+## License & Copyright
 
-Copyright (c) 2025
+**Copyright © 2025. All Rights Reserved.**
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software and associated documentation files (the "Software") are proprietary and confidential.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+**RESTRICTIONS:**
+- This Software is licensed, not sold
+- No part of this Software may be reproduced, distributed, or transmitted in any form or by any means
+- Unauthorized copying, modification, distribution, or use of this Software is strictly prohibited
+- Reverse engineering, decompilation, or disassembly of this Software is not permitted
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+**USAGE:**
+- Licensed for use only by authorized parties
+- Commercial use requires explicit written permission
+- Distribution requires separate licensing agreement
+
+**DISCLAIMER:**
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+For licensing inquiries, please contact: malutibethuel@gmail.com
