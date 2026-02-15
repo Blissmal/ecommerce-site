@@ -138,8 +138,8 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 {/* Total Section */}
                 <div>
                   <p className={`text-[10px] font-bold uppercase tracking-widest ${order.status === 'PAID' ? 'text-green' :
-                      (order.status === 'FAILED' || order.status === 'CANCELLED') ? 'text-red' :
-                        'text-dark-4'
+                    (order.status === 'FAILED' || order.status === 'CANCELLED') ? 'text-red' :
+                      'text-dark-4'
                     }`}>
                     {order.status === 'PAID' || order.status === 'DELIVERED'
                       ? "Total Amount Paid"
@@ -223,12 +223,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               </p>
               <div className="space-y-3">
                 <DownloadInvoiceButton order={order} />
-                <button className="w-full py-4 bg-blue text-white rounded-2xl font-bold text-sm hover:shadow-lg hover:shadow-blue/20 transition-all">
-                  Contact Support
-                </button>
-                <div className="mt-6">
-  <MessageOrderButton orderId={order.id} />
-</div>
+                <MessageOrderButton orderId={order.id} />
               </div>
             </div>
 

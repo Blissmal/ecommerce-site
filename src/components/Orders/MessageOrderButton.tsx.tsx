@@ -31,10 +31,10 @@ export function MessageOrderButton({ orderId }: { orderId: string }) {
     <button
       onClick={handleStartChat}
       disabled={loading}
-      className="flex items-center gap-2 px-6 py-3 bg-blue text-white rounded-xl font-bold hover:bg-blue-dark transition-colors disabled:opacity-50"
+      className="w-full flex justify-center items-center gap-2 px-6 py-3 bg-blue text-white rounded-xl font-bold hover:bg-blue-dark transition-colors disabled:opacity-50"
     >
       <MessageCircle className="w-5 h-5" />
-      {loading ? 'Starting...' : 'Message About This Order'}
+      {loading ? 'Starting...' : 'Contact support'}
     </button>
   );
 }
