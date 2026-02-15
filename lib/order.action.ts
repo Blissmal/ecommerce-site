@@ -5,6 +5,7 @@ import { prisma } from "./prisma";
 import { revalidatePath } from "next/cache";
 import { updateVariantStock } from "./variant.action";
 import { canTransitionStatus } from "./utils/order-utils";
+import { sendOrderStatusMessage } from "./auto-message-service";
 
 // Type definitions
 export type OrderStatus = 
@@ -191,7 +192,7 @@ export async function createOrder(data: CreateOrderData) {
 }
 
 /**
- * Update order status with validation
+ * Update order status with validation and auto-messaging
  */
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   try {
@@ -205,8 +206,10 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
       throw new Error("Order not found");
     }
 
+    const oldStatus = currentOrder.status as OrderStatus;
+
     // Validate status transition
-    const transition = canTransitionStatus(currentOrder.status as OrderStatus, status);
+    const transition = canTransitionStatus(oldStatus, status);
     
     if (!transition.canTransition) {
       throw new Error(transition.reason || "Invalid status transition");
@@ -223,6 +226,14 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
       where: { id: orderId },
       data: updateData,
     });
+
+    // Send auto-message for status change
+    try {
+      await sendOrderStatusMessage(orderId, status, oldStatus);
+    } catch (messageError) {
+      // Log but don't fail the order update if messaging fails
+      console.error("Failed to send status message:", messageError);
+    }
 
     revalidatePath("/admin/orders");
     revalidatePath("/my-account");
@@ -333,8 +344,10 @@ export async function cancelOrder(orderId: string) {
       throw new Error("Order not found");
     }
 
+    const oldStatus = order.status as OrderStatus;
+
     // Validate that we can cancel this order
-    const transition = canTransitionStatus(order.status as OrderStatus, "CANCELLED");
+    const transition = canTransitionStatus(oldStatus, "CANCELLED");
     
     if (!transition.canTransition) {
       throw new Error(transition.reason || "Cannot cancel this order");
@@ -348,6 +361,13 @@ export async function cancelOrder(orderId: string) {
       data: { status: "CANCELLED" },
     });
 
+    // Send cancellation message
+    try {
+      await sendOrderStatusMessage(orderId, "CANCELLED", oldStatus);
+    } catch (messageError) {
+      console.error("Failed to send cancellation message:", messageError);
+    }
+
     revalidatePath("/admin/orders");
     revalidatePath("/my-account");
     return { success: true };
@@ -358,7 +378,7 @@ export async function cancelOrder(orderId: string) {
 }
 
 /**
- * Batch update order status with validation
+ * Batch update order status with validation and auto-messaging
  */
 export async function batchUpdateOrderStatus(orderIds: string[], targetStatus: OrderStatus) {
   try {
@@ -369,14 +389,17 @@ export async function batchUpdateOrderStatus(orderIds: string[], targetStatus: O
     });
 
     // Separate valid and invalid orders
-    const validOrders: string[] = [];
+    const validOrders: Array<{ id: string; oldStatus: OrderStatus }> = [];
     const invalidOrders: Array<{ id: string; currentStatus: OrderStatus; reason: string }> = [];
 
     for (const order of orders) {
       const transition = canTransitionStatus(order.status as OrderStatus, targetStatus);
       
       if (transition.canTransition) {
-        validOrders.push(order.id);
+        validOrders.push({
+          id: order.id,
+          oldStatus: order.status as OrderStatus
+        });
       } else {
         invalidOrders.push({
           id: order.id,
@@ -397,18 +420,28 @@ export async function batchUpdateOrderStatus(orderIds: string[], targetStatus: O
       }
 
       await prisma.$transaction(
-        validOrders.map(orderId =>
+        validOrders.map(order =>
           prisma.order.update({
-            where: { id: orderId },
+            where: { id: order.id },
             data: updateData
           })
         )
       );
       
       updatedCount = validOrders.length;
+
+      // Send auto-messages for all updated orders
+      // Run in background to avoid blocking
+      Promise.all(
+        validOrders.map(order =>
+          sendOrderStatusMessage(order.id, targetStatus, order.oldStatus)
+            .catch(err => console.error(`Failed to send message for order ${order.id}:`, err))
+        )
+      ).catch(err => console.error("Error sending batch messages:", err));
     }
 
     revalidatePath('/admin/orders');
+    revalidatePath('/my-account');
     
     return { 
       success: true, 

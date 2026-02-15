@@ -1,6 +1,6 @@
 // app/api/mpesa/callback/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { cancelOrder, restoreOrderStock } from '../../../../../lib/order.action';
+import { cancelOrder, restoreOrderStock, updateOrderStatus } from '../../../../../lib/order.action';
 import { prisma } from '../../../../../lib/prisma';
 import { clearUserCart } from '../../../../../lib/db';
 
@@ -37,14 +37,16 @@ export async function POST(req: NextRequest) {
         (item: any) => item.Name === 'MpesaReceiptNumber'
       )?.Value;
 
+      // Update receipt first
       await prisma.order.update({
         where: { id: order.id },
         data: {
-          status: 'PAID',
           receipt: receiptNumber,
-          paymentCompletedAt: new Date(),
         },
       });
+
+      // Then update status (this triggers auto-message)
+      await updateOrderStatus(order.id, 'PAID');
 
       // Clear cart only after successful payment
       await clearUserCart(order.userId);
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     } else if (ResultCode === 1032) {
       // ❌ User explicitly cancelled the payment
-      // Use cancelOrder() which sets status to CANCELLED and restores stock
+      // Use cancelOrder() which sets status to CANCELLED, restores stock, and sends message
       // console.log(`Payment cancelled by user for order ${order.id}: ${ResultDesc}`);
       await cancelOrder(order.id);
 
@@ -62,11 +64,8 @@ export async function POST(req: NextRequest) {
       // ⏱️ Timeout - user didn't enter PIN in time
       // console.log(`Payment timeout for order ${order.id}: ${ResultDesc}`);
       
-      // Set status to FAILED
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'FAILED' }
-      });
+      // Update status to FAILED (this triggers auto-message)
+      await updateOrderStatus(order.id, 'FAILED');
       
       // Restore stock WITHOUT changing status
       await restoreOrderStock(order.id);
@@ -75,10 +74,8 @@ export async function POST(req: NextRequest) {
       // 💰 Insufficient balance
       // console.log(`Insufficient balance for order ${order.id}: ${ResultDesc}`);
       
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'FAILED' }
-      });
+      // Update status to FAILED (this triggers auto-message)
+      await updateOrderStatus(order.id, 'FAILED');
       
       await restoreOrderStock(order.id);
 
@@ -86,10 +83,8 @@ export async function POST(req: NextRequest) {
       // 🔐 Wrong PIN entered
       // console.log(`Wrong PIN for order ${order.id}: ${ResultDesc}`);
       
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'FAILED' }
-      });
+      // Update status to FAILED (this triggers auto-message)
+      await updateOrderStatus(order.id, 'FAILED');
       
       await restoreOrderStock(order.id);
 
@@ -97,10 +92,8 @@ export async function POST(req: NextRequest) {
       // ❌ Unable to complete transaction
       // console.log(`Transaction failed for order ${order.id}: ${ResultDesc}`);
       
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'FAILED' }
-      });
+      // Update status to FAILED (this triggers auto-message)
+      await updateOrderStatus(order.id, 'FAILED');
       
       await restoreOrderStock(order.id);
 
@@ -108,10 +101,8 @@ export async function POST(req: NextRequest) {
       // ⚠️ Other unknown error - mark as FAILED
       // console.log(`Payment error (${ResultCode}) for order ${order.id}: ${ResultDesc}`);
       
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'FAILED' }
-      });
+      // Update status to FAILED (this triggers auto-message)
+      await updateOrderStatus(order.id, 'FAILED');
       
       await restoreOrderStock(order.id);
     }
