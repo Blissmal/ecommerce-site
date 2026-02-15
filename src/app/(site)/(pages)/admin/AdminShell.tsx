@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MessageCircle } from "lucide-react";
+import AdminFloatingMessageButton from "./AdminFloatingMessageButton";
 
 const navigation = [
   {
@@ -162,6 +163,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </div>
         </main>
       </div>
+      <AdminFloatingMessageButton />
     </div>
   );
 }

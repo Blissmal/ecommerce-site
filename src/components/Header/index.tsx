@@ -267,7 +267,6 @@ const Header = () => {
 
             {/* Account */}
             {user ? (
-              <>
                 <Link
                   href="/my-account"
                   className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-2 border border-gray-3 hover:border-blue hover:bg-blue/5 transition-all"
@@ -278,11 +277,6 @@ const Header = () => {
                     {user.email[0].toUpperCase()}
                   </span>
                 </Link>
-                <Link href="/messages" className="flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5" />
-                  Messages
-                </Link>
-              </>
             ) : (
               <Link
                 href="/handler/login"

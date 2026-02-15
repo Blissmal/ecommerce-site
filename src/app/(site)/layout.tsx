@@ -80,6 +80,7 @@ import PreviewSliderModal from "@/components/Common/PreviewSlider";
 import ScrollToTop from "@/components/Common/ScrollToTop";
 import { Toaster } from "react-hot-toast";
 import { LoaderProvider, LoaderUIWrapper } from "../context/LoadingContext";
+import FloatingMessageButton from "@/components/Common/FloatMessageButton";
 
 export default function SiteLayout({
   children,
@@ -106,6 +107,7 @@ export default function SiteLayout({
                     
                     {/* Global Components */}
                     <ScrollToTop />
+                    <FloatingMessageButton />
                     <Toaster />
                   </PreviewSliderProvider>
                 </ModalProvider>
