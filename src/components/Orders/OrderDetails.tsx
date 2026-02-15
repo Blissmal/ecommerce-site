@@ -1,5 +1,5 @@
 import React from "react";
-import { Order, OrderItem, Product } from "@/generated/prisma";
+import { Order, OrderItem, Product } from "@prisma/client";
 
 // Defining the expected extended Order type from Prisma
 type OrderWithItems = Order & {

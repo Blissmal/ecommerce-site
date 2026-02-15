@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { Order, OrderStatus } from "@/generated/prisma";
+import { Order, OrderStatus } from "@prisma/client";
 
 interface EditOrderProps {
   order: Order;

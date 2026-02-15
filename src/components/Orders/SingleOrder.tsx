@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import OrderActions from "./OrderActions";
 import OrderModal from "./OrderModal";
 import Link from "next/link"; // 1. Import Link
-import { Order, OrderStatus } from "@/generated/prisma"; 
+import { Order, OrderStatus } from "@prisma/client"; 
 
 interface SingleOrderProps {
   orderItem: Order & { title?: string }; 
