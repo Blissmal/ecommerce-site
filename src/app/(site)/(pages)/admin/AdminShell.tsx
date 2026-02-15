@@ -135,13 +135,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               </Link>
 
               <div className="h-8 w-[1px] bg-gray-3 hidden sm:block" />
-              <Link
-                href="/admin/messages"
-                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-1 rounded-lg"
-              >
-                <MessageCircle className="w-5 h-5" />
-                Messages
-              </Link>
 
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
