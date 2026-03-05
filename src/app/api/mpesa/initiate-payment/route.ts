@@ -1,4 +1,4 @@
-// app/api/checkout/route.ts
+// app/api/mpesa/initiate-payment/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createOrder } from '@/lib/order.action';
 import { getUserCartItems, clearUserCart } from '@/lib/db';

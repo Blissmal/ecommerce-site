@@ -132,9 +132,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchCartItems, selectTotalPrice } from "@/redux/features/cart-slice";
 import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 import Image from "next/image";
-import type { AppDispatch, RootState } from "@/redux/store";
+import { store, type AppDispatch, type RootState } from "@/redux/store";
 import { useLoader } from "@/app/context/LoadingContext";
 import { MessageCircle } from "lucide-react";
+import { fetchWishlistItems } from "@/redux/features/wishlist-slice";
 
 const Header = () => {
   const [stickyMenu, setStickyMenu] = useState(false);
@@ -178,6 +179,11 @@ const Header = () => {
           // 3. ONLY once synced, fetch the Cart
           // This ensures /api/cart findUnique { authId } won't 404
           await dispatch(fetchCartItems());
+          const wishlistItems = store.getState().wishlistReducer.items;
+
+          if (wishlistItems.length === 0) {
+            await dispatch(fetchWishlistItems());
+          }
 
           // 4. Fetch other dependent data like orders
           // dispatch(fetchOrders()); 
@@ -267,16 +273,16 @@ const Header = () => {
 
             {/* Account */}
             {user ? (
-                <Link
-                  href="/my-account"
-                  className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-2 border border-gray-3 hover:border-blue hover:bg-blue/5 transition-all"
-                  aria-label={`Account for ${user.email}`}
-                  title="My Account"
-                >
-                  <span className="text-custom-xs font-bold text-dark">
-                    {user.email[0].toUpperCase()}
-                  </span>
-                </Link>
+              <Link
+                href="/my-account"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-2 border border-gray-3 hover:border-blue hover:bg-blue/5 transition-all"
+                aria-label={`Account for ${user.email}`}
+                title="My Account"
+              >
+                <span className="text-custom-xs font-bold text-dark">
+                  {user.email[0].toUpperCase()}
+                </span>
+              </Link>
             ) : (
               <Link
                 href="/handler/login"

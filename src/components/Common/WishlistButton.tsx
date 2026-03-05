@@ -38,13 +38,6 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
     (item) => item.product.id === productId
   );
 
-  // Fetch wishlist on mount
-  useEffect(() => {
-    if (user) {
-      dispatch(fetchWishlistItems());
-    }
-  }, [user, dispatch]);
-
   const handleToggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
