@@ -4,8 +4,8 @@ import { Metadata } from "next";
 export const revalidate = 30;
 
 export const metadata: Metadata = {
-  title: "NextCommerce | Nextjs E-commerce template",
-  description: "This is Home for NextCommerce Template",
+  title: "NextCommerce | Nextjs E-commerce",
+  description: "This is Home for NextCommerce",
   // other metadata
 };
 
