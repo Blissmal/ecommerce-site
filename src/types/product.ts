@@ -18,6 +18,6 @@ export type Product = {
     name: string;
     slug: string;
   };
-  createdAt?: string; // Add this as string
-  updatedAt?: string; // Add this as string
+  createdAt?: string;
+  updatedAt?: string;
 };

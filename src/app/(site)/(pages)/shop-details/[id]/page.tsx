@@ -8,17 +8,17 @@ import ShopDetailsClient from "@/components/ShopDetails";
 type Params = Promise<{ id: string }>;
 
 // Generate metadata for SEO
-export async function generateMetadata(props: { 
-  params: Params 
+export async function generateMetadata(props: {
+  params: Params
 }): Promise<Metadata> {
   const params = await props.params;
-  
+
   try {
     const product = await prisma.product.findUnique({
       where: { id: params.id },
-      select: { 
-        title: true, 
-        description: true, 
+      select: {
+        title: true,
+        description: true,
         imageUrl: true,
       },
     });
@@ -49,54 +49,54 @@ export async function generateMetadata(props: {
 // Main page component
 export default async function ShopDetailsPage(props: { params: Params }) {
   const params = await props.params;
-  
+
   try {
     // Fetch product from database using ORIGINAL schema
     const product = await prisma.product.findUnique({
-  where: {
-    id: params.id,
-    status: "ACTIVE",
-  },
-  select: {
-    id: true,
-    title: true,
-    description: true,
-    shortDescription: true, // Added
-    price: true,
-    discount: true,
-    discountExpiry: true,
-    stock: true,
-    imageUrl: true,
-    images: true,
-    brand: true,           // Added
-    model: true,           // Added
-    features: true,        // Added
-    specifications: true,  // Added
-    availableColors: true,  // Missing - added
-    availableSizes: true,   // Missing - added
-    availableStorage: true, // Missing - added
-    variants: true,         // Missing - added (The cause of the crash)
-    category: {
+      where: {
+        id: params.id,
+        status: "ACTIVE",
+      },
       select: {
         id: true,
-        name: true,
-        slug: true,
-      },
-    },
-    reviews: {
-      include: {
-        user: {
+        title: true,
+        description: true,
+        shortDescription: true,
+        price: true,
+        discount: true,
+        discountExpiry: true,
+        stock: true,
+        imageUrl: true,
+        images: true,
+        brand: true,
+        model: true,
+        features: true,
+        specifications: true,
+        availableColors: true,
+        availableSizes: true,
+        availableStorage: true,
+        variants: true,
+        category: {
           select: {
+            id: true,
             name: true,
-            email: true,
+            slug: true,
           },
         },
+        reviews: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
       },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    },
-  },
-});
+    });
 
     // If product not found, show 404
     if (!product) {
@@ -106,34 +106,31 @@ export default async function ShopDetailsPage(props: { params: Params }) {
     const now = new Date();
     const isExpired = product.discountExpiry && new Date(product.discountExpiry) < now;
 
-    // Transform product data (serialize for client)
-    // Transform product data (serialize for client)
-const serializedProduct = {
-  ...product, // Spreading is easier if keys match
-  discount: isExpired ? 0 : product.discount, // Set to 0 if already passed
-  discountExpiry: product.discountExpiry ? product.discountExpiry.toISOString() : null,
-  images: product.images || [],
-  category: {
-    id: product.category.id,
-    name: product.category.name,
-    slug: product.category.slug,
-  },
-  // Ensure these are passed down
-  variants: product.variants || [], 
-  availableColors: product.availableColors || [],
-  availableSizes: product.availableSizes || [],
-  availableStorage: product.availableStorage || [],
-  reviews: product.reviews.map((review) => ({
-    id: review.id,
-    rating: review.rating,
-    comment: review.comment,
-    createdAt: review.createdAt.toISOString(),
-    user: {
-      name: review.user.name,
-      email: review.user.email,
-    },
-  })),
-};
+    const serializedProduct = {
+      ...product,
+      discount: isExpired ? 0 : product.discount, // Set to 0 if already passed
+      discountExpiry: product.discountExpiry ? product.discountExpiry.toISOString() : null,
+      images: product.images || [],
+      category: {
+        id: product.category.id,
+        name: product.category.name,
+        slug: product.category.slug,
+      },
+      variants: product.variants || [],
+      availableColors: product.availableColors || [],
+      availableSizes: product.availableSizes || [],
+      availableStorage: product.availableStorage || [],
+      reviews: product.reviews.map((review) => ({
+        id: review.id,
+        rating: review.rating,
+        comment: review.comment,
+        createdAt: review.createdAt.toISOString(),
+        user: {
+          name: review.user.name,
+          email: review.user.email,
+        },
+      })),
+    };
 
     return (
       <main>
